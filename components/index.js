@@ -20,3 +20,4 @@ import './RadioGroup.js';
 import './Logo.js';
 import './PageHeader.js';
 import './Sidebar.js';
+import './Pages.js';

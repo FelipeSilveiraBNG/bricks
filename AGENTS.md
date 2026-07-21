@@ -148,6 +148,37 @@ body {
 <me-logo variant="monotone" style="color:#CB2957"></me-logo>
 ```
 
+### Múltiplas páginas num só arquivo (rotas por hash)
+Protótipos com navegação usam `<me-pages>`: cada `<me-page name="...">` é uma rota
+`#/nome`. Links são `<a href="#/nome">` — funciona com deep-link e voltar/avançar.
+
+```html
+<me-sidebar expanded id="nav">
+  <me-sidebar-item href="#/inicio" data-page="inicio" active>
+    <me-icon slot="start" name="monitor"></me-icon>Início
+  </me-sidebar-item>
+  <me-sidebar-item href="#/escalas" data-page="escalas">
+    <me-icon slot="start" name="calendar-edit"></me-icon>Escalas
+  </me-sidebar-item>
+</me-sidebar>
+
+<main>
+  <me-pages default="inicio" id="router">
+    <me-page name="inicio"><!-- conteúdo --></me-page>
+    <me-page name="escalas"><!-- conteúdo --></me-page>
+  </me-pages>
+</main>
+
+<script>
+  // Sincroniza o item ativo da sidebar com a rota atual
+  document.getElementById('router').addEventListener('change', (e) => {
+    for (const item of document.querySelectorAll('me-sidebar-item[data-page]')) {
+      item.toggleAttribute('active', item.dataset.page === e.detail.page);
+    }
+  });
+</script>
+```
+
 ### Formulário completo
 Os controles são form-associated: basta um `<form>` nativo.
 
@@ -173,6 +204,7 @@ Os controles são form-associated: basta um `<form>` nativo.
 | `change` | `me-switch` | `{ checked }` |
 | `change` | `me-radio-group` | `{ value }` |
 | `me-toggle` | `me-sidebar` | `{ expanded }` |
+| `change` | `me-pages` (ao trocar de rota) | `{ page }` |
 | `me-close` | `me-card` (cancelável; sem `preventDefault` o card se esconde) | — |
 
 ## Tokens mais usados

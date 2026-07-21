@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Escala — Demo me-pages (rotas por hash)</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: flex;
+      font-family: var(--me-font-family);
+      font-size: var(--me-font-size-body);
+      line-height: var(--me-line-height-body);
+      letter-spacing: var(--me-letter-spacing);
+      color: var(--me-color-text);
+      background: var(--me-color-page);
+    }
+    me-sidebar { flex: none; height: 100vh; position: sticky; top: 0; }
+    main { flex: 1; min-width: 0; padding: 24px 32px; }
+    me-page[active] { display: flex; flex-direction: column; gap: 24px; }
+  </style>
+</head>
+<body>
+  <!--
+    Navegação: cada item aponta para uma rota #/nome.
+    O <me-pages> abaixo decide qual <me-page name="nome"> renderizar.
+    O atributo "active" dos itens é sincronizado no evento "change".
+  -->
+  <me-sidebar expanded id="nav">
+    <me-sidebar-item href="#/dashboard" data-page="dashboard" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+    <me-sidebar-item href="#/escalas" data-page="escalas"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+    <me-sidebar-item href="#/medicos" data-page="medicos"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
+    <me-sidebar-item slot="footer" href="#/dashboard"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
+  </me-sidebar>
+
+  <main>
+    <me-pages default="dashboard" id="router">
+      <me-page name="dashboard">
+        <me-page-header heading="Dashboard" subheading="Visão geral dos plantões da unidade"></me-page-header>
+        <me-card>
+          <span slot="header">Bem-vindo!</span>
+          Esta é a rota <code>#/dashboard</code> (default). Navegue pela sidebar ou
+          use os botões voltar/avançar do navegador — a rota vive no hash da URL.
+        </me-card>
+      </me-page>
+
+      <me-page name="escalas">
+        <me-page-header heading="Gerenciar Escalas" subheading="Rota #/escalas"></me-page-header>
+        <me-card>
+          <span slot="header">Escala de Abril</span>
+          Conteúdo da página de escalas.
+          <div slot="footer" style="display:flex; gap:16px;">
+            <me-button size="small"><me-icon slot="start" name="plus"></me-icon>Novo plantão</me-button>
+          </div>
+        </me-card>
+      </me-page>
+
+      <me-page name="medicos">
+        <me-page-header heading="Médicos" subheading="Rota #/medicos"></me-page-header>
+        <me-card>
+          <span slot="header">Diogo Vinicius</span>
+          <me-badge size="small">Fixo</me-badge>
+        </me-card>
+      </me-page>
+    </me-pages>
+  </main>
+
+  <script type="module">
+    // Sincroniza o item ativo da sidebar com a página atual.
+    const nav = document.getElementById('nav');
+    document.getElementById('router').addEventListener('change', (event) => {
+      for (const item of nav.querySelectorAll('me-sidebar-item[data-page]')) {
+        item.toggleAttribute('active', item.dataset.page === event.detail.page);
+      }
+    });
+  </script>
+</body>
+</html>

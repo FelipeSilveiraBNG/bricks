@@ -22,6 +22,7 @@ Depois abra:
 
 - `index.html` — **showcase**: todos os componentes, variantes e snippets de código.
 - `demo/app-shell.html` — página completa composta (sidebar + header + cards + form).
+- `demo/pages.html` — mini-app com rotas por hash (`me-pages` + sidebar sincronizada).
 
 ## Usando num protótipo
 
@@ -54,6 +55,12 @@ O `tokens.css` já importa a fonte **Inter** e a webfont de ícones **Material D
 | `<me-sidebar>` + `<me-sidebar-item>` | Menu lateral 76px/232px com toggle rosa (evento `me-toggle`), item ativo teal e slot `footer` para "Sair" |
 | `<me-logo>` | Logotipo em SVG embutido: `variant="horizontal|stacked|symbol|monotone"` |
 | `<me-icon>` | Ícone MDI (`name` do catálogo [pictogrammers.com/library/mdi](https://pictogrammers.com/library/mdi/)) |
+
+## Utilitários
+
+| Tag | Descrição |
+| --- | --- |
+| `<me-pages>` + `<me-page>` | Controle de renderização de páginas por hash (`#/rota`): deep-link e voltar/avançar nativos, evento `change`, rota refletida em `me-pages[page]`. Demo em `demo/pages.html` |
 
 ## Convenções
 

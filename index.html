@@ -74,6 +74,7 @@
       <a href="#logo">Logo</a>
       <a href="#page-header">PageHeader</a>
       <a href="#sidebar">Sidebar</a>
+      <a href="#pages">Pages</a>
       <a href="#form">Formulário</a>
     </nav>
 
@@ -309,6 +310,25 @@
     &lt;me-icon slot="start" name="logout"&gt;&lt;/me-icon&gt;Sair
   &lt;/me-sidebar-item&gt;
 &lt;/me-sidebar&gt;</pre>
+      </section>
+
+      <section id="pages">
+        <h2>&lt;me-pages&gt; + &lt;me-page&gt; — Controle de páginas</h2>
+        <p class="desc">
+          Roteador por hash (<code>#/rota</code>): transforma uma página estática num app
+          multi-página, sem servidor nem build. Deep-link e voltar/avançar do navegador
+          funcionam nativamente. Emite <code>change</code> (<code>detail.page</code>) e reflete
+          a rota atual em <code>me-pages[page]</code>.
+          <strong><a href="demo/pages.html">Veja a demo interativa →</a></strong>
+          <em>(demo separada porque a rota vive no hash da URL, que aqui é usado pelo sumário)</em>
+        </p>
+        <pre>&lt;me-pages default="inicio"&gt;
+  &lt;me-page name="inicio"&gt;...&lt;/me-page&gt;
+  &lt;me-page name="escalas"&gt;...&lt;/me-page&gt;
+&lt;/me-pages&gt;
+
+&lt;a href="#/inicio"&gt;Início&lt;/a&gt;
+&lt;a href="#/escalas"&gt;Escalas&lt;/a&gt;</pre>
       </section>
 
       <section id="form">
