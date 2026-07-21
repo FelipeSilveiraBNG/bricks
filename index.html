@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>me-bricks — Kit de componentes Minha Escala</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <script type="module" src="./components/index.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--me-font-family);
+      font-size: var(--me-font-size-body);
+      line-height: var(--me-line-height-body);
+      letter-spacing: var(--me-letter-spacing);
+      color: var(--me-color-text);
+      background: var(--me-color-page);
+    }
+    .layout { display: flex; gap: 32px; max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    nav.toc {
+      position: sticky; top: 32px; align-self: flex-start;
+      display: flex; flex-direction: column; gap: 4px;
+      min-width: 180px; font-size: var(--me-font-size-small);
+    }
+    nav.toc a { color: var(--me-color-text-muted); text-decoration: none; padding: 4px 8px; border-radius: var(--me-radius-s); }
+    nav.toc a:hover { background: var(--me-color-brand-soft); color: var(--me-color-brand); }
+    main { flex: 1; min-width: 0; }
+    h1 { font-size: var(--me-font-size-h5); line-height: var(--me-line-height-h5); }
+    h1 small { font-weight: var(--me-font-weight-regular); color: var(--me-color-text-muted); font-size: var(--me-font-size-small); display: block; }
+    section { margin-bottom: 48px; }
+    h2 {
+      font-size: 20px; border-bottom: 1px solid var(--me-color-border);
+      padding-bottom: 8px; margin-top: 0;
+    }
+    p.desc { color: var(--me-color-text-muted); font-size: var(--me-font-size-small); }
+    .example {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+      padding: 24px; background: var(--me-color-surface);
+      border: 1px solid var(--me-color-border);
+      border-radius: var(--me-radius-l) var(--me-radius-l) 0 0;
+    }
+    .example.column { flex-direction: column; align-items: stretch; }
+    .example + pre {
+      margin: 0; padding: 16px; overflow-x: auto;
+      background: var(--me-color-secondary-50); color: var(--me-color-neutral-20);
+      border-radius: 0 0 var(--me-radius-l) var(--me-radius-l);
+      font-size: 13px; line-height: 1.5;
+    }
+    /* Tokens */
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .swatch { background: var(--me-color-surface); border: 1px solid var(--me-color-border); border-radius: var(--me-radius-m); overflow: hidden; font-size: 12px; }
+    .swatch .color { height: 48px; }
+    .swatch .info { padding: 8px; }
+    .swatch code { color: var(--me-color-text-muted); }
+    /* Ícones */
+    .icon-grid { display: flex; flex-wrap: wrap; gap: 16px; font-size: 24px; }
+    .icon-grid figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; width: 96px; }
+    .icon-grid figcaption { font-size: 11px; color: var(--me-color-text-muted); }
+    output { display: block; white-space: pre-wrap; font-family: monospace; font-size: 13px; padding: 12px; background: var(--me-color-neutral-5); border-radius: var(--me-radius-s); }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="toc" aria-label="Sumário">
+      <a href="#tokens">Tokens</a>
+      <a href="#icones">Ícones</a>
+      <a href="#botoes">Botões</a>
+      <a href="#badges">LabelBadge</a>
+      <a href="#cards">Card</a>
+      <a href="#inputs">Input</a>
+      <a href="#switch">Switch</a>
+      <a href="#radio">Radio</a>
+      <a href="#logo">Logo</a>
+      <a href="#page-header">PageHeader</a>
+      <a href="#sidebar">Sidebar</a>
+      <a href="#form">Formulário</a>
+    </nav>
+
+    <main>
+      <h1>
+        me-bricks
+        <small>Kit de web components para protótipos do Minha Escala — sem build, só abrir e usar.</small>
+      </h1>
+
+      <section id="tokens">
+        <h2>Design tokens</h2>
+        <p class="desc">Definidos em <code>tokens.css</code> (<code>--me-*</code>). Paleta extraída do UI Kit no Figma.</p>
+        <div class="swatches" id="swatch-grid"></div>
+      </section>
+
+      <section id="icones">
+        <h2>&lt;me-icon&gt; — Ícones (MDI via CDN)</h2>
+        <p class="desc">Webfont <code>@mdi/font</code> importada pelo tokens.css. Catálogo completo em <a href="https://pictogrammers.com/library/mdi/" target="_blank" rel="noopener">pictogrammers.com</a>. Tamanho/cor herdam de <code>font-size</code>/<code>color</code>.</p>
+        <div class="example">
+          <div class="icon-grid" id="icon-grid"></div>
+        </div>
+        <pre>&lt;me-icon name="bell" label="Notificações"&gt;&lt;/me-icon&gt;</pre>
+      </section>
+
+      <section id="botoes">
+        <h2>&lt;me-button&gt; — Botões</h2>
+        <p class="desc">Primário = filled (default) · Secundário = outlined · Terciário = plain (ghost). Variantes: brand (default), danger, success, warning, neutral.</p>
+        <div class="example">
+          <me-button>Confirmar</me-button>
+          <me-button appearance="outlined">Cancelar</me-button>
+          <me-button appearance="plain">Ver mais</me-button>
+          <me-button variant="danger" appearance="outlined">Excluir</me-button>
+          <me-button disabled>Desabilitado</me-button>
+        </div>
+        <pre>&lt;me-button&gt;Confirmar&lt;/me-button&gt;
+&lt;me-button appearance="outlined"&gt;Cancelar&lt;/me-button&gt;
+&lt;me-button appearance="plain"&gt;Ver mais&lt;/me-button&gt;
+&lt;me-button variant="danger" appearance="outlined"&gt;Excluir&lt;/me-button&gt;
+&lt;me-button disabled&gt;Desabilitado&lt;/me-button&gt;</pre>
+        <div class="example">
+          <me-button size="small"><me-icon slot="start" name="plus"></me-icon>Nova regra</me-button>
+          <me-button size="small" appearance="outlined">Novo grupo</me-button>
+          <me-button size="large">Candidatar-se</me-button>
+          <me-button href="https://minhaescala.app" appearance="plain"><me-icon slot="start" name="open-in-new"></me-icon>Como link</me-button>
+        </div>
+        <pre>&lt;me-button size="small"&gt;&lt;me-icon slot="start" name="plus"&gt;&lt;/me-icon&gt;Nova regra&lt;/me-button&gt;
+&lt;me-button size="small" appearance="outlined"&gt;Novo grupo&lt;/me-button&gt;
+&lt;me-button size="large"&gt;Candidatar-se&lt;/me-button&gt;
+&lt;me-button href="https://minhaescala.app" appearance="plain"&gt;Como link&lt;/me-button&gt;</pre>
+      </section>
+
+      <section id="badges">
+        <h2>&lt;me-badge&gt; — LabelBadge</h2>
+        <p class="desc">Status de plantão do app: Extra (success) · Cobertura (danger) · Fixo (brand) · Aberta (warning). Tamanhos small (26px) e medium (32px).</p>
+        <div class="example">
+          <me-badge variant="success">Extra</me-badge>
+          <me-badge variant="danger">Cobertura</me-badge>
+          <me-badge>Fixo</me-badge>
+          <me-badge variant="warning">Aberta</me-badge>
+          <me-badge variant="neutral">Externo</me-badge>
+          <me-badge variant="warning" size="small"><me-icon slot="start" name="lock-open-variant-outline"></me-icon>Em revisão</me-badge>
+          <me-badge variant="success" size="small"><me-icon slot="start" name="lock-open-variant-outline"></me-icon>Aprovado</me-badge>
+        </div>
+        <pre>&lt;me-badge variant="success"&gt;Extra&lt;/me-badge&gt;
+&lt;me-badge variant="danger"&gt;Cobertura&lt;/me-badge&gt;
+&lt;me-badge&gt;Fixo&lt;/me-badge&gt;
+&lt;me-badge variant="warning"&gt;Aberta&lt;/me-badge&gt;
+&lt;me-badge variant="warning" size="small"&gt;
+  &lt;me-icon slot="start" name="lock-open-variant-outline"&gt;&lt;/me-icon&gt;Em revisão
+&lt;/me-badge&gt;</pre>
+      </section>
+
+      <section id="cards">
+        <h2>&lt;me-card&gt; — Card</h2>
+        <p class="desc">Slots <code>header</code>, corpo (default) e <code>footer</code>; header/footer somem quando vazios. <code>closable</code> mostra o "X" e emite <code>me-close</code>.</p>
+        <div class="example column" style="background: var(--me-color-page);">
+          <me-card closable style="max-width: 520px;">
+            <span slot="header">Detalhes do plantão</span>
+            De <strong>Segunda-feira, 21/04/2025 às 09:00</strong> até <strong>às 18:00</strong>.<br />
+            Hospital Walter Ferrari · Jaguariúna · Pediatria.
+            <div slot="footer" style="display:flex; gap:16px; width:100%;">
+              <me-button style="flex:1">Candidatar-se</me-button>
+              <me-button style="flex:1" appearance="outlined">Fechar</me-button>
+            </div>
+          </me-card>
+          <me-card style="max-width: 520px; text-align: center;">
+            <strong>Excluir Cartão?</strong><br />
+            Tem certeza que deseja excluir esse card?
+            <div slot="footer" style="display:flex; gap:16px; width:100%;">
+              <me-button style="flex:1">Cancelar</me-button>
+              <me-button style="flex:1" variant="danger" appearance="outlined">Confirmar</me-button>
+            </div>
+          </me-card>
+        </div>
+        <pre>&lt;me-card closable&gt;
+  &lt;span slot="header"&gt;Detalhes do plantão&lt;/span&gt;
+  Conteúdo do card...
+  &lt;div slot="footer"&gt;
+    &lt;me-button&gt;Candidatar-se&lt;/me-button&gt;
+    &lt;me-button appearance="outlined"&gt;Fechar&lt;/me-button&gt;
+  &lt;/div&gt;
+&lt;/me-card&gt;</pre>
+      </section>
+
+      <section id="inputs">
+        <h2>&lt;me-input&gt; — Campo de texto</h2>
+        <p class="desc">Label "notched" apoiada na borda; <code>required</code> adiciona asterisco vermelho; ícones via slots <code>start</code>/<code>end</code>. Participa de formulários nativos.</p>
+        <div class="example">
+          <me-input label="Nome do médico" placeholder="Digite o nome"></me-input>
+          <me-input label="Tipo de condicional" required value="Todos - E"></me-input>
+          <me-input label="Data" type="date" value="2025-04-21">
+            <me-icon slot="start" name="calendar"></me-icon>
+          </me-input>
+          <me-input label="Hora" type="time" value="09:00" size="small">
+            <me-icon slot="start" name="clock-outline"></me-icon>
+          </me-input>
+          <me-input label="Desabilitado" disabled value="Somente leitura"></me-input>
+        </div>
+        <pre>&lt;me-input label="Nome do médico" placeholder="Digite o nome"&gt;&lt;/me-input&gt;
+&lt;me-input label="Tipo de condicional" required value="Todos - E"&gt;&lt;/me-input&gt;
+&lt;me-input label="Data" type="date"&gt;&lt;me-icon slot="start" name="calendar"&gt;&lt;/me-icon&gt;&lt;/me-input&gt;</pre>
+      </section>
+
+      <section id="switch">
+        <h2>&lt;me-switch&gt; — Toggle</h2>
+        <div class="example">
+          <me-switch>Notificações por e-mail</me-switch>
+          <me-switch checked>Plantão noturno</me-switch>
+          <me-switch size="small" checked>Compacto</me-switch>
+          <me-switch disabled>Desabilitado</me-switch>
+        </div>
+        <pre>&lt;me-switch&gt;Notificações por e-mail&lt;/me-switch&gt;
+&lt;me-switch checked&gt;Plantão noturno&lt;/me-switch&gt;</pre>
+      </section>
+
+      <section id="radio">
+        <h2>&lt;me-radio-group&gt; + &lt;me-radio&gt; — Seleção única</h2>
+        <p class="desc">Setas movem a seleção (um único tab stop). <code>appearance="card"</code> replica a seleção de proporcionalidade do app.</p>
+        <div class="example">
+          <me-radio-group name="turno" value="noturno" label="Turno">
+            <me-radio value="diurno">Diurno</me-radio>
+            <me-radio value="noturno">Noturno</me-radio>
+            <me-radio value="cinderela" disabled>Cinderela</me-radio>
+          </me-radio-group>
+        </div>
+        <pre>&lt;me-radio-group name="turno" value="noturno" label="Turno"&gt;
+  &lt;me-radio value="diurno"&gt;Diurno&lt;/me-radio&gt;
+  &lt;me-radio value="noturno"&gt;Noturno&lt;/me-radio&gt;
+&lt;/me-radio-group&gt;</pre>
+        <div class="example column" style="background: var(--me-color-brand-soft);">
+          <me-radio-group name="regra" value="limite" orientation="horizontal" label="Regras de proporcionalidade">
+            <me-radio value="limite" appearance="card">
+              Proporcional com limite
+              <span slot="description">Desconto por atraso e/ou saída antecipada, sem pagamento adicional.</span>
+            </me-radio>
+            <me-radio value="sem-limite" appearance="card">
+              Proporcional sem limite
+              <span slot="description">Desconto por atraso e/ou saída antecipada. Com pagamento adicional mediante autorização.</span>
+            </me-radio>
+            <me-radio value="integral" appearance="card">
+              Integral
+              <span slot="description">Pagamento integral da vaga, independente de atraso ou saída antecipada.</span>
+            </me-radio>
+          </me-radio-group>
+        </div>
+        <pre>&lt;me-radio-group name="regra" value="limite" orientation="horizontal"&gt;
+  &lt;me-radio value="limite" appearance="card"&gt;
+    Proporcional com limite
+    &lt;span slot="description"&gt;Desconto por atraso e/ou saída antecipada.&lt;/span&gt;
+  &lt;/me-radio&gt;
+  ...
+&lt;/me-radio-group&gt;</pre>
+      </section>
+
+      <section id="logo">
+        <h2>&lt;me-logo&gt; — Logotipo</h2>
+        <p class="desc">SVG embutido exportado do Figma. Variantes: horizontal (default), stacked, symbol, monotone (tintável via <code>color</code>).</p>
+        <div class="example">
+          <me-logo style="height: 48px;"></me-logo>
+          <me-logo variant="stacked" style="height: 72px;"></me-logo>
+          <me-logo variant="symbol" style="height: 42px;"></me-logo>
+          <me-logo variant="monotone" style="height: 48px;"></me-logo>
+          <me-logo variant="monotone" style="height: 48px; color: var(--me-color-tertiary-30);"></me-logo>
+        </div>
+        <pre>&lt;me-logo style="height:48px"&gt;&lt;/me-logo&gt;
+&lt;me-logo variant="stacked"&gt;&lt;/me-logo&gt;
+&lt;me-logo variant="symbol"&gt;&lt;/me-logo&gt;
+&lt;me-logo variant="monotone" style="color:#CB2957"&gt;&lt;/me-logo&gt;</pre>
+      </section>
+
+      <section id="page-header">
+        <h2>&lt;me-page-header&gt; — Header de página</h2>
+        <div class="example column">
+          <me-page-header heading="Título" subheading="Descrição da página">
+            <span slot="end" style="display:flex; align-items:center; gap:16px;">
+              <me-icon name="bell-outline" label="Notificações"></me-icon>
+              <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>
+              <me-icon name="chevron-down"></me-icon>
+            </span>
+          </me-page-header>
+        </div>
+        <pre>&lt;me-page-header heading="Título" subheading="Descrição da página"&gt;
+  &lt;span slot="end"&gt;
+    &lt;me-icon name="bell-outline" label="Notificações"&gt;&lt;/me-icon&gt;
+    &lt;me-icon name="account-circle" label="Perfil"&gt;&lt;/me-icon&gt;
+  &lt;/span&gt;
+&lt;/me-page-header&gt;</pre>
+      </section>
+
+      <section id="sidebar">
+        <h2>&lt;me-sidebar&gt; — Menu lateral</h2>
+        <p class="desc">Recolhida 76px / expandida 232px. Clique no botão rosa para alternar (emite <code>me-toggle</code>). Item "Sair" fixado embaixo via <code>slot="footer"</code>.</p>
+        <div class="example" style="align-items: stretch; height: 560px; background: var(--me-color-brand-soft); overflow: hidden;">
+          <me-sidebar expanded>
+            <me-sidebar-item href="#sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
+            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
+            <me-sidebar-item slot="footer" href="#sidebar"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
+          </me-sidebar>
+        </div>
+        <pre>&lt;me-sidebar expanded&gt;
+  &lt;me-sidebar-item href="/dashboard" active&gt;
+    &lt;me-icon slot="start" name="monitor"&gt;&lt;/me-icon&gt;Dashboard
+  &lt;/me-sidebar-item&gt;
+  ...
+  &lt;me-sidebar-item slot="footer" href="/sair"&gt;
+    &lt;me-icon slot="start" name="logout"&gt;&lt;/me-icon&gt;Sair
+  &lt;/me-sidebar-item&gt;
+&lt;/me-sidebar&gt;</pre>
+      </section>
+
+      <section id="form">
+        <h2>Participação em formulário nativo</h2>
+        <p class="desc">Os controles são form-associated (ElementInternals): entram no <code>FormData</code> de um <code>&lt;form&gt;</code> comum. Submeta para conferir.</p>
+        <div class="example column">
+          <form id="test-form" style="display:flex; flex-direction:column; gap:24px; max-width:420px;">
+            <me-input label="Nome" name="nome" required placeholder="Seu nome"></me-input>
+            <me-switch name="noturno" checked>Aceito plantão noturno</me-switch>
+            <me-radio-group name="turno" value="diurno" label="Turno preferido">
+              <me-radio value="diurno">Diurno</me-radio>
+              <me-radio value="noturno">Noturno</me-radio>
+            </me-radio-group>
+            <div style="display:flex; gap:16px;">
+              <me-button type="submit">Enviar</me-button>
+              <me-button appearance="outlined" onclick="document.getElementById('test-form').reset()">Limpar</me-button>
+            </div>
+          </form>
+          <output id="form-output">Aguardando envio…</output>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    // Grid de swatches de cor a partir dos tokens
+    const tokens = [
+      'primary-5', 'primary-20', 'primary-30',
+      'secondary-10', 'secondary-40', 'secondary-50',
+      'tertiary-30', 'neutral-5', 'neutral-20',
+      'success-50', 'success-5', 'negative-50', 'negative-5', 'alert-50', 'alert-5',
+    ];
+    const styles = getComputedStyle(document.documentElement);
+    document.getElementById('swatch-grid').innerHTML = tokens.map((token) => {
+      const value = styles.getPropertyValue(`--me-color-${token}`).trim();
+      return `<div class="swatch">
+        <div class="color" style="background: var(--me-color-${token})"></div>
+        <div class="info"><strong>${token}</strong><br /><code>${value}</code></div>
+      </div>`;
+    }).join('');
+
+    // Grid dos ícones usados no kit
+    const icons = [
+      'monitor', 'calendar-edit', 'clipboard-text-outline', 'checkbox-marked-outline',
+      'office-building-outline', 'magnify', 'doctor', 'file-chart-outline',
+      'account-group', 'logout', 'bell-outline', 'account-circle', 'chevron-down',
+      'calendar', 'clock-outline', 'plus', 'close', 'delete-outline', 'pencil-outline',
+      'lock-open-variant-outline',
+    ];
+    document.getElementById('icon-grid').innerHTML = icons.map((name) =>
+      `<figure><me-icon name="${name}"></me-icon><figcaption>${name}</figcaption></figure>`
+    ).join('');
+
+    // Prova do form-associated: imprime o FormData no submit
+    const form = document.getElementById('test-form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const lines = [...data.entries()].map(([key, value]) => `${key} = ${value}`);
+      document.getElementById('form-output').textContent =
+        lines.length ? lines.join('\n') : '(FormData vazio)';
+    });
+  </script>
+</body>
+</html>

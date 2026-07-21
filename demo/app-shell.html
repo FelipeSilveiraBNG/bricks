@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minha Escala — Demo de protótipo (me-bricks)</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: flex;
+      font-family: var(--me-font-family);
+      font-size: var(--me-font-size-body);
+      line-height: var(--me-line-height-body);
+      letter-spacing: var(--me-letter-spacing);
+      color: var(--me-color-text);
+      background: var(--me-color-page);
+    }
+    me-sidebar { flex: none; height: 100vh; position: sticky; top: 0; }
+    main { flex: 1; min-width: 0; padding: 24px 32px; display: flex; flex-direction: column; gap: 24px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .kv { color: var(--me-color-text-muted); font-size: var(--me-font-size-small); }
+    .kv strong { color: var(--me-color-text); }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <me-sidebar expanded>
+    <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
+    <me-sidebar-item slot="footer" href="#"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
+  </me-sidebar>
+
+  <main>
+    <me-page-header heading="Dashboard" subheading="Visão geral dos plantões da unidade">
+      <span slot="end" style="display:flex; align-items:center; gap:16px;">
+        <me-icon name="bell-outline" label="Notificações"></me-icon>
+        <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>
+        <me-icon name="chevron-down"></me-icon>
+      </span>
+    </me-page-header>
+
+    <div class="cards">
+      <me-card closable>
+        <span slot="header">#15258 · Detalhes do plantão</span>
+        <div class="kv">
+          De <strong>Segunda-feira, 21/04/2025 às 09:00</strong><br />
+          Até <strong>Segunda-feira, 21/04/2025 às 18:00</strong><br />
+          Horário de Brasília
+        </div>
+        <div class="badges">
+          <me-badge>Fixo</me-badge>
+          <me-badge variant="success" size="small">Extra</me-badge>
+        </div>
+        <div slot="footer" style="display:flex; gap:16px; width:100%;">
+          <me-button style="flex:1">Candidatar-se</me-button>
+          <me-button style="flex:1" appearance="outlined">Detalhes</me-button>
+        </div>
+      </me-card>
+
+      <me-card>
+        <span slot="header">Diogo Vinicius</span>
+        <div class="kv">
+          <strong>Formação:</strong> Residência ano 3<br />
+          <strong>Equipe:</strong> Nossa equipe<br />
+          <strong>Posição:</strong> Ambulatório<br />
+          <strong>Turno:</strong> Noturno
+        </div>
+        <div class="badges">
+          <me-badge size="small">Fixo</me-badge>
+          <me-badge variant="danger" size="small">Cobertura</me-badge>
+          <me-badge variant="warning" size="small">Aberta</me-badge>
+        </div>
+      </me-card>
+
+      <me-card style="text-align:center;">
+        <strong>Excluir Cartão?</strong><br />
+        <span class="kv">Tem certeza que deseja excluir esse card?</span>
+        <div slot="footer" style="display:flex; gap:16px; width:100%;">
+          <me-button style="flex:1">Cancelar</me-button>
+          <me-button style="flex:1" variant="danger" appearance="outlined">Confirmar</me-button>
+        </div>
+      </me-card>
+    </div>
+
+    <me-card>
+      <span slot="header">Regras de proporcionalidade</span>
+      <me-radio-group name="regra" value="limite" orientation="horizontal" label="Regras de proporcionalidade">
+        <me-radio value="limite" appearance="card">
+          Proporcional com limite
+          <span slot="description">Desconto por atraso e/ou saída antecipada, sem pagamento adicional.</span>
+        </me-radio>
+        <me-radio value="sem-limite" appearance="card">
+          Proporcional sem limite
+          <span slot="description">Desconto por atraso e/ou saída antecipada. Com pagamento adicional mediante autorização da supervisão.</span>
+        </me-radio>
+        <me-radio value="integral" appearance="card">
+          Integral
+          <span slot="description">Pagamento integral da vaga, independente de atraso ou saída antecipada.</span>
+        </me-radio>
+      </me-radio-group>
+      <div slot="footer" style="display:flex; gap:24px; align-items:center; width:100%;">
+        <me-input label="Tipo de condicional" required value="Todos - E" size="small"></me-input>
+        <me-switch checked>Exigir aprovação</me-switch>
+        <span style="flex:1"></span>
+        <me-button size="small" appearance="outlined">Novo grupo</me-button>
+        <me-button size="small"><me-icon slot="start" name="plus"></me-icon>Nova regra</me-button>
+      </div>
+    </me-card>
+  </main>
+</body>
+</html>

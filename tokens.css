@@ -1,0 +1,87 @@
+/*
+ * me-bricks — Design Tokens do Minha Escala
+ * Única fonte de verdade para cores, tipografia, forma e elevação.
+ * Valores extraídos do UI Kit Minha Escala no Figma.
+ *
+ * Os componentes consomem estes tokens com fallback embutido
+ * (ex.: var(--me-color-brand, #2F7F91)), então continuam funcionando
+ * mesmo se este arquivo não for carregado — mas carregá-lo é o caminho feliz.
+ */
+
+/* Fonte Inter (tipografia do app) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+/* Material Design Icons (webfont usada pelo <me-icon>) */
+@import url('https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css');
+
+:root {
+  /* ===== Paleta (escalas do Figma) ===== */
+  --me-color-primary-5: #D8EEF3;
+  --me-color-primary-20: #3CA2B9;
+  --me-color-primary-30: #2F7F91;   /* cor de marca (teal) */
+
+  --me-color-secondary-10: #68688D;
+  --me-color-secondary-40: #1E1E29;
+  --me-color-secondary-50: #16161D; /* texto padrão */
+
+  --me-color-tertiary-30: #CB2957;  /* rosa (toggle da sidebar) */
+
+  --me-color-neutral-5: #FAFAFA;
+  --me-color-neutral-20: #E2E2E9;
+  --me-color-white: #FFFFFF;
+
+  --me-color-success-50: #198038;
+  --me-color-success-5: #EAFBEF;
+  --me-color-negative-50: #DA1E28;
+  --me-color-negative-5: #FCE9EA;
+  --me-color-alert-50: #F18F1B;
+  --me-color-alert-5: #FEF3E7;
+
+  /* ===== Aliases semânticos (o que os componentes consomem) ===== */
+  --me-color-brand: var(--me-color-primary-30);
+  --me-color-brand-soft: var(--me-color-primary-5);
+  --me-color-text: var(--me-color-secondary-50);
+  --me-color-text-muted: var(--me-color-secondary-10);
+  --me-color-border: var(--me-color-neutral-20);
+  --me-color-surface: var(--me-color-white);
+  --me-color-page: var(--me-color-neutral-5);
+
+  /* ===== Tipografia (Inter, letter-spacing 0.5px) ===== */
+  --me-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --me-font-size-small: 14px;   --me-line-height-small: 18px;
+  --me-font-size-body: 16px;    --me-line-height-body: 24px;
+  --me-font-size-h5: 24px;      --me-line-height-h5: 32px;
+  --me-font-weight-regular: 400;
+  --me-font-weight-medium: 500;
+  --me-font-weight-bold: 700;
+  --me-letter-spacing: 0.5px;
+
+  /* ===== Forma / elevação ===== */
+  --me-radius-s: 4px;
+  --me-radius-m: 6px;
+  --me-radius-l: 8px;
+  --me-shadow-card: 0 1px 4px rgb(22 22 29 / 0.10);
+
+  /* ===== Controles ===== */
+  --me-control-height-s: 32px;
+  --me-control-height-m: 40px;
+  --me-control-height-l: 48px;
+  --me-focus-ring: 0 0 0 3px color-mix(in srgb, var(--me-color-brand) 35%, transparent);
+  --me-transition: 0.2s ease;
+}
+
+/*
+ * <me-icon> renderiza em light DOM (fora de shadow DOM) para que a
+ * webfont MDI carregada acima se aplique. Estes ajustes garantem
+ * alinhamento e herança de tamanho/cor.
+ */
+me-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+me-icon .mdi::before {
+  font-size: inherit;
+  line-height: 1;
+}

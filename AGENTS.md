@@ -1,0 +1,190 @@
+# me-bricks — Guia para agentes de IA
+
+Este guia ensina a **consumir** a biblioteca me-bricks ao gerar protótipos do app
+Minha Escala. Leia antes de escrever qualquer HTML de protótipo.
+
+## Setup obrigatório de toda página
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protótipo — Minha Escala</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <script type="module" src="./components/index.js"></script>
+</head>
+```
+
+Ajuste os caminhos relativos conforme a pasta da página (ex.: `../tokens.css` dentro de `demo/`).
+A página precisa ser servida via HTTP (`npx serve .`) — ES modules não funcionam em `file://`.
+
+Estilo base recomendado para o `<body>`:
+
+```css
+body {
+  margin: 0;
+  font-family: var(--me-font-family);
+  color: var(--me-color-text);
+  background: var(--me-color-page);
+  letter-spacing: var(--me-letter-spacing);
+}
+```
+
+## Regras de ouro
+
+1. **Nunca reestilize os componentes por dentro** — use os atributos (`variant`, `appearance`,
+   `size`) e, se precisar, tokens `--me-*` ou `::part()`.
+2. **Ícones sempre por slot**: `<me-icon slot="start" name="...">`. Nomes do catálogo MDI
+   (https://pictogrammers.com/library/mdi/). Nunca coloque `<i class="mdi">` direto.
+3. **Tags custom nunca são self-closing**: `<me-icon name="x"></me-icon>`, jamais `<me-icon />`.
+4. Textos de UI em **pt-BR**.
+5. Botões seguem o mapeamento do app: primário = default, secundário = `appearance="outlined"`,
+   terciário = `appearance="plain"`, destrutivo = `variant="danger" appearance="outlined"`.
+
+## Receitas copy-paste
+
+### Botões
+```html
+<me-button>Confirmar</me-button>
+<me-button appearance="outlined">Cancelar</me-button>
+<me-button appearance="plain">Ver mais</me-button>
+<me-button variant="danger" appearance="outlined">Excluir</me-button>
+<me-button size="small"><me-icon slot="start" name="plus"></me-icon>Nova regra</me-button>
+<me-button type="submit">Enviar</me-button>
+<me-button href="/detalhes" appearance="plain">Como link</me-button>
+```
+
+### Campo de texto / data / hora
+```html
+<me-input label="Nome do médico" name="nome" required placeholder="Digite o nome"></me-input>
+<me-input label="Data" type="date" name="data">
+  <me-icon slot="start" name="calendar"></me-icon>
+</me-input>
+<me-input label="Hora" type="time" name="hora" size="small">
+  <me-icon slot="start" name="clock-outline"></me-icon>
+</me-input>
+```
+
+### Switch
+```html
+<me-switch name="noturno" checked>Aceito plantão noturno</me-switch>
+```
+
+### Radio (simples e em cards)
+```html
+<me-radio-group name="turno" value="diurno" label="Turno">
+  <me-radio value="diurno">Diurno</me-radio>
+  <me-radio value="noturno">Noturno</me-radio>
+</me-radio-group>
+
+<me-radio-group name="regra" value="limite" orientation="horizontal" label="Regras">
+  <me-radio value="limite" appearance="card">
+    Proporcional com limite
+    <span slot="description">Desconto por atraso, sem pagamento adicional.</span>
+  </me-radio>
+  <me-radio value="integral" appearance="card">
+    Integral
+    <span slot="description">Pagamento integral da vaga.</span>
+  </me-radio>
+</me-radio-group>
+```
+
+### Badges de status de plantão
+```html
+<me-badge variant="success">Extra</me-badge>
+<me-badge variant="danger">Cobertura</me-badge>
+<me-badge>Fixo</me-badge>
+<me-badge variant="warning">Aberta</me-badge>
+```
+
+### Card (e dialog de confirmação)
+```html
+<me-card closable>
+  <span slot="header">Detalhes do plantão</span>
+  Conteúdo…
+  <div slot="footer" style="display:flex; gap:16px; width:100%;">
+    <me-button style="flex:1">Candidatar-se</me-button>
+    <me-button style="flex:1" appearance="outlined">Fechar</me-button>
+  </div>
+</me-card>
+
+<!-- Dialog de confirmação = card centrado com dois botões full-width -->
+<me-card style="max-width:520px; text-align:center;">
+  <strong>Excluir Cartão?</strong><br />
+  Tem certeza que deseja excluir esse card?
+  <div slot="footer" style="display:flex; gap:16px; width:100%;">
+    <me-button style="flex:1">Cancelar</me-button>
+    <me-button style="flex:1" variant="danger" appearance="outlined">Confirmar</me-button>
+  </div>
+</me-card>
+```
+
+### Shell de aplicação (sidebar + header)
+```html
+<body style="display:flex; margin:0;">
+  <me-sidebar expanded style="height:100vh; position:sticky; top:0;">
+    <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+    <me-sidebar-item slot="footer" href="#"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
+  </me-sidebar>
+  <main style="flex:1; padding:24px 32px;">
+    <me-page-header heading="Dashboard" subheading="Visão geral">
+      <span slot="end" style="display:flex; align-items:center; gap:16px;">
+        <me-icon name="bell-outline" label="Notificações"></me-icon>
+        <me-icon name="account-circle" label="Perfil" style="font-size:36px; color:var(--me-color-brand);"></me-icon>
+      </span>
+    </me-page-header>
+    <!-- conteúdo -->
+  </main>
+</body>
+```
+
+### Logo
+```html
+<me-logo style="height:48px"></me-logo>                <!-- horizontal (default) -->
+<me-logo variant="symbol" style="height:42px"></me-logo>
+<me-logo variant="monotone" style="color:#CB2957"></me-logo>
+```
+
+### Formulário completo
+Os controles são form-associated: basta um `<form>` nativo.
+
+```html
+<form id="f">
+  <me-input label="Nome" name="nome" required></me-input>
+  <me-switch name="noturno">Plantão noturno</me-switch>
+  <me-button type="submit">Enviar</me-button>
+</form>
+<script>
+  document.getElementById('f').addEventListener('submit', (e) => {
+    e.preventDefault();
+    console.log(Object.fromEntries(new FormData(e.target)));
+  });
+</script>
+```
+
+## Eventos
+
+| Evento | Origem | detail |
+| --- | --- | --- |
+| `input` / `change` | `me-input` | `{ value }` |
+| `change` | `me-switch` | `{ checked }` |
+| `change` | `me-radio-group` | `{ value }` |
+| `me-toggle` | `me-sidebar` | `{ expanded }` |
+| `me-close` | `me-card` (cancelável; sem `preventDefault` o card se esconde) | — |
+
+## Tokens mais usados
+
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `--me-color-brand` | `#2F7F91` | Teal da marca (botões, item ativo) |
+| `--me-color-brand-soft` | `#D8EEF3` | Fundos tintados |
+| `--me-color-text` | `#16161D` | Texto padrão |
+| `--me-color-text-muted` | `#68688D` | Texto secundário |
+| `--me-color-tertiary-30` | `#CB2957` | Rosa (toggle da sidebar) |
+| `--me-color-negative-50` | `#DA1E28` | Ações destrutivas |
+| `--me-color-page` | `#FAFAFA` | Fundo de página |
+| `--me-radius-l` | `8px` | Cards |
+| `--me-shadow-card` | sombra sutil | Cards/sidebar |
