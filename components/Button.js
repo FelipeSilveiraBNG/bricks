@@ -31,6 +31,8 @@ template.innerHTML = `
 
     .btn {
       box-sizing: border-box;
+      position: relative; /* âncora do ripple */
+      overflow: hidden;   /* recorta o ripple no raio do botão */
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -145,6 +147,22 @@ template.innerHTML = `
     }
 
     ::slotted(me-icon) { font-size: 1.25em; }
+
+    /* Ripple de clique (equivalente ao v-ripple do VBtn do app):
+       círculo em currentColor que irradia do ponto clicado.
+       Em botões filled fica branco; em outlined/ghost, na cor do texto. */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.25;
+      transform: scale(0);
+      pointer-events: none;
+      animation: me-ripple 0.45s ease-out forwards;
+    }
+    @keyframes me-ripple {
+      to { transform: scale(4); opacity: 0; }
+    }
   </style>
 `;
 
@@ -164,6 +182,9 @@ class MeButton extends HTMLElement {
         event.preventDefault();
         return;
       }
+      // Ativação por teclado (Enter/Space) dispara click com detail 0:
+      // sem coordenadas, o ripple parte do centro.
+      if (event.detail === 0) this.#spawnRipple();
       if (this.getAttribute('type') === 'submit') {
         this.closest('form')?.requestSubmit();
       }
@@ -208,10 +229,34 @@ class MeButton extends HTMLElement {
       <span class="label" part="label"><slot></slot></span>
       <slot name="end"></slot>
     `;
+    // Ripple no pressionar (como o v-ripple, que inicia no pointerdown).
+    // CSS pointer-events:none no estado disabled já impede o ripple lá.
+    el.addEventListener('pointerdown', (event) => this.#spawnRipple(event));
+
     if (this.#base) this.#base.replaceWith(el);
     else this.shadowRoot.appendChild(el);
     this.#base = el;
     this.#syncDisabled();
+  }
+
+  /* Cria o círculo do ripple no ponto do evento (ou no centro, via teclado). */
+  #spawnRipple(event) {
+    if (this.disabled || !this.#base) return;
+    const rect = this.#base.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = (event?.clientX ?? rect.left + rect.width / 2) - rect.left - size / 2;
+    const y = (event?.clientY ?? rect.top + rect.height / 2) - rect.top - size / 2;
+
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+    // Fallback: em abas ocultas o Chrome congela animações e o animationend
+    // nunca dispara — garante a limpeza mesmo assim (remove() repetido é no-op).
+    setTimeout(() => ripple.remove(), 600);
+    this.#base.appendChild(ripple);
   }
 
   #syncDisabled() {
