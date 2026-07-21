@@ -159,7 +159,7 @@ sidebarTemplate.innerHTML = `
       display: flex;
       flex-direction: column;
       height: 100%;
-      padding: 16px 12px;
+      padding: 16px 8px;
       background: var(--me-color-surface, #FFFFFF);
       box-shadow: var(--me-shadow-card, 0 1px 4px rgb(22 22 29 / 0.10));
       overflow: hidden;
@@ -175,9 +175,10 @@ sidebarTemplate.innerHTML = `
     }
     :host([expanded]) .header { justify-content: space-between; }
 
-    /* No app: recolhida mostra só o toggle; expandida mostra logo + toggle. */
+    /* No app: recolhida mostra só o toggle; expandida mostra logo + toggle.
+       Lockup compacto (stacked) — o horizontal não cabe nos 232px. */
     .logo { display: none; }
-    :host([expanded]) .logo { display: block; height: 40px; }
+    :host([expanded]) .logo { display: block; height: 44px; }
 
     .toggle {
       flex: none;
@@ -209,6 +210,7 @@ sidebarTemplate.innerHTML = `
       gap: 8px;
       overflow-y: auto;
       overflow-x: hidden;
+      scrollbar-width: thin; /* barra fina para não roubar largura dos rótulos */
     }
 
     .footer {
@@ -221,7 +223,7 @@ sidebarTemplate.innerHTML = `
   </style>
   <div class="base" part="base">
     <div class="header" part="header">
-      <me-logo class="logo" variant="horizontal"></me-logo>
+      <me-logo class="logo" variant="stacked"></me-logo>
       <!-- Chevrons duplos em SVG inline (estruturais, não dependem do CDN) -->
       <button class="toggle" part="toggle" type="button" aria-label="Expandir menu" aria-expanded="false">
         <svg class="expand-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">

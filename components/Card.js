@@ -58,6 +58,7 @@ template.innerHTML = `
       color: var(--me-color-text-muted, #68688D);
       cursor: pointer;
     }
+    .close[hidden] { display: none; } /* a classe venceria o [hidden] do UA */
     .close:hover { color: var(--me-color-text, #16161D); }
     .close:focus-visible {
       outline: none;
