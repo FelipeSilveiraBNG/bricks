@@ -311,7 +311,7 @@
 
       <me-page name="sidebar">
         <h2>&lt;me-sidebar&gt; — Menu lateral</h2>
-        <p class="desc">Espelha o Sidebar do app: recolhida 64px / aberta 288px (300ms), borda direita cinza, header 80px com logo "variant" + toggle rosa 24px, item ativo teal com texto semibold, hover teal a 8%. Clique no botão rosa para alternar (emite <code>me-toggle</code>). Item "Sair" no <code>slot="footer"</code> é extensão do kit.</p>
+        <p class="desc">Espelha o Sidebar do app: recolhida 64px / aberta 288px (300ms), borda direita cinza, header 80px com logo "variant" + toggle rosa 24px, item ativo teal com texto semibold, hover teal a 8%. Clique no botão rosa para alternar (emite <code>me-toggle</code>). Como no app, não há "Sair" na sidebar (o <code>slot="footer"</code> existe para casos especiais).</p>
         <div class="example" style="align-items: stretch; height: 560px; background: var(--me-color-brand-soft); overflow: hidden;">
           <me-sidebar expanded>
             <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
@@ -323,7 +323,6 @@
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
-            <me-sidebar-item slot="footer" href="#/sidebar"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
           </me-sidebar>
         </div>
         <pre>&lt;me-sidebar expanded&gt;
@@ -331,9 +330,6 @@
     &lt;me-icon slot="start" name="monitor"&gt;&lt;/me-icon&gt;Dashboard
   &lt;/me-sidebar-item&gt;
   ...
-  &lt;me-sidebar-item slot="footer" href="/sair"&gt;
-    &lt;me-icon slot="start" name="logout"&gt;&lt;/me-icon&gt;Sair
-  &lt;/me-sidebar-item&gt;
 &lt;/me-sidebar&gt;</pre>
       </me-page>
 

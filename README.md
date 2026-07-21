@@ -52,7 +52,7 @@ O `tokens.css` já importa a fonte **Inter** e a webfont de ícones **Material D
 | `<me-badge>` | labelBadge de status: Extra=`success`, Cobertura=`danger`, Fixo=`brand`, Aberta=`warning`; `size="small|medium"` |
 | `<me-card>` | Cartão com slots `header`/`footer` colapsáveis e `closable` (evento `me-close`) |
 | `<me-page-header>` | Header de página: título + subtítulo + slot `end` (sino, avatar) |
-| `<me-sidebar>` + `<me-sidebar-item>` | Menu lateral espelhado do app: 64px/288px, toggle rosa 24px (evento `me-toggle`), item ativo teal semibold; slot `footer` (extensão do kit) |
+| `<me-sidebar>` + `<me-sidebar-item>` | Menu lateral espelhado do app: 64px/288px, toggle rosa 24px (evento `me-toggle`), item ativo teal semibold; sem "Sair" (como no app — slot `footer` disponível para casos especiais) |
 | `<me-logo>` | Logotipo em SVG embutido: `variant="horizontal|stacked|variant|symbol|monotone"` (`variant` = lockup da sidebar do app) |
 | `<me-icon>` | Ícone MDI (`name` do catálogo [pictogrammers.com/library/mdi](https://pictogrammers.com/library/mdi/)) |
 

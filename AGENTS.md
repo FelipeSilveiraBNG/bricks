@@ -130,7 +130,8 @@ body {
   <me-sidebar expanded style="height:100vh; position:sticky; top:0;">
     <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
     <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
-    <me-sidebar-item slot="footer" href="#"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
+    <!-- Como no app real, a sidebar NÃO tem item "Sair" (logout fica no menu
+         do header). O slot="footer" existe para casos especiais. -->
   </me-sidebar>
   <main style="flex:1; padding:24px 32px;">
     <me-page-header heading="Dashboard" subheading="Visão geral">
