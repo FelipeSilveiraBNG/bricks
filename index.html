@@ -25,10 +25,15 @@
     }
     nav.toc a { color: var(--me-color-text-muted); text-decoration: none; padding: 4px 8px; border-radius: var(--me-radius-s); }
     nav.toc a:hover { background: var(--me-color-brand-soft); color: var(--me-color-brand); }
+    nav.toc a.active {
+      background: var(--me-color-brand);
+      color: var(--me-color-white);
+      font-weight: var(--me-font-weight-bold);
+    }
     main { flex: 1; min-width: 0; }
     h1 { font-size: var(--me-font-size-h5); line-height: var(--me-line-height-h5); }
     h1 small { font-weight: var(--me-font-weight-regular); color: var(--me-color-text-muted); font-size: var(--me-font-size-small); display: block; }
-    section { margin-bottom: 48px; }
+    me-page { padding-bottom: 48px; }
     h2 {
       font-size: 20px; border-bottom: 1px solid var(--me-color-border);
       padding-bottom: 8px; margin-top: 0;
@@ -62,20 +67,21 @@
 </head>
 <body>
   <div class="layout">
-    <nav class="toc" aria-label="Sumário">
-      <a href="#tokens">Tokens</a>
-      <a href="#icones">Ícones</a>
-      <a href="#botoes">Botões</a>
-      <a href="#badges">LabelBadge</a>
-      <a href="#cards">Card</a>
-      <a href="#inputs">Input</a>
-      <a href="#switch">Switch</a>
-      <a href="#radio">Radio</a>
-      <a href="#logo">Logo</a>
-      <a href="#page-header">PageHeader</a>
-      <a href="#sidebar">Sidebar</a>
-      <a href="#pages">Pages</a>
-      <a href="#form">Formulário</a>
+    <!-- Navegação por rotas (#/pagina): quem renderiza é o <me-pages> no main -->
+    <nav class="toc" aria-label="Componentes">
+      <a href="#/tokens" data-page="tokens">Tokens</a>
+      <a href="#/icones" data-page="icones">Ícones</a>
+      <a href="#/botoes" data-page="botoes">Botões</a>
+      <a href="#/badges" data-page="badges">LabelBadge</a>
+      <a href="#/cards" data-page="cards">Card</a>
+      <a href="#/inputs" data-page="inputs">Input</a>
+      <a href="#/switch" data-page="switch">Switch</a>
+      <a href="#/radio" data-page="radio">Radio</a>
+      <a href="#/logo" data-page="logo">Logo</a>
+      <a href="#/page-header" data-page="page-header">PageHeader</a>
+      <a href="#/sidebar" data-page="sidebar">Sidebar</a>
+      <a href="#/pages" data-page="pages">Pages</a>
+      <a href="#/form" data-page="form">Formulário</a>
     </nav>
 
     <main>
@@ -84,22 +90,25 @@
         <small>Kit de web components para protótipos do Minha Escala — sem build, só abrir e usar.</small>
       </h1>
 
-      <section id="tokens">
+      <!-- Cada componente é uma rota: #/tokens, #/botoes... (dogfooding do me-pages) -->
+      <me-pages default="tokens" id="docs-router">
+
+      <me-page name="tokens">
         <h2>Design tokens</h2>
         <p class="desc">Definidos em <code>tokens.css</code> (<code>--me-*</code>). Paleta extraída do UI Kit no Figma.</p>
         <div class="swatches" id="swatch-grid"></div>
-      </section>
+      </me-page>
 
-      <section id="icones">
+      <me-page name="icones">
         <h2>&lt;me-icon&gt; — Ícones (MDI via CDN)</h2>
         <p class="desc">Webfont <code>@mdi/font</code> importada pelo tokens.css. Catálogo completo em <a href="https://pictogrammers.com/library/mdi/" target="_blank" rel="noopener">pictogrammers.com</a>. Tamanho/cor herdam de <code>font-size</code>/<code>color</code>.</p>
         <div class="example">
           <div class="icon-grid" id="icon-grid"></div>
         </div>
         <pre>&lt;me-icon name="bell" label="Notificações"&gt;&lt;/me-icon&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="botoes">
+      <me-page name="botoes">
         <h2>&lt;me-button&gt; — Botões</h2>
         <p class="desc">Primário = filled (default) · Secundário = outlined · Terciário = plain (ghost). Variantes: brand (default), danger, success, warning, neutral.</p>
         <div class="example">
@@ -124,9 +133,9 @@
 &lt;me-button size="small" appearance="outlined"&gt;Novo grupo&lt;/me-button&gt;
 &lt;me-button size="large"&gt;Candidatar-se&lt;/me-button&gt;
 &lt;me-button href="https://minhaescala.app" appearance="plain"&gt;Como link&lt;/me-button&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="badges">
+      <me-page name="badges">
         <h2>&lt;me-badge&gt; — LabelBadge</h2>
         <p class="desc">Status de plantão do app: Extra (success) · Cobertura (danger) · Fixo (brand) · Aberta (warning). Tamanhos small (26px) e medium (32px).</p>
         <div class="example">
@@ -145,9 +154,9 @@
 &lt;me-badge variant="warning" size="small"&gt;
   &lt;me-icon slot="start" name="lock-open-variant-outline"&gt;&lt;/me-icon&gt;Em revisão
 &lt;/me-badge&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="cards">
+      <me-page name="cards">
         <h2>&lt;me-card&gt; — Card</h2>
         <p class="desc">Slots <code>header</code>, corpo (default) e <code>footer</code>; header/footer somem quando vazios. <code>closable</code> mostra o "X" e emite <code>me-close</code>.</p>
         <div class="example column" style="background: var(--me-color-page);">
@@ -177,9 +186,9 @@
     &lt;me-button appearance="outlined"&gt;Fechar&lt;/me-button&gt;
   &lt;/div&gt;
 &lt;/me-card&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="inputs">
+      <me-page name="inputs">
         <h2>&lt;me-input&gt; — Campo de texto</h2>
         <p class="desc">Label "notched" apoiada na borda; <code>required</code> adiciona asterisco vermelho; ícones via slots <code>start</code>/<code>end</code>. Participa de formulários nativos.</p>
         <div class="example">
@@ -196,9 +205,9 @@
         <pre>&lt;me-input label="Nome do médico" placeholder="Digite o nome"&gt;&lt;/me-input&gt;
 &lt;me-input label="Tipo de condicional" required value="Todos - E"&gt;&lt;/me-input&gt;
 &lt;me-input label="Data" type="date"&gt;&lt;me-icon slot="start" name="calendar"&gt;&lt;/me-icon&gt;&lt;/me-input&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="switch">
+      <me-page name="switch">
         <h2>&lt;me-switch&gt; — Toggle</h2>
         <div class="example">
           <me-switch>Notificações por e-mail</me-switch>
@@ -208,9 +217,9 @@
         </div>
         <pre>&lt;me-switch&gt;Notificações por e-mail&lt;/me-switch&gt;
 &lt;me-switch checked&gt;Plantão noturno&lt;/me-switch&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="radio">
+      <me-page name="radio">
         <h2>&lt;me-radio-group&gt; + &lt;me-radio&gt; — Seleção única</h2>
         <p class="desc">Setas movem a seleção (um único tab stop). <code>appearance="card"</code> replica a seleção de proporcionalidade do app.</p>
         <div class="example">
@@ -247,9 +256,9 @@
   &lt;/me-radio&gt;
   ...
 &lt;/me-radio-group&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="logo">
+      <me-page name="logo">
         <h2>&lt;me-logo&gt; — Logotipo</h2>
         <p class="desc">SVG embutido exportado do Figma. Variantes: horizontal (default), stacked, symbol, monotone (tintável via <code>color</code>).</p>
         <div class="example">
@@ -263,9 +272,9 @@
 &lt;me-logo variant="stacked"&gt;&lt;/me-logo&gt;
 &lt;me-logo variant="symbol"&gt;&lt;/me-logo&gt;
 &lt;me-logo variant="monotone" style="color:#CB2957"&gt;&lt;/me-logo&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="page-header">
+      <me-page name="page-header">
         <h2>&lt;me-page-header&gt; — Header de página</h2>
         <div class="example column">
           <me-page-header heading="Título" subheading="Descrição da página">
@@ -282,23 +291,23 @@
     &lt;me-icon name="account-circle" label="Perfil"&gt;&lt;/me-icon&gt;
   &lt;/span&gt;
 &lt;/me-page-header&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="sidebar">
+      <me-page name="sidebar">
         <h2>&lt;me-sidebar&gt; — Menu lateral</h2>
         <p class="desc">Recolhida 76px / expandida 232px. Clique no botão rosa para alternar (emite <code>me-toggle</code>). Item "Sair" fixado embaixo via <code>slot="footer"</code>.</p>
         <div class="example" style="align-items: stretch; height: 560px; background: var(--me-color-brand-soft); overflow: hidden;">
           <me-sidebar expanded>
-            <me-sidebar-item href="#sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
-            <me-sidebar-item href="#sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
-            <me-sidebar-item slot="footer" href="#sidebar"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
+            <me-sidebar-item slot="footer" href="#/sidebar"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
           </me-sidebar>
         </div>
         <pre>&lt;me-sidebar expanded&gt;
@@ -310,17 +319,18 @@
     &lt;me-icon slot="start" name="logout"&gt;&lt;/me-icon&gt;Sair
   &lt;/me-sidebar-item&gt;
 &lt;/me-sidebar&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="pages">
+      <me-page name="pages">
         <h2>&lt;me-pages&gt; + &lt;me-page&gt; — Controle de páginas</h2>
         <p class="desc">
           Roteador por hash (<code>#/rota</code>): transforma uma página estática num app
           multi-página, sem servidor nem build. Deep-link e voltar/avançar do navegador
           funcionam nativamente. Emite <code>change</code> (<code>detail.page</code>) e reflete
           a rota atual em <code>me-pages[page]</code>.
-          <strong><a href="demo/pages.html">Veja a demo interativa →</a></strong>
-          <em>(demo separada porque a rota vive no hash da URL, que aqui é usado pelo sumário)</em>
+          <strong>Esta própria documentação usa o me-pages</strong> — cada componente do menu
+          ao lado é uma rota. Veja também um exemplo de app completo em
+          <a href="demo/pages.html">demo/pages.html</a>.
         </p>
         <pre>&lt;me-pages default="inicio"&gt;
   &lt;me-page name="inicio"&gt;...&lt;/me-page&gt;
@@ -329,9 +339,9 @@
 
 &lt;a href="#/inicio"&gt;Início&lt;/a&gt;
 &lt;a href="#/escalas"&gt;Escalas&lt;/a&gt;</pre>
-      </section>
+      </me-page>
 
-      <section id="form">
+      <me-page name="form">
         <h2>Participação em formulário nativo</h2>
         <p class="desc">Os controles são form-associated (ElementInternals): entram no <code>FormData</code> de um <code>&lt;form&gt;</code> comum. Submeta para conferir.</p>
         <div class="example column">
@@ -349,11 +359,23 @@
           </form>
           <output id="form-output">Aguardando envio…</output>
         </div>
-      </section>
+      </me-page>
+
+      </me-pages>
     </main>
   </div>
 
   <script type="module">
+    // Marca no sumário a rota ativa do roteador de docs
+    const router = document.getElementById('docs-router');
+    const syncToc = (page) => {
+      for (const link of document.querySelectorAll('nav.toc a[data-page]')) {
+        link.classList.toggle('active', link.dataset.page === page);
+      }
+    };
+    router.addEventListener('change', (event) => syncToc(event.detail.page));
+    syncToc(router.getAttribute('page')); // estado inicial (inclusive deep-link)
+
     // Grid de swatches de cor a partir dos tokens
     const tokens = [
       'primary-5', 'primary-20', 'primary-30',
