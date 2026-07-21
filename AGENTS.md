@@ -70,6 +70,9 @@ body {
 ### Switch
 ```html
 <me-switch name="noturno" checked>Aceito plantão noturno</me-switch>
+<me-switch size="small">Compacto</me-switch>
+<me-switch disabled checked>Desabilitado</me-switch>
+<me-switch loading>Carregando (aria-busy, bloqueia interação)</me-switch>
 ```
 
 ### Radio (simples e em cards)

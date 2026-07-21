@@ -209,14 +209,20 @@
 
       <me-page name="switch">
         <h2>&lt;me-switch&gt; — Toggle</h2>
-        <div class="example">
+        <p class="desc">Espelha o Switch do app: anel branco externo, track teal quando ligado, estados <code>disabled</code> e <code>loading</code> (pulse + <code>aria-busy</code>).</p>
+        <div class="example" style="background: var(--me-color-brand-soft);">
           <me-switch>Notificações por e-mail</me-switch>
           <me-switch checked>Plantão noturno</me-switch>
           <me-switch size="small" checked>Compacto</me-switch>
+          <me-switch disabled checked>Desabilitado ligado</me-switch>
           <me-switch disabled>Desabilitado</me-switch>
+          <me-switch loading checked>Carregando</me-switch>
         </div>
         <pre>&lt;me-switch&gt;Notificações por e-mail&lt;/me-switch&gt;
-&lt;me-switch checked&gt;Plantão noturno&lt;/me-switch&gt;</pre>
+&lt;me-switch checked&gt;Plantão noturno&lt;/me-switch&gt;
+&lt;me-switch size="small" checked&gt;Compacto&lt;/me-switch&gt;
+&lt;me-switch disabled checked&gt;Desabilitado ligado&lt;/me-switch&gt;
+&lt;me-switch loading checked&gt;Carregando&lt;/me-switch&gt;</pre>
       </me-page>
 
       <me-page name="radio">
