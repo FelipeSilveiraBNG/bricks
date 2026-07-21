@@ -143,6 +143,7 @@
       <a href="#/cards" data-page="cards">Card</a>
       <a href="#/inputs" data-page="inputs">Input</a>
       <a href="#/switch" data-page="switch">Switch</a>
+      <a href="#/checkbox" data-page="checkbox">Checkbox</a>
       <a href="#/radio" data-page="radio">Radio</a>
       <a href="#/icones" data-page="icones">Ícones</a>
       <a href="#/logo" data-page="logo">Logo</a>
@@ -181,7 +182,7 @@
           <me-button appearance="outlined" href="#/tokens">Design tokens</me-button>
         </div>
         <div class="stats">
-          <me-badge size="small">11 componentes</me-badge>
+          <me-badge size="small">12 componentes</me-badge>
           <me-badge size="small" variant="success">0 dependências</me-badge>
           <me-badge size="small" variant="warning">0 build</me-badge>
           <me-badge size="small" variant="neutral">pt-BR</me-badge>
@@ -233,6 +234,7 @@
           <a href="#/cards"><strong>Card</strong><small>header/footer e dialog de confirmação</small></a>
           <a href="#/inputs"><strong>Input</strong><small>label notched, participa de forms</small></a>
           <a href="#/switch"><strong>Switch</strong><small>toggle com estados disabled/loading</small></a>
+          <a href="#/checkbox"><strong>Checkbox</strong><small>seleção múltipla e CheckboxSelect</small></a>
           <a href="#/radio"><strong>Radio</strong><small>seleção única e cards selecionáveis</small></a>
           <a href="#/icones"><strong>Ícones</strong><small>Material Design Icons via CDN</small></a>
           <a href="#/logo"><strong>Logo</strong><small>5 variantes em SVG do Figma</small></a>
@@ -383,6 +385,51 @@
 &lt;me-switch loading checked&gt;Carregando&lt;/me-switch&gt;</pre>
       </me-page>
 
+      <me-page name="checkbox">
+        <h2>&lt;me-checkbox&gt; — Checkbox</h2>
+        <p class="desc">
+          Réplica do Checkbox do app: caixa 18px com borda 2px, check FontAwesome branco
+          sobre teal, transição na borda. Vários com o mesmo <code>name</code> geram múltiplas
+          entradas no <code>FormData</code>, como checkboxes nativos.
+        </p>
+        <div class="example column">
+          <me-checkbox>Desmarcado</me-checkbox>
+          <me-checkbox checked>Marcado</me-checkbox>
+          <me-checkbox disabled>Desabilitado</me-checkbox>
+          <me-checkbox disabled checked>Desabilitado marcado</me-checkbox>
+        </div>
+        <pre>&lt;me-checkbox&gt;Desmarcado&lt;/me-checkbox&gt;
+&lt;me-checkbox checked&gt;Marcado&lt;/me-checkbox&gt;
+&lt;me-checkbox disabled&gt;Desabilitado&lt;/me-checkbox&gt;
+&lt;me-checkbox disabled checked&gt;Desabilitado marcado&lt;/me-checkbox&gt;</pre>
+
+        <h2 style="margin-top: 32px;">&lt;me-checkbox-select&gt; — Grupo com título</h2>
+        <p class="desc">
+          Réplica do CheckboxSelect do app: card branco com título semibold, descrição e
+          lista de opções. Emite <code>change</code> com <code>detail.value</code> = lista dos
+          values marcados.
+        </p>
+        <div class="example column" style="background: var(--me-color-brand-soft);">
+          <me-checkbox-select
+            id="demo-checkbox-select"
+            heading="Turnos de interesse"
+            description="Selecione os turnos em que você pode assumir plantões."
+            style="max-width: 420px;"
+          >
+            <me-checkbox name="turnos" value="diurno" checked>Diurno</me-checkbox>
+            <me-checkbox name="turnos" value="noturno">Noturno</me-checkbox>
+            <me-checkbox name="turnos" value="cinderela">Cinderela</me-checkbox>
+          </me-checkbox-select>
+          <output id="checkbox-select-output">Marcados: diurno</output>
+        </div>
+        <pre>&lt;me-checkbox-select heading="Turnos de interesse"
+  description="Selecione os turnos em que você pode assumir plantões."&gt;
+  &lt;me-checkbox name="turnos" value="diurno" checked&gt;Diurno&lt;/me-checkbox&gt;
+  &lt;me-checkbox name="turnos" value="noturno"&gt;Noturno&lt;/me-checkbox&gt;
+  &lt;me-checkbox name="turnos" value="cinderela"&gt;Cinderela&lt;/me-checkbox&gt;
+&lt;/me-checkbox-select&gt;</pre>
+      </me-page>
+
       <me-page name="radio">
         <h2>&lt;me-radio-group&gt; + &lt;me-radio&gt; — Seleção única</h2>
         <p class="desc">Setas movem a seleção (um único tab stop). <code>appearance="card"</code> replica a seleção de proporcionalidade do app.</p>
@@ -509,6 +556,8 @@
           <form id="test-form" style="display:flex; flex-direction:column; gap:24px; max-width:420px;">
             <me-input label="Nome" name="nome" required placeholder="Seu nome"></me-input>
             <me-switch name="noturno" checked>Aceito plantão noturno</me-switch>
+            <me-checkbox name="unidades" value="hospital-central" checked>Hospital Central</me-checkbox>
+            <me-checkbox name="unidades" value="ambulatorio">Ambulatório</me-checkbox>
             <me-radio-group name="turno" value="diurno" label="Turno preferido">
               <me-radio value="diurno">Diurno</me-radio>
               <me-radio value="noturno">Noturno</me-radio>
@@ -581,6 +630,13 @@
     document.getElementById('icon-grid').innerHTML = icons.map((name) =>
       `<figure><me-icon name="${name}"></me-icon><figcaption>${name}</figcaption></figure>`
     ).join('');
+
+    // Demo do me-checkbox-select: mostra a lista agregada de marcados
+    const checkboxSelect = document.getElementById('demo-checkbox-select');
+    checkboxSelect.addEventListener('change', (event) => {
+      document.getElementById('checkbox-select-output').textContent =
+        'Marcados: ' + (event.detail.value.join(', ') || '(nenhum)');
+    });
 
     // Prova do form-associated: imprime o FormData no submit
     const form = document.getElementById('test-form');

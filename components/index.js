@@ -16,6 +16,7 @@ import './Badge.js';
 import './Card.js';
 import './Input.js';
 import './Switch.js';
+import './Checkbox.js';
 import './RadioGroup.js';
 import './Logo.js';
 import './PageHeader.js';

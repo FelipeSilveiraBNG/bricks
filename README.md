@@ -48,6 +48,7 @@ O `tokens.css` já importa a fonte **Inter** e a webfont de ícones **Material D
 | `<me-button>` | Botão. Primário (filled, default), secundário (`appearance="outlined"`), terciário (`appearance="plain"`); variantes `danger`/`success`/`warning`/`neutral`; `size`, `disabled`, `type="submit"`, `href` |
 | `<me-input>` | Campo de texto com label notched e asterisco de obrigatório; tipos text/email/password/number/date/time; slots `start`/`end` para ícones; participa de `<form>` |
 | `<me-switch>` | Toggle espelhado do app (anel branco + track teal); estados `disabled` e `loading`; semântica de checkbox no submit |
+| `<me-checkbox>` + `<me-checkbox-select>` | Checkbox 18px do app (check FontAwesome sobre teal) e grupo em card com título/descrição; múltiplas entradas no `FormData` com o mesmo `name` |
 | `<me-radio-group>` + `<me-radio>` | Seleção única com navegação por setas; `appearance="card"` para cards selecionáveis |
 | `<me-badge>` | labelBadge de status: Extra=`success`, Cobertura=`danger`, Fixo=`brand`, Aberta=`warning`; `size="small|medium"` |
 | `<me-card>` | Cartão com slots `header`/`footer` colapsáveis e `closable` (evento `me-close`) |

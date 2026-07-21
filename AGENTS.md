@@ -75,6 +75,17 @@ body {
 <me-switch loading>Carregando (aria-busy, bloqueia interação)</me-switch>
 ```
 
+### Checkbox (simples e grupo com título)
+```html
+<me-checkbox name="unidades" value="central" checked>Hospital Central</me-checkbox>
+
+<me-checkbox-select heading="Turnos de interesse"
+  description="Selecione os turnos em que você pode assumir plantões.">
+  <me-checkbox name="turnos" value="diurno" checked>Diurno</me-checkbox>
+  <me-checkbox name="turnos" value="noturno">Noturno</me-checkbox>
+</me-checkbox-select>
+```
+
 ### Radio (simples e em cards)
 ```html
 <me-radio-group name="turno" value="diurno" label="Turno">
@@ -206,6 +217,8 @@ Os controles são form-associated: basta um `<form>` nativo.
 | --- | --- | --- |
 | `input` / `change` | `me-input` | `{ value }` |
 | `change` | `me-switch` | `{ checked }` |
+| `change` | `me-checkbox` | `{ checked, value }` |
+| `change` | `me-checkbox-select` | `{ value: [marcados] }` |
 | `change` | `me-radio-group` | `{ value }` |
 | `me-toggle` | `me-sidebar` | `{ expanded }` |
 | `change` | `me-pages` (ao trocar de rota) | `{ page }` |
