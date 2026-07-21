@@ -390,10 +390,13 @@
 
     // Grid de swatches de cor a partir dos tokens
     const tokens = [
-      'primary-5', 'primary-20', 'primary-30',
-      'secondary-10', 'secondary-40', 'secondary-50',
-      'tertiary-30', 'neutral-5', 'neutral-20',
-      'success-50', 'success-5', 'negative-50', 'negative-5', 'alert-50', 'alert-5',
+      'primary-5', 'primary-10', 'primary-20', 'primary-30', 'primary-40', 'primary-50',
+      'secondary-5', 'secondary-10', 'secondary-20', 'secondary-40', 'secondary-50',
+      'tertiary-10', 'tertiary-30', 'tertiary-40',
+      'neutral-5', 'neutral-10', 'neutral-20', 'neutral-30', 'neutral-40', 'neutral-50',
+      'gray-30', 'gray-50',
+      'success-50', 'success-5', 'negative-50', 'negative-5',
+      'alert-50', 'alert-5', 'warning-50', 'warning-5',
     ];
     const styles = getComputedStyle(document.documentElement);
     document.getElementById('swatch-grid').innerHTML = tokens.map((token) => {

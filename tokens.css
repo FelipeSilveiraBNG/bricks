@@ -15,28 +15,47 @@
 @import url('https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css');
 
 :root {
-  /* ===== Paleta (escalas do Figma) ===== */
+  /* ===== Paleta (escalas completas do Figma UI Kit) ===== */
   --me-color-primary-5: #D8EEF3;
+  --me-color-primary-10: #84C8D7;
   --me-color-primary-20: #3CA2B9;
   --me-color-primary-30: #2F7F91;   /* cor de marca (teal) */
+  --me-color-primary-40: #235E6C;
+  --me-color-primary-50: #163D45;   /* wordmark da logo */
 
+  --me-color-secondary-5: #8484A4;
   --me-color-secondary-10: #68688D;
+  --me-color-secondary-20: #52526F;
   --me-color-secondary-40: #1E1E29;
   --me-color-secondary-50: #16161D; /* texto padrão */
 
+  --me-color-tertiary-10: #E37796;
   --me-color-tertiary-30: #CB2957;  /* rosa (toggle da sidebar) */
+  --me-color-tertiary-40: #A12145;
 
+  /* Neutral/LightGray */
   --me-color-neutral-5: #FAFAFA;
+  --me-color-neutral-10: #F0F0F4;
   --me-color-neutral-20: #E2E2E9;
-  --me-color-neutral-30: #D8D8E2; /* lightGray30 do app (track do switch desligado) */
+  --me-color-neutral-30: #D8D8E2;   /* track do switch desligado */
+  --me-color-neutral-40: #BCBCCD;
+  --me-color-neutral-50: #9E9EB7;
+  /* Neutral/Gray */
+  --me-color-gray-30: #666666;
+  --me-color-gray-50: #323232;
   --me-color-white: #FFFFFF;
 
+  /* Feedback — atenção: Alert (laranja) e Warning (amarelo) são famílias
+     DISTINTAS no Figma. O variant="warning" dos componentes usa o laranja
+     (Alert), que é o do badge "Aberta" do app. */
   --me-color-success-50: #198038;
   --me-color-success-5: #EAFBEF;
   --me-color-negative-50: #DA1E28;
   --me-color-negative-5: #FCE9EA;
   --me-color-alert-50: #F18F1B;
   --me-color-alert-5: #FEF3E7;
+  --me-color-warning-50: #F1C21B;
+  --me-color-warning-5: #FEF9E7;
 
   /* ===== Aliases semânticos (o que os componentes consomem) ===== */
   --me-color-brand: var(--me-color-primary-30);
