@@ -17,22 +17,83 @@
       color: var(--me-color-text);
       background: var(--me-color-page);
     }
-    .layout { display: flex; gap: 32px; max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
-    nav.toc {
-      position: sticky; top: 32px; align-self: flex-start;
-      display: flex; flex-direction: column; gap: 4px;
-      min-width: 180px; font-size: var(--me-font-size-small);
+    /* ===== Layout de docs: aside fixa + main (padrão bng/Web Awesome) ===== */
+    aside {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 260px;
+      padding: 24px 16px;
+      background: var(--me-color-surface);
+      border-right: 1px solid var(--me-color-border);
+      overflow-y: auto;
+      scrollbar-width: thin;
     }
-    nav.toc a { color: var(--me-color-text-muted); text-decoration: none; padding: 4px 8px; border-radius: var(--me-radius-s); }
-    nav.toc a:hover { background: var(--me-color-brand-soft); color: var(--me-color-brand); }
-    nav.toc a.active {
+    .brand { display: block; text-decoration: none; color: inherit; margin-bottom: 8px; }
+    .brand me-logo { height: 40px; }
+    .brand small {
+      display: block; margin-top: 8px;
+      font-size: 12px; color: var(--me-color-text-muted);
+    }
+    aside nav { display: flex; flex-direction: column; gap: 2px; font-size: var(--me-font-size-small); }
+    aside nav .group {
+      margin: 20px 0 6px; padding: 0 10px;
+      font-size: 11px; font-weight: var(--me-font-weight-semibold);
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--me-color-text-muted);
+    }
+    aside nav a {
+      color: var(--me-color-text-muted); text-decoration: none;
+      padding: 6px 10px; border-radius: var(--me-radius-s);
+    }
+    aside nav a:hover { background: var(--me-color-brand-soft); color: var(--me-color-brand); }
+    aside nav a.active {
       background: var(--me-color-brand);
       color: var(--me-color-white);
       font-weight: var(--me-font-weight-bold);
     }
-    main { flex: 1; min-width: 0; }
-    h1 { font-size: var(--me-font-size-h5); line-height: var(--me-line-height-h5); }
-    h1 small { font-weight: var(--me-font-weight-regular); color: var(--me-color-text-muted); font-size: var(--me-font-size-small); display: block; }
+    main { margin-left: 260px; max-width: 820px; padding: 32px 40px 64px; }
+
+    @media (max-width: 900px) {
+      aside { position: static; width: auto; border-right: none; border-bottom: 1px solid var(--me-color-border); }
+      main { margin-left: 0; padding: 24px 20px 48px; }
+    }
+
+    /* ===== Homepage (hero + tutorial + cards) ===== */
+    .hero { margin: 24px 0 8px; }
+    .hero h1 { margin: 20px 0 0; font-size: 2.5rem; line-height: 1.15; letter-spacing: -0.5px; }
+    .subtitle { margin: 8px 0 0; font-size: 18px; color: var(--me-color-text-muted); }
+    .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 12px; }
+    .stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 16px; }
+    .code-card { position: relative; margin: 12px 0; }
+    .code-card pre {
+      margin: 0; padding: 20px; overflow-x: auto;
+      background: var(--me-color-secondary-50); color: var(--me-color-neutral-20);
+      border-radius: var(--me-radius-l);
+      font-size: 13px; line-height: 1.7;
+    }
+    .code-card .copy {
+      position: absolute; top: 10px; right: 10px;
+      padding: 4px 10px; border: 1px solid var(--me-color-secondary-10);
+      border-radius: var(--me-radius-s); background: transparent;
+      color: var(--me-color-neutral-20);
+      font-family: inherit; font-size: 12px; cursor: pointer;
+    }
+    .code-card .copy:hover { background: var(--me-color-secondary-40); }
+    .live-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 12px 0; }
+    .cards {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 12px; margin-top: 12px;
+    }
+    .cards a {
+      display: block; padding: 14px 16px;
+      border: 1px solid var(--me-color-border); border-radius: var(--me-radius-l);
+      background: var(--me-color-surface);
+      text-decoration: none; color: inherit;
+      transition: border-color var(--me-transition), color var(--me-transition);
+    }
+    .cards a:hover { border-color: var(--me-color-brand); color: var(--me-color-brand); }
+    .cards strong { display: block; font-size: var(--me-font-size-small); }
+    .cards small { font-size: 12px; color: var(--me-color-text-muted); }
     me-page { padding-bottom: 48px; }
     h2 {
       font-size: 20px; border-bottom: 1px solid var(--me-color-border);
@@ -66,32 +127,120 @@
   </style>
 </head>
 <body>
-  <div class="layout">
-    <!-- Navegação por rotas (#/pagina): quem renderiza é o <me-pages> no main -->
-    <nav class="toc" aria-label="Componentes">
-      <a href="#/tokens" data-page="tokens">Tokens</a>
-      <a href="#/icones" data-page="icones">Ícones</a>
+  <!-- Navegação por rotas (#/pagina): quem renderiza é o <me-pages> no main.
+       Layout inspirado nas docs da bng-components / Web Awesome. -->
+  <aside>
+    <a class="brand" href="#/inicio">
+      <me-logo variant="variant"></me-logo>
+      <small>Design System · v0.1.0</small>
+    </a>
+    <nav aria-label="Documentação">
+      <div class="group">Guia</div>
+      <a href="#/inicio" data-page="inicio">Início</a>
+      <div class="group">Componentes</div>
       <a href="#/botoes" data-page="botoes">Botões</a>
       <a href="#/badges" data-page="badges">LabelBadge</a>
       <a href="#/cards" data-page="cards">Card</a>
       <a href="#/inputs" data-page="inputs">Input</a>
       <a href="#/switch" data-page="switch">Switch</a>
       <a href="#/radio" data-page="radio">Radio</a>
+      <a href="#/icones" data-page="icones">Ícones</a>
       <a href="#/logo" data-page="logo">Logo</a>
       <a href="#/page-header" data-page="page-header">PageHeader</a>
       <a href="#/sidebar" data-page="sidebar">Sidebar</a>
+      <div class="group">Utilitários</div>
       <a href="#/pages" data-page="pages">Pages</a>
+      <a href="#/tokens" data-page="tokens">Tokens</a>
       <a href="#/form" data-page="form">Formulário</a>
     </nav>
+  </aside>
 
-    <main>
-      <h1>
-        me-bricks
-        <small>Kit de web components para protótipos do Minha Escala — sem build, só abrir e usar.</small>
-      </h1>
-
+  <main>
       <!-- Cada componente é uma rota: #/tokens, #/botoes... (dogfooding do me-pages) -->
-      <me-pages default="tokens" id="docs-router">
+      <me-pages default="inicio" id="docs-router">
+
+      <!-- ===================== Início (homepage) ===================== -->
+      <me-page name="inicio">
+        <div class="hero">
+          <me-logo variant="stacked" style="height: 72px;"></me-logo>
+          <h1>me-bricks</h1>
+          <p class="subtitle">
+            Kit de web components do Minha Escala para protótipos —
+            sem build, sem dependências, só HTML.
+          </p>
+        </div>
+        <p>
+          Componentes encapsulados em Shadow DOM que espelham o visual do aplicativo real,
+          estilizados por <a href="#/tokens">design tokens</a> (<code>--me-*</code>) e com API
+          inspirada no <a href="https://webawesome.com" target="_blank" rel="noopener">Web Awesome</a>:
+          eixos <code>variant</code>/<code>appearance</code>/<code>size</code>, slots
+          <code>start</code>/<code>end</code> e participação nativa em formulários.
+        </p>
+        <div class="ctas">
+          <me-button href="#/botoes">Ver componentes</me-button>
+          <me-button appearance="outlined" href="#/tokens">Design tokens</me-button>
+        </div>
+        <div class="stats">
+          <me-badge size="small">11 componentes</me-badge>
+          <me-badge size="small" variant="success">0 dependências</me-badge>
+          <me-badge size="small" variant="warning">0 build</me-badge>
+          <me-badge size="small" variant="neutral">pt-BR</me-badge>
+        </div>
+
+        <h3>Instalação rápida</h3>
+        <p class="desc">Duas linhas no <code>&lt;head&gt;</code> e todas as tags <code>&lt;me-*&gt;</code> ficam disponíveis:</p>
+        <div class="code-card">
+          <button class="copy" type="button" data-copy="install-snippet">Copiar</button>
+          <pre id="install-snippet"><code>&lt;!-- 1. Design tokens (cores, tipografia, fonte Inter e ícones MDI) --&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/SUA-ORG/me-bricks@main/tokens.css" /&gt;
+
+&lt;!-- 2. Componentes (registra todas as tags &lt;me-*&gt;) --&gt;
+&lt;script type="module" src="https://cdn.jsdelivr.net/gh/SUA-ORG/me-bricks@main/components/index.js"&gt;&lt;/script&gt;</code></pre>
+        </div>
+        <p>Pronto — qualquer tag do kit já funciona no seu HTML:</p>
+        <div class="code-card">
+          <pre><code>&lt;me-button&gt;Candidatar-se&lt;/me-button&gt;
+&lt;me-badge variant="success"&gt;Extra&lt;/me-badge&gt;</code></pre>
+        </div>
+        <div class="live-row">
+          <me-button>Candidatar-se</me-button>
+          <me-badge variant="success">Extra</me-badge>
+          <span style="font-size: 13px; color: var(--me-color-text-muted);">← renderizados ao vivo por este próprio tutorial</span>
+        </div>
+
+        <h3>Boas práticas</h3>
+        <p>
+          <strong>Versionamento:</strong> ao publicar releases, troque <code>@main</code> por uma
+          tag (<code>@v0.1.0</code>) nas URLs — o jsDelivr serve tags de forma imutável e com cache
+          agressivo, então cada protótipo fica pinado numa versão estável.
+        </p>
+        <p>
+          <strong>GitHub:</strong> as URLs acima passam a funcionar assim que este repositório for
+          publicado no GitHub — substitua <code>SUA-ORG</code> pela organização (ex.:
+          <code>bng-health</code>).
+        </p>
+        <p>
+          <strong>Uso local (este repositório):</strong> ES modules não carregam via
+          <code>file://</code> — sirva a pasta com <code>npx serve .</code> ou
+          <code>python -m http.server</code> e aponte as duas tags para
+          <code>./tokens.css</code> e <code>./components/index.js</code>.
+        </p>
+
+        <h3>Componentes</h3>
+        <div class="cards">
+          <a href="#/botoes"><strong>Botões</strong><small>filled, outlined, ghost e danger</small></a>
+          <a href="#/badges"><strong>LabelBadge</strong><small>status de plantão do app</small></a>
+          <a href="#/cards"><strong>Card</strong><small>header/footer e dialog de confirmação</small></a>
+          <a href="#/inputs"><strong>Input</strong><small>label notched, participa de forms</small></a>
+          <a href="#/switch"><strong>Switch</strong><small>toggle com estados disabled/loading</small></a>
+          <a href="#/radio"><strong>Radio</strong><small>seleção única e cards selecionáveis</small></a>
+          <a href="#/icones"><strong>Ícones</strong><small>Material Design Icons via CDN</small></a>
+          <a href="#/logo"><strong>Logo</strong><small>5 variantes em SVG do Figma</small></a>
+          <a href="#/page-header"><strong>PageHeader</strong><small>título, subtítulo e ações</small></a>
+          <a href="#/sidebar"><strong>Sidebar</strong><small>menu lateral 64/288px do app</small></a>
+          <a href="#/pages"><strong>Pages</strong><small>rotas por hash sem build</small></a>
+        </div>
+      </me-page>
 
       <me-page name="tokens">
         <h2>Design tokens</h2>
@@ -374,19 +523,33 @@
       </me-page>
 
       </me-pages>
-    </main>
-  </div>
+  </main>
 
   <script type="module">
-    // Marca no sumário a rota ativa do roteador de docs
+    // Marca no menu lateral a rota ativa do roteador de docs
     const router = document.getElementById('docs-router');
-    const syncToc = (page) => {
-      for (const link of document.querySelectorAll('nav.toc a[data-page]')) {
+    const syncNav = (page) => {
+      for (const link of document.querySelectorAll('aside nav a[data-page]')) {
         link.classList.toggle('active', link.dataset.page === page);
       }
     };
-    router.addEventListener('change', (event) => syncToc(event.detail.page));
-    syncToc(router.getAttribute('page')); // estado inicial (inclusive deep-link)
+    router.addEventListener('change', (event) => {
+      // Guard essencial: "change" de me-switch/me-radio/me-input (ex.: na
+      // página Formulário) também borbulha até aqui — só reagimos ao router.
+      if (event.target !== router) return;
+      syncNav(event.detail.page);
+    });
+    syncNav(router.getAttribute('page')); // estado inicial (inclusive deep-link)
+
+    // Botão "Copiar" dos blocos de código da homepage
+    for (const button of document.querySelectorAll('.code-card .copy')) {
+      button.addEventListener('click', async () => {
+        const snippet = document.getElementById(button.dataset.copy);
+        await navigator.clipboard.writeText(snippet.innerText);
+        button.textContent = 'Copiado!';
+        setTimeout(() => { button.textContent = 'Copiar'; }, 1500);
+      });
+    }
 
     // Grid de swatches de cor a partir dos tokens
     const tokens = [
