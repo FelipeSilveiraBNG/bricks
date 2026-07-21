@@ -158,7 +158,7 @@ template.innerHTML = `
       opacity: 0.25;
       transform: scale(0);
       pointer-events: none;
-      animation: me-ripple 0.45s ease-out forwards;
+      animation: me-ripple 0.7s ease-out forwards;
     }
     @keyframes me-ripple {
       to { transform: scale(4); opacity: 0; }
@@ -255,7 +255,7 @@ class MeButton extends HTMLElement {
     ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
     // Fallback: em abas ocultas o Chrome congela animações e o animationend
     // nunca dispara — garante a limpeza mesmo assim (remove() repetido é no-op).
-    setTimeout(() => ripple.remove(), 600);
+    setTimeout(() => ripple.remove(), 900);
     this.#base.appendChild(ripple);
   }
 
