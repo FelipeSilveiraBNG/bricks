@@ -81,7 +81,7 @@
   --me-radius-s: 4px;
   --me-radius-m: 6px;
   --me-radius-l: 8px;
-  --me-shadow-card: 0 1px 4px rgb(22 22 29 / 0.10);
+  --me-shadow-card: 0 8px 24px rgb(188 188 205 / 0.32); /* neutral-40 a 32%, como o Card real */
 
   /* ===== Controles ===== */
   --me-control-height-s: 32px;

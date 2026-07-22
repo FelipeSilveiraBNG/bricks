@@ -1,14 +1,17 @@
 /*
  * <me-input> — Campo de texto do Minha Escala (form-associated).
  *
- * Visual do app: fundo branco, borda 1px escura, cantos 4px, label
- * flutuante "notched" apoiada na borda superior (com asterisco vermelho
- * quando required), ícone opcional no início (calendar/clock).
+ * Visual do app (Input.vue): fundo branco, borda 1px #323232, cantos 4px.
+ * A label começa DENTRO do campo (como placeholder) e sobe/encolhe para a
+ * borda superior ao focar ou quando há valor (label flutuante). O foco
+ * engrossa a borda para 2px em primary-20 (#3CA2B9). Estado de erro: borda,
+ * label e mensagem em negative (#DA1E28), com a mensagem abaixo do campo.
  *
  * Atributos: label, type (text|email|password|number|date|time), name,
- * value (valor inicial), placeholder, required, disabled, size.
+ * value (valor inicial), placeholder, required, disabled, size,
+ * error, error-message.
  * Slots: start, end (ícones).
- * Parts: base, label, input.
+ * Parts: base, label, input, error.
  * Eventos: input, change (re-emitidos com detail.value, composed).
  *
  * Participa de <form> nativo via ElementInternals (FormData inclui name/value).
@@ -32,7 +35,7 @@ template.innerHTML = `
       width: 100%;
       height: var(--me-control-height-m, 40px);
       padding: 0 12px;
-      border: 1px solid var(--me-color-secondary-50, #16161D);
+      border: 1px solid var(--me-color-gray-50, #323232);
       border-radius: var(--me-radius-s, 4px);
       background: var(--me-color-surface, #FFFFFF);
       color: var(--me-color-text, #16161D);
@@ -41,32 +44,53 @@ template.innerHTML = `
     :host([size="small"]) .field { height: var(--me-control-height-s, 32px); }
     :host([size="large"]) .field { height: var(--me-control-height-l, 48px); }
 
+    /* App engrossa a borda para 2px em primary-20 no foco; o inset dobra a
+       espessura sem deslocar o layout (evita o "pulo" de 1px). */
     .field:focus-within {
-      border-color: var(--me-color-brand, #2F7F91);
-      box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
+      border-color: var(--me-color-primary-20, #3CA2B9);
+      box-shadow: inset 0 0 0 1px var(--me-color-primary-20, #3CA2B9);
     }
     :host([disabled]) .field {
       opacity: 0.45;
       background: var(--me-color-neutral-5, #FAFAFA);
     }
 
-    /* Label "notched": apoiada na borda superior, com fundo da superfície. */
+    /* Label flutuante: em repouso funciona como placeholder centralizado;
+       flutua para a borda superior ao focar, ao ter valor (.filled) ou
+       quando há ícone no início (.has-start). */
     label {
       position: absolute;
-      top: 0;
-      left: 10px;
+      top: 50%;
+      left: 12px;
       transform: translateY(-50%);
-      padding: 0 4px;
-      background: var(--me-color-surface, #FFFFFF);
+      margin: 0;
+      padding: 0;
+      max-width: calc(100% - 24px);
+      background: transparent;
       color: var(--me-color-text-muted, #68688D);
-      font-size: 12px;
+      font-size: var(--me-font-size-body, 16px);
       line-height: 1.2;
       letter-spacing: var(--me-letter-spacing, 0.5px);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       pointer-events: none;
+      transition: top var(--me-transition, 0.2s ease), left var(--me-transition, 0.2s ease),
+                  font-size var(--me-transition, 0.2s ease), color var(--me-transition, 0.2s ease);
     }
-    .field:focus-within label { color: var(--me-color-brand, #2F7F91); }
+    :host([size="small"]) label { font-size: var(--me-font-size-small, 14px); }
     label[hidden] { display: none; }
+
+    .field:focus-within label,
+    .field.filled label,
+    .field.has-start label {
+      top: 0;
+      left: 10px;
+      font-size: 12px;
+      background: var(--me-color-surface, #FFFFFF);
+      padding: 0 4px;
+    }
+    .field:focus-within label { color: var(--me-color-primary-20, #3CA2B9); }
     .asterisk { color: var(--me-color-negative-50, #DA1E28); }
 
     input {
@@ -82,12 +106,36 @@ template.innerHTML = `
       letter-spacing: var(--me-letter-spacing, 0.5px);
     }
     :host([size="small"]) input { font-size: var(--me-font-size-small, 14px); }
-    input::placeholder { color: var(--me-color-text-muted, #68688D); }
+
+    /* Placeholder nativo fica escondido enquanto a label repousa por cima
+       (evita texto duplicado); reaparece quando a label flutua. Sem label,
+       o placeholder aparece normalmente. */
+    .field.has-label input::placeholder { color: transparent; }
+    .field.has-label:focus-within input::placeholder,
+    .field.has-label.filled input::placeholder,
+    .field.has-label.has-start input::placeholder { color: var(--me-color-text-muted, #68688D); }
+    .field:not(.has-label) input::placeholder { color: var(--me-color-text-muted, #68688D); }
 
     ::slotted(me-icon) {
       font-size: 18px;
       color: var(--me-color-text-muted, #68688D);
     }
+
+    /* Estado de erro (negative), vence o foco */
+    :host([error]) .field {
+      border-color: var(--me-color-negative-50, #DA1E28);
+      box-shadow: inset 0 0 0 1px var(--me-color-negative-50, #DA1E28);
+    }
+    :host([error]) .field label { color: var(--me-color-negative-50, #DA1E28); }
+
+    .error-text {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.3;
+      letter-spacing: var(--me-letter-spacing, 0.5px);
+      color: var(--me-color-negative-50, #DA1E28);
+    }
+    .error-text[hidden] { display: none; }
   </style>
   <div class="field" part="base">
     <label part="label" hidden><span class="text"></span><span class="asterisk" hidden> *</span></label>
@@ -95,6 +143,7 @@ template.innerHTML = `
     <input part="input" type="text" />
     <slot name="end"></slot>
   </div>
+  <div class="error-text" part="error" hidden></div>
 `;
 
 class MeInput extends HTMLElement {
@@ -108,14 +157,17 @@ class MeInput extends HTMLElement {
     this.shadowRoot.appendChild(template.content.cloneNode(true));
     this.#internals = this.attachInternals();
 
+    this.fieldElement = this.shadowRoot.querySelector('.field');
     this.inputElement = this.shadowRoot.querySelector('input');
     this.labelElement = this.shadowRoot.querySelector('label');
+    this.errorTextElement = this.shadowRoot.querySelector('.error-text');
 
     // Re-emite eventos nativos cruzando o shadow boundary com detail.value.
     for (const type of ['input', 'change']) {
       this.inputElement.addEventListener(type, (event) => {
         event.stopPropagation();
         this.#syncFormValue();
+        this.#syncFilled();
         this.dispatchEvent(new CustomEvent(type, {
           bubbles: true,
           composed: true,
@@ -123,10 +175,14 @@ class MeInput extends HTMLElement {
         }));
       });
     }
+
+    // Ícone no início força a label a flutuar (não sobrepõe o ícone).
+    this.shadowRoot.querySelector('slot[name="start"]')
+      .addEventListener('slotchange', () => this.#syncStart());
   }
 
   static get observedAttributes() {
-    return ['label', 'type', 'value', 'placeholder', 'required', 'disabled', 'name'];
+    return ['label', 'type', 'value', 'placeholder', 'required', 'disabled', 'name', 'error', 'error-message'];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -134,15 +190,18 @@ class MeInput extends HTMLElement {
       case 'label': {
         this.labelElement.hidden = newValue == null;
         this.labelElement.querySelector('.text').textContent = newValue ?? '';
+        this.fieldElement.classList.toggle('has-label', newValue != null);
         break;
       }
       case 'type':
         this.inputElement.type = newValue ?? 'text';
+        this.#syncFilled();
         break;
       case 'value':
         // Atributo = valor inicial (semântica nativa).
         this.inputElement.value = newValue ?? '';
         this.#syncFormValue();
+        this.#syncFilled();
         break;
       case 'placeholder':
         newValue == null
@@ -157,11 +216,18 @@ class MeInput extends HTMLElement {
       case 'disabled':
         this.inputElement.disabled = newValue !== null;
         break;
+      case 'error':
+      case 'error-message':
+        this.#syncError();
+        break;
     }
   }
 
   connectedCallback() {
     this.#syncFormValue();
+    this.#syncFilled();
+    this.#syncStart();
+    this.#syncError();
   }
 
   /* Valor vivo mora na propriedade (não reflete de volta ao atributo). */
@@ -169,6 +235,7 @@ class MeInput extends HTMLElement {
   set value(newValue) {
     this.inputElement.value = newValue ?? '';
     this.#syncFormValue();
+    this.#syncFilled();
   }
 
   get name() { return this.getAttribute('name'); }
@@ -186,6 +253,16 @@ class MeInput extends HTMLElement {
     value ? this.setAttribute('required', '') : this.removeAttribute('required');
   }
 
+  get error() { return this.hasAttribute('error'); }
+  set error(value) {
+    value ? this.setAttribute('error', '') : this.removeAttribute('error');
+  }
+
+  get errorMessage() { return this.getAttribute('error-message'); }
+  set errorMessage(value) {
+    value == null ? this.removeAttribute('error-message') : this.setAttribute('error-message', value);
+  }
+
   get form() { return this.#internals.form; }
   get validity() { return this.#internals.validity; }
   get validationMessage() { return this.#internals.validationMessage; }
@@ -199,6 +276,7 @@ class MeInput extends HTMLElement {
   formResetCallback() {
     this.inputElement.value = this.getAttribute('value') ?? '';
     this.#syncFormValue();
+    this.#syncFilled();
   }
 
   formDisabledCallback(disabled) {
@@ -218,6 +296,27 @@ class MeInput extends HTMLElement {
     } else {
       this.#internals.setValidity(input.validity, input.validationMessage, input);
     }
+  }
+
+  /* A label flutua quando há valor ou o tipo sempre mostra conteúdo (date/time). */
+  #syncFilled() {
+    const alwaysFilled = ['date', 'time', 'datetime-local', 'month', 'week'];
+    const filled = this.inputElement.value !== '' || alwaysFilled.includes(this.inputElement.type);
+    this.fieldElement.classList.toggle('filled', filled);
+  }
+
+  #syncStart() {
+    const hasStart = this.shadowRoot
+      .querySelector('slot[name="start"]').assignedNodes({ flatten: true }).length > 0;
+    this.fieldElement.classList.toggle('has-start', hasStart);
+  }
+
+  #syncError() {
+    const on = this.hasAttribute('error');
+    this.inputElement.setAttribute('aria-invalid', String(on));
+    const message = this.getAttribute('error-message') ?? '';
+    this.errorTextElement.textContent = message;
+    this.errorTextElement.hidden = !(on && message);
   }
 }
 

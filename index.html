@@ -297,12 +297,13 @@
 
       <me-page name="badges">
         <h2>&lt;me-badge&gt; — LabelBadge</h2>
-        <p class="desc">Status de plantão do app: Extra (success) · Cobertura (danger) · Fixo (brand) · Aberta (warning). Tamanhos small (26px) e medium (32px).</p>
+        <p class="desc">Espelha o LabelBadge: texto sempre escuro, borda e ícone coloridos, fundo quase branco, radius 4px. Status do app: Extra (success) · Cobertura (danger) · Fixo (brand) · Aberta (warning/laranja) · Aguardando (yellow/amarelo). Tamanhos small e medium.</p>
         <div class="example">
           <me-badge variant="success">Extra</me-badge>
           <me-badge variant="danger">Cobertura</me-badge>
           <me-badge>Fixo</me-badge>
           <me-badge variant="warning">Aberta</me-badge>
+          <me-badge variant="yellow">Aguardando</me-badge>
           <me-badge variant="neutral">Externo</me-badge>
           <me-badge variant="warning" size="small"><me-icon slot="start" name="lock-open-variant-outline"></me-icon>Em revisão</me-badge>
           <me-badge variant="success" size="small"><me-icon slot="start" name="lock-open-variant-outline"></me-icon>Aprovado</me-badge>
@@ -350,7 +351,7 @@
 
       <me-page name="inputs">
         <h2>&lt;me-input&gt; — Campo de texto</h2>
-        <p class="desc">Label "notched" apoiada na borda; <code>required</code> adiciona asterisco vermelho; ícones via slots <code>start</code>/<code>end</code>. Participa de formulários nativos.</p>
+        <p class="desc">Label flutuante (começa como placeholder e sobe ao focar/preencher, como o Input.vue); foco engrossa a borda em teal <code>#3CA2B9</code>. <code>required</code> adiciona asterisco; <code>error</code> + <code>error-message</code> exibem borda e mensagem vermelhas; ícones via slots <code>start</code>/<code>end</code>. Participa de formulários nativos.</p>
         <div class="example">
           <me-input label="Nome do médico" placeholder="Digite o nome"></me-input>
           <me-input label="Tipo de condicional" required value="Todos - E"></me-input>
@@ -360,11 +361,13 @@
           <me-input label="Hora" type="time" value="09:00" size="small">
             <me-icon slot="start" name="clock-outline"></me-icon>
           </me-input>
+          <me-input label="E-mail" type="email" value="invalido@" error error-message="E-mail inválido"></me-input>
           <me-input label="Desabilitado" disabled value="Somente leitura"></me-input>
         </div>
         <pre>&lt;me-input label="Nome do médico" placeholder="Digite o nome"&gt;&lt;/me-input&gt;
 &lt;me-input label="Tipo de condicional" required value="Todos - E"&gt;&lt;/me-input&gt;
-&lt;me-input label="Data" type="date"&gt;&lt;me-icon slot="start" name="calendar"&gt;&lt;/me-icon&gt;&lt;/me-input&gt;</pre>
+&lt;me-input label="Data" type="date"&gt;&lt;me-icon slot="start" name="calendar"&gt;&lt;/me-icon&gt;&lt;/me-input&gt;
+&lt;me-input label="E-mail" type="email" error error-message="E-mail inválido"&gt;&lt;/me-input&gt;</pre>
       </me-page>
 
       <me-page name="switch">
@@ -471,7 +474,7 @@
 
       <me-page name="logo">
         <h2>&lt;me-logo&gt; — Logotipo</h2>
-        <p class="desc">SVG embutido exportado do Figma. Variantes: horizontal (default), stacked, symbol, monotone (tintável via <code>color</code>).</p>
+        <p class="desc">SVG embutido exportado do Figma. Variantes: horizontal (default), stacked, stacked-white (wordmark branco p/ fundo escuro), symbol, monotone (tintável via <code>color</code>). Aliases do app: <code>full</code>→stacked, <code>small</code>→symbol.</p>
         <div class="example">
           <me-logo style="height: 48px;"></me-logo>
           <me-logo variant="stacked" style="height: 72px;"></me-logo>

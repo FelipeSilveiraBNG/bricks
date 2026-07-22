@@ -38,9 +38,9 @@ template.innerHTML = `
     .card.has-header .header { display: flex; }
     .header-content {
       flex: 1;
-      font-size: var(--me-font-size-body, 16px);
+      font-size: 18px;             /* text-lg do título do card no app */
       font-weight: var(--me-font-weight-bold, 700);
-      line-height: var(--me-line-height-body, 24px);
+      line-height: 28px;
     }
 
     .close {
@@ -75,6 +75,7 @@ template.innerHTML = `
     .footer {
       display: none;
       align-items: center;
+      justify-content: flex-end; /* v-card-actions com v-spacer: ações à direita */
       gap: 16px;
       padding: var(--padding, 24px);
       padding-top: 0;

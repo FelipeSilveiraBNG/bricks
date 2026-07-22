@@ -65,6 +65,8 @@ body {
 <me-input label="Hora" type="time" name="hora" size="small">
   <me-icon slot="start" name="clock-outline"></me-icon>
 </me-input>
+<!-- A label flutua (placeholder que sobe ao focar/preencher). Estado de erro: -->
+<me-input label="E-mail" type="email" error error-message="E-mail inválido"></me-input>
 ```
 
 ### Switch
@@ -110,7 +112,9 @@ body {
 <me-badge variant="success">Extra</me-badge>
 <me-badge variant="danger">Cobertura</me-badge>
 <me-badge>Fixo</me-badge>
-<me-badge variant="warning">Aberta</me-badge>
+<me-badge variant="warning">Aberta</me-badge>       <!-- laranja -->
+<me-badge variant="yellow">Aguardando</me-badge>  <!-- amarelo -->
+<me-badge variant="neutral">Externo</me-badge>    <!-- cinza -->
 ```
 
 ### Card (e dialog de confirmação)
@@ -170,8 +174,11 @@ body {
 ### Logo
 ```html
 <me-logo style="height:48px"></me-logo>                <!-- horizontal (default) -->
-<me-logo variant="symbol" style="height:42px"></me-logo>
+<me-logo variant="stacked" style="height:64px"></me-logo> <!-- empilhado (alias: full) -->
+<me-logo variant="symbol" style="height:42px"></me-logo>  <!-- só o glifo (alias: small) -->
 <me-logo variant="monotone" style="color:#CB2957"></me-logo>
+<!-- Fundo escuro (telas de login): wordmark branco -->
+<me-logo variant="stacked-white" style="height:64px"></me-logo>
 ```
 
 ### Múltiplas páginas num só arquivo (rotas por hash)

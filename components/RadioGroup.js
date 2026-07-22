@@ -37,7 +37,7 @@ radioTemplate.innerHTML = `
 
     .base {
       display: flex;
-      align-items: flex-start;
+      align-items: center;             /* radio simples: círculo e label centralizados (app) */
       gap: 8px;
     }
 
@@ -48,10 +48,9 @@ radioTemplate.innerHTML = `
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 20px;
-      height: 20px;
-      margin-top: 2px;
-      border: 2px solid var(--me-color-text-muted, #68688D);
+      width: 18px;                     /* w-[18px] do app */
+      height: 18px;
+      border: 2px solid #9ca3af;       /* gray-400 do app (não selecionado) */
       border-radius: 50%;
       background: var(--me-color-surface, #FFFFFF);
       transition: border-color var(--me-transition, 0.2s ease);
@@ -80,25 +79,27 @@ radioTemplate.innerHTML = `
     .description {
       display: none;
       font-size: var(--me-font-size-small, 14px);
-      line-height: var(--me-line-height-small, 18px);
-      color: var(--me-color-text-muted, #68688D);
+      line-height: 20px;
+      color: #4b5563;                  /* gray-600 do app */
     }
 
     /* Modo card (SelecaoProporcionalidade do app) */
     :host([appearance="card"]) .base {
       box-sizing: border-box;
       height: 100%;
+      align-items: flex-start;
       padding: 16px;
       border-radius: var(--me-radius-l, 8px);
       background: var(--me-color-surface, #FFFFFF);
-      /* Borda via box-shadow inset: engrossa quando selecionado sem layout shift */
-      box-shadow: inset 0 0 0 1px var(--me-color-border, #E2E2E9);
+      /* Borda #d1d5db (gray-300 do app) via inset — engrossa selecionado sem
+         layout shift — composta com a shadow-sm base do card. */
+      box-shadow: inset 0 0 0 1px #d1d5db, 0 1px 2px rgb(0 0 0 / 0.05);
       transition: box-shadow var(--me-transition, 0.2s ease), background var(--me-transition, 0.2s ease);
     }
     :host([appearance="card"][checked]) .base {
-      box-shadow: inset 0 0 0 2px var(--me-color-brand, #2F7F91);
+      box-shadow: inset 0 0 0 2px var(--me-color-brand, #2F7F91), 0 1px 2px rgb(0 0 0 / 0.05);
     }
-    :host([appearance="card"]) .label { font-weight: var(--me-font-weight-bold, 700); }
+    :host([appearance="card"]) .label { font-weight: var(--me-font-weight-semibold, 600); }
     :host([appearance="card"]) .description { display: block; }
   </style>
   <div class="base" part="base">
