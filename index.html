@@ -60,7 +60,8 @@
 
     /* ===== Homepage (hero + tutorial + cards) ===== */
     .hero { margin: 24px 0 8px; }
-    .hero h1 { margin: 20px 0 0; font-size: 2.5rem; line-height: 1.15; letter-spacing: -0.5px; }
+    .hero-title { display: flex; align-items: center; gap: 16px; }
+    .hero h1 { margin: 0; font-size: 2.5rem; line-height: 1.15; letter-spacing: -0.5px; }
     .subtitle { margin: 8px 0 0; font-size: 18px; color: var(--me-color-text-muted); }
     .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 12px; }
     .stats { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 16px; }
@@ -137,6 +138,7 @@
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
       <a href="#/inicio" data-page="inicio">Início</a>
+      <a href="#/tokens" data-page="tokens">Tokens</a>
       <div class="group">Componentes</div>
       <a href="#/botoes" data-page="botoes">Botões</a>
       <a href="#/badges" data-page="badges">LabelBadge</a>
@@ -151,7 +153,6 @@
       <a href="#/sidebar" data-page="sidebar">Sidebar</a>
       <div class="group">Utilitários</div>
       <a href="#/pages" data-page="pages">Pages</a>
-      <a href="#/tokens" data-page="tokens">Tokens</a>
       <a href="#/form" data-page="form">Formulário</a>
     </nav>
   </aside>
@@ -163,8 +164,10 @@
       <!-- ===================== Início (homepage) ===================== -->
       <me-page name="inicio">
         <div class="hero">
-          <me-logo variant="stacked" style="height: 72px;"></me-logo>
-          <h1>me-bricks</h1>
+          <div class="hero-title">
+            <me-logo variant="symbol" style="height: 48px;"></me-logo>
+            <h1>me-bricks</h1>
+          </div>
           <p class="subtitle">
             Kit de web components do Minha Escala para protótipos —
             sem build, sem dependências, só HTML.
@@ -177,17 +180,6 @@
           eixos <code>variant</code>/<code>appearance</code>/<code>size</code>, slots
           <code>start</code>/<code>end</code> e participação nativa em formulários.
         </p>
-        <div class="ctas">
-          <me-button href="#/botoes">Ver componentes</me-button>
-          <me-button appearance="outlined" href="#/tokens">Design tokens</me-button>
-        </div>
-        <div class="stats">
-          <me-badge size="small">12 componentes</me-badge>
-          <me-badge size="small" variant="success">0 dependências</me-badge>
-          <me-badge size="small" variant="warning">0 build</me-badge>
-          <me-badge size="small" variant="neutral">pt-BR</me-badge>
-        </div>
-
         <h3>Instalação rápida</h3>
         <p class="desc">Duas linhas no <code>&lt;head&gt;</code> e todas as tags <code>&lt;me-*&gt;</code> ficam disponíveis:</p>
         <div class="code-card">
@@ -209,22 +201,11 @@
           <span style="font-size: 13px; color: var(--me-color-text-muted);">← renderizados ao vivo por este próprio tutorial</span>
         </div>
 
-        <h3>Boas práticas</h3>
+        <h3>Demo</h3>
         <p>
-          <strong>Versionamento:</strong> ao publicar releases, troque <code>@main</code> por uma
-          tag (<code>@v0.1.0</code>) nas URLs — o jsDelivr serve tags de forma imutável e com cache
-          agressivo, então cada protótipo fica pinado numa versão estável.
-        </p>
-        <p>
-          <strong>GitHub:</strong> as URLs acima passam a funcionar assim que este repositório for
-          publicado no GitHub — substitua <code>SUA-ORG</code> pela organização (ex.:
-          <code>bng-health</code>).
-        </p>
-        <p>
-          <strong>Uso local (este repositório):</strong> ES modules não carregam via
-          <code>file://</code> — sirva a pasta com <code>npx serve .</code> ou
-          <code>python -m http.server</code> e aponte as duas tags para
-          <code>./tokens.css</code> e <code>./components/index.js</code>.
+          Veja o kit montado num protótipo completo (sidebar + header + cards):
+          <a href="demo/app-shell.html">demo de protótipo</a>.
+          Há também um exemplo de <a href="demo/pages.html">navegação por rotas (hash)</a>.
         </p>
 
         <h3>Componentes</h3>
