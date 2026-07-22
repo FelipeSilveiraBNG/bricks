@@ -115,11 +115,21 @@
       font-size: 13px; line-height: 1.5;
     }
     /* Tokens */
-    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
     .swatch { background: var(--me-color-surface); border: 1px solid var(--me-color-border); border-radius: var(--me-radius-m); overflow: hidden; font-size: 12px; }
     .swatch .color { height: 48px; }
     .swatch .info { padding: 8px; }
     .swatch code { color: var(--me-color-text-muted); }
+    .token-group { margin: 28px 0; }
+    .token-group > h3 { margin: 0 0 12px; }
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .swatch-row .swatch { width: 132px; }
+    .token-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .token-table th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--me-color-text-muted); padding: 0 12px 8px; font-weight: var(--me-font-weight-semibold); }
+    .token-table td { padding: 10px 12px; border-top: 1px solid var(--me-color-border); vertical-align: middle; }
+    .token-table td:first-child, .token-table td:nth-child(2) { white-space: nowrap; }
+    .token-table code { color: var(--me-color-text-muted); }
+    .pv-box { display: inline-block; width: 56px; height: 36px; background: var(--me-color-surface); border: 1px solid var(--me-color-border); }
+    .pv-bar { display: inline-block; width: 120px; background: var(--me-color-brand); border-radius: var(--me-radius-s); }
     /* Ícones */
     .icon-grid { display: flex; flex-wrap: wrap; gap: 16px; font-size: 24px; }
     .icon-grid figure { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; width: 96px; }
@@ -227,8 +237,8 @@
 
       <me-page name="tokens">
         <h2>Design tokens</h2>
-        <p class="desc">Definidos em <code>tokens.css</code> (<code>--me-*</code>). Paleta extraída do UI Kit no Figma.</p>
-        <div class="swatches" id="swatch-grid"></div>
+        <p class="desc">Todos os tokens de <code>tokens.css</code> (<code>--me-*</code>), agrupados por família. Valores lidos ao vivo do CSS.</p>
+        <div id="tokens-view"></div>
       </me-page>
 
       <me-page name="icones">
@@ -585,24 +595,78 @@
       });
     }
 
-    // Grid de swatches de cor a partir dos tokens
-    const tokens = [
-      'primary-5', 'primary-10', 'primary-20', 'primary-30', 'primary-40', 'primary-50',
-      'secondary-5', 'secondary-10', 'secondary-20', 'secondary-40', 'secondary-50',
-      'tertiary-10', 'tertiary-30', 'tertiary-40',
-      'neutral-5', 'neutral-10', 'neutral-20', 'neutral-30', 'neutral-40', 'neutral-50',
-      'gray-30', 'gray-50',
-      'success-50', 'success-5', 'negative-50', 'negative-5',
-      'alert-50', 'alert-5', 'warning-50', 'warning-5',
-    ];
+    // ===== Página de tokens: todos os --me-* agrupados por família =====
     const styles = getComputedStyle(document.documentElement);
-    document.getElementById('swatch-grid').innerHTML = tokens.map((token) => {
-      const value = styles.getPropertyValue(`--me-color-${token}`).trim();
-      return `<div class="swatch">
+    const cssVal = (name) => styles.getPropertyValue(`--me-${name}`).trim();
+
+    // Cores: uma linha por família (escalas do Figma)
+    const colorFamilies = [
+      ['Primária (teal)', 'primary', [5, 10, 20, 30, 40, 50]],
+      ['Secundária', 'secondary', [5, 10, 20, 40, 50]],
+      ['Terciária (rosa)', 'tertiary', [10, 30, 40]],
+      ['Neutral', 'neutral', [5, 10, 20, 30, 40, 50]],
+      ['Gray', 'gray', [30, 50]],
+    ];
+    const feedbackTokens = ['success-50', 'success-5', 'negative-50', 'negative-5', 'alert-50', 'alert-5', 'warning-50', 'warning-5'];
+    const aliasTokens = ['brand', 'brand-soft', 'text', 'text-muted', 'border', 'surface', 'page', 'white'];
+
+    const swatch = (token) =>
+      `<div class="swatch">
         <div class="color" style="background: var(--me-color-${token})"></div>
-        <div class="info"><strong>${token}</strong><br /><code>${value}</code></div>
+        <div class="info"><strong>${token}</strong><br /><code>${cssVal(`color-${token}`)}</code></div>
       </div>`;
-    }).join('');
+    const colorRow = (title, tokens) =>
+      `<div class="token-group"><h3>${title}</h3><div class="swatch-row">${tokens.map(swatch).join('')}</div></div>`;
+
+    // Tokens não-cor: tabela Token · Valor · Amostra
+    const specTable = (title, rows) =>
+      `<div class="token-group"><h3>${title}</h3>
+        <table class="token-table">
+          <thead><tr><th>Token</th><th>Valor</th><th>Amostra</th></tr></thead>
+          <tbody>${rows.map(([name, preview]) =>
+            `<tr><td><code>--me-${name}</code></td><td><code>${cssVal(name)}</code></td><td>${preview}</td></tr>`
+          ).join('')}</tbody>
+        </table>
+      </div>`;
+
+    const typography = [
+      ['font-family', `<span style="font-family: var(--me-font-family); font-size: 16px;">Inter — Aa Bb Cc 0123</span>`],
+      ['font-size-small', `<span style="font-size: var(--me-font-size-small); line-height: var(--me-line-height-small);">Texto pequeno</span>`],
+      ['line-height-small', `<span style="font-size: var(--me-font-size-small); line-height: var(--me-line-height-small);">linha 1<br />linha 2</span>`],
+      ['font-size-body', `<span style="font-size: var(--me-font-size-body); line-height: var(--me-line-height-body);">Texto corpo</span>`],
+      ['line-height-body', `<span style="font-size: var(--me-font-size-body); line-height: var(--me-line-height-body);">linha 1<br />linha 2</span>`],
+      ['font-size-h5', `<span style="font-size: var(--me-font-size-h5); line-height: var(--me-line-height-h5); font-weight: 700;">Título H5</span>`],
+      ['line-height-h5', `<span style="font-size: var(--me-font-size-h5); line-height: var(--me-line-height-h5);">linha 1<br />linha 2</span>`],
+      ['font-weight-regular', `<span style="font-weight: var(--me-font-weight-regular);">Regular 400</span>`],
+      ['font-weight-medium', `<span style="font-weight: var(--me-font-weight-medium);">Medium 500</span>`],
+      ['font-weight-semibold', `<span style="font-weight: var(--me-font-weight-semibold);">Semibold 600</span>`],
+      ['font-weight-bold', `<span style="font-weight: var(--me-font-weight-bold);">Bold 700</span>`],
+      ['letter-spacing', `<span style="letter-spacing: var(--me-letter-spacing);">Espaçamento entre letras</span>`],
+    ];
+
+    const shape = [
+      ['radius-s', `<span class="pv-box" style="border-radius: var(--me-radius-s);"></span>`],
+      ['radius-m', `<span class="pv-box" style="border-radius: var(--me-radius-m);"></span>`],
+      ['radius-l', `<span class="pv-box" style="border-radius: var(--me-radius-l);"></span>`],
+      ['shadow-card', `<span class="pv-box" style="box-shadow: var(--me-shadow-card);"></span>`],
+    ];
+
+    const controls = [
+      ['control-height-s', `<span class="pv-bar" style="height: var(--me-control-height-s);"></span>`],
+      ['control-height-m', `<span class="pv-bar" style="height: var(--me-control-height-m);"></span>`],
+      ['control-height-l', `<span class="pv-bar" style="height: var(--me-control-height-l);"></span>`],
+      ['focus-ring', `<span class="pv-box" style="box-shadow: var(--me-focus-ring);"></span>`],
+      ['transition', `<span style="color: var(--me-color-text-muted);">usada em hovers, toggles e foco</span>`],
+    ];
+
+    document.getElementById('tokens-view').innerHTML = [
+      colorFamilies.map(([title, prefix, steps]) => colorRow(`Cor · ${title}`, steps.map((s) => `${prefix}-${s}`))).join(''),
+      colorRow('Cor · Feedback', feedbackTokens),
+      colorRow('Cor · Aliases semânticos', aliasTokens),
+      specTable('Tipografia', typography),
+      specTable('Forma e elevação', shape),
+      specTable('Controles', controls),
+    ].join('');
 
     // Grid dos ícones usados no kit
     const icons = [
