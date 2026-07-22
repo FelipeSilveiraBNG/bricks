@@ -138,21 +138,32 @@ body {
 ### Shell de aplicação (sidebar + header)
 ```html
 <body style="display:flex; margin:0;">
-  <me-sidebar expanded style="height:100vh; position:sticky; top:0;">
+  <me-sidebar expanded id="nav" style="height:100vh; position:sticky; top:0;">
     <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
     <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
     <!-- Como no app real, a sidebar NÃO tem item "Sair" (logout fica no menu
          do header). O slot="footer" existe para casos especiais. -->
   </me-sidebar>
-  <main style="flex:1; padding:24px 32px;">
-    <me-page-header heading="Dashboard" subheading="Visão geral">
+  <main style="flex:1; display:flex; flex-direction:column;">
+    <!-- me-page-header já é uma barra branca com padding próprio (16px/32px):
+         deixe-o full-bleed no topo e dê padding só ao conteúdo abaixo.
+         O atributo "menu" mostra o botão de abrir a sidebar em telas < 800px. -->
+    <me-page-header id="hdr" menu menu-open heading="Dashboard" subheading="Visão geral">
       <span slot="end" style="display:flex; align-items:center; gap:16px;">
         <me-icon name="bell-outline" label="Notificações"></me-icon>
         <me-icon name="account-circle" label="Perfil" style="font-size:36px; color:var(--me-color-brand);"></me-icon>
       </span>
     </me-page-header>
-    <!-- conteúdo -->
+    <div style="padding:24px 32px;">
+      <!-- conteúdo -->
+    </div>
   </main>
+  <script type="module">
+    // Liga o botão mobile do header à sidebar (< 800px).
+    const nav = document.getElementById('nav'), hdr = document.getElementById('hdr');
+    hdr.addEventListener('me-menu', (e) => { nav.expanded = hdr.menuOpen = e.detail.open; });
+    nav.addEventListener('me-toggle', (e) => { hdr.menuOpen = e.detail.expanded; });
+  </script>
 </body>
 ```
 
@@ -221,6 +232,7 @@ Os controles são form-associated: basta um `<form>` nativo.
 | `change` | `me-checkbox-select` | `{ value: [marcados] }` |
 | `change` | `me-radio-group` | `{ value }` |
 | `me-toggle` | `me-sidebar` | `{ expanded }` |
+| `me-menu` | `me-page-header` (botão mobile, atributo `menu`) | `{ open }` |
 | `change` | `me-pages` (ao trocar de rota) | `{ page }` |
 | `me-close` | `me-card` (cancelável; sem `preventDefault` o card se esconde) | — |
 

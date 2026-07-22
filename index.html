@@ -488,8 +488,9 @@
 
       <me-page name="page-header">
         <h2>&lt;me-page-header&gt; — Header de página</h2>
-        <div class="example column">
-          <me-page-header heading="Título" subheading="Descrição da página">
+        <p class="desc">Barra branca (padding 16px/32px) com título e subtítulo, espelhando o Header.vue do app. Com o atributo <code>menu</code>, um botão de seta aparece à esquerda apenas em telas &lt; 800px e emite <code>me-menu</code> (<code>detail.open</code>) para abrir/recolher a sidebar; <code>menu-open</code> alterna a direção da seta.</p>
+        <div class="example column" style="padding:0; background:var(--me-color-page);">
+          <me-page-header menu heading="Título" subheading="Descrição da página">
             <span slot="end" style="display:flex; align-items:center; gap:16px;">
               <me-icon name="bell-outline" label="Notificações"></me-icon>
               <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>

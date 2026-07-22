@@ -20,8 +20,10 @@
       background: var(--me-color-page);
     }
     me-sidebar { flex: none; height: 100vh; position: sticky; top: 0; }
-    main { flex: 1; min-width: 0; padding: 24px 32px; }
-    me-page[active] { display: flex; flex-direction: column; gap: 24px; }
+    main { flex: 1; min-width: 0; }
+    me-page[active] { display: flex; flex-direction: column; }
+    /* header full-bleed no topo; conteúdo da página com padding próprio */
+    .content { padding: 24px 32px; display: flex; flex-direction: column; gap: 24px; }
   </style>
 </head>
 <body>
@@ -39,16 +41,19 @@
   <main>
     <me-pages default="dashboard" id="router">
       <me-page name="dashboard">
-        <me-page-header heading="Dashboard" subheading="Visão geral dos plantões da unidade"></me-page-header>
+        <me-page-header menu menu-open heading="Dashboard" subheading="Visão geral dos plantões da unidade"></me-page-header>
+        <div class="content">
         <me-card>
           <span slot="header">Bem-vindo!</span>
           Esta é a rota <code>#/dashboard</code> (default). Navegue pela sidebar ou
           use os botões voltar/avançar do navegador — a rota vive no hash da URL.
         </me-card>
+        </div>
       </me-page>
 
       <me-page name="escalas">
-        <me-page-header heading="Gerenciar Escalas" subheading="Rota #/escalas"></me-page-header>
+        <me-page-header menu menu-open heading="Gerenciar Escalas" subheading="Rota #/escalas"></me-page-header>
+        <div class="content">
         <me-card>
           <span slot="header">Escala de Abril</span>
           Conteúdo da página de escalas.
@@ -56,14 +61,17 @@
             <me-button size="small"><me-icon slot="start" name="plus"></me-icon>Novo plantão</me-button>
           </div>
         </me-card>
+        </div>
       </me-page>
 
       <me-page name="medicos">
-        <me-page-header heading="Médicos" subheading="Rota #/medicos"></me-page-header>
+        <me-page-header menu menu-open heading="Médicos" subheading="Rota #/medicos"></me-page-header>
+        <div class="content">
         <me-card>
           <span slot="header">Diogo Vinicius</span>
           <me-badge size="small">Fixo</me-badge>
         </me-card>
+        </div>
       </me-page>
     </me-pages>
   </main>
@@ -76,6 +84,16 @@
         item.toggleAttribute('active', item.dataset.page === event.detail.page);
       }
     });
+
+    // Toggle mobile: qualquer header abre/recolhe a sidebar (< 800px).
+    const headers = document.querySelectorAll('me-page-header[menu]');
+    const syncHeaders = (open) => headers.forEach((h) => { h.menuOpen = open; });
+    syncHeaders(nav.expanded);
+    document.addEventListener('me-menu', (event) => {
+      nav.expanded = event.detail.open;
+      syncHeaders(event.detail.open);
+    });
+    nav.addEventListener('me-toggle', (event) => syncHeaders(event.detail.expanded));
   </script>
 </body>
 </html>

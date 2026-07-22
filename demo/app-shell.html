@@ -20,7 +20,9 @@
       background: var(--me-color-page);
     }
     me-sidebar { flex: none; height: 100vh; position: sticky; top: 0; }
-    main { flex: 1; min-width: 0; padding: 24px 32px; display: flex; flex-direction: column; gap: 24px; }
+    main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    /* header full-bleed no topo (barra branca), conteúdo com padding próprio */
+    .content { padding: 24px 32px; display: flex; flex-direction: column; gap: 24px; }
     .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
     .kv { color: var(--me-color-text-muted); font-size: var(--me-font-size-small); }
     .kv strong { color: var(--me-color-text); }
@@ -41,7 +43,7 @@
   </me-sidebar>
 
   <main>
-    <me-page-header heading="Dashboard" subheading="Visão geral dos plantões da unidade">
+    <me-page-header menu menu-open heading="Dashboard" subheading="Visão geral dos plantões da unidade">
       <span slot="end" style="display:flex; align-items:center; gap:16px;">
         <me-icon name="bell-outline" label="Notificações"></me-icon>
         <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>
@@ -49,6 +51,7 @@
       </span>
     </me-page-header>
 
+    <div class="content">
     <div class="cards">
       <me-card closable>
         <span slot="header">#15258 · Detalhes do plantão</span>
@@ -116,6 +119,22 @@
         <me-button size="small"><me-icon slot="start" name="plus"></me-icon>Nova regra</me-button>
       </div>
     </me-card>
+    </div>
   </main>
+
+  <script type="module">
+    // Toggle mobile: o botão do header abre/recolhe a sidebar (< 800px).
+    const sidebar = document.querySelector('me-sidebar');
+    const header = document.querySelector('me-page-header');
+    header.menuOpen = sidebar.expanded;
+    header.addEventListener('me-menu', (event) => {
+      sidebar.expanded = event.detail.open;
+      header.menuOpen = event.detail.open;
+    });
+    // Mantém a seta do header em sincronia se a sidebar for alternada por ela mesma.
+    sidebar.addEventListener('me-toggle', (event) => {
+      header.menuOpen = event.detail.expanded;
+    });
+  </script>
 </body>
 </html>
