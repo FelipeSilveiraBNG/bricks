@@ -43,24 +43,9 @@
 
     /* ---- Barra de filtros (pílulas rounded-full) ---- */
     .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-    .filter-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border: 1px solid var(--me-color-neutral-40);
-      border-radius: 999px;
-      background: var(--me-color-surface);
-      color: var(--me-color-secondary-10);
-      font: inherit;
-      font-size: var(--me-font-size-small);
-      line-height: 20px;            /* casa com a altura do me-select-filter (38px) */
-      cursor: pointer;
-      transition: background var(--me-transition);
-      white-space: nowrap;
-    }
-    .filter-pill:hover { background: var(--me-color-neutral-10); }
-    .filter-pill me-icon { font-size: 18px; }
+    /* Filtros de data usam o me-select-filter só pela aparência: o dropdown é
+       desativado ocultando o painel (não há me-date-filter no kit ainda). */
+    .date-filter::part(panel) { display: none !important; }
 
     /* ---- Tags de filtro ativo ---- */
     .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
@@ -191,16 +176,15 @@
               <me-option value="DELETED">Excluído</me-option>
             </me-select-filter>
 
-            <!-- Data plantão / Data upload: seriam um me-date-filter (seletor de
-                 datas), brick ainda inexistente no kit — pílula estática aqui. -->
-            <button class="filter-pill">
-              <me-icon name="calendar-outline"></me-icon>
-              <span>Data plantão</span>
-            </button>
-            <button class="filter-pill">
-              <me-icon name="calendar-arrow-up"></me-icon>
-              <span>Data upload</span>
-            </button>
+            <!-- Data plantão / Data upload: usam o me-select-filter apenas pela
+                 aparência (dropdown oculto via ::part(panel)); seriam um
+                 me-date-filter, brick ainda inexistente no kit. -->
+            <me-select-filter class="date-filter" label="Data plantão">
+              <me-icon slot="start" name="calendar-outline"></me-icon>
+            </me-select-filter>
+            <me-select-filter class="date-filter" label="Data upload">
+              <me-icon slot="start" name="calendar-arrow-up"></me-icon>
+            </me-select-filter>
 
             <me-select-filter label="Unidades" multiple searchable>
               <me-icon slot="start" name="office-building-outline"></me-icon>
