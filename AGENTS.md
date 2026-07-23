@@ -114,8 +114,33 @@ body {
 <me-badge>Fixo</me-badge>
 <me-badge variant="warning">Aberta</me-badge>       <!-- laranja -->
 <me-badge variant="yellow">Aguardando</me-badge>  <!-- amarelo -->
+<me-badge variant="blue">Em progresso</me-badge>  <!-- azul/primária (teal) -->
 <me-badge variant="neutral">Externo</me-badge>    <!-- cinza -->
 ```
+
+### Filtros (pílula com dropdown + tags de filtro ativo)
+Espelham `SelectFilter.vue` e `ActiveFilters.vue`. As opções são `me-option`
+filhas (light DOM). `multiple` mantém o dropdown aberto e mostra badge de
+contagem; `searchable` adiciona campo de busca; `disabled` desativa a pílula.
+```html
+<me-select-filter label="Status" multiple>
+  <me-icon slot="start" name="format-list-checks"></me-icon>
+  <me-option value="PENDING_AUDIT" selected>Aguardando Auditoria</me-option>
+  <me-option value="APPROVED">Aprovado</me-option>
+</me-select-filter>
+
+<me-select-filter label="Unidades" multiple searchable>
+  <me-icon slot="start" name="office-building-outline"></me-icon>
+  <me-option value="1">Hospital São Lucas</me-option>
+  <me-option value="2">Hospital Santa Casa</me-option>
+</me-select-filter>
+
+<!-- Tag de filtro ativo (removível). O × emite me-remove. -->
+<me-filter-tag value="PENDING_AUDIT">Aguardando Auditoria</me-filter-tag>
+```
+`me-select-filter.value` (leitura) devolve o array de values selecionados.
+Abre/fecha sozinho (clique fora, Esc). Para "abrir um fecha os outros", ouça
+`me-toggle` no contêiner e feche os irmãos (`f.open = false`).
 
 ### Card (e dialog de confirmação)
 ```html
@@ -252,6 +277,10 @@ Os controles são form-associated: basta um `<form>` nativo.
 | `me-menu` | `me-page-header` (botão mobile, atributo `menu`) | `{ open }` |
 | `change` | `me-pages` (ao trocar de rota) | `{ page }` |
 | `me-close` | `me-card` (cancelável; sem `preventDefault` o card se esconde) | — |
+| `me-select` | `me-select-filter` (opção alternada) | `{ value, selected }` |
+| `change` | `me-select-filter` (lista completa após alternar) | `{ value: [values] }` |
+| `me-toggle` | `me-select-filter` (dropdown abre/fecha) | `{ open }` |
+| `me-remove` | `me-filter-tag` (clique no ×) | `{ value }` |
 
 ## Tokens mais usados
 

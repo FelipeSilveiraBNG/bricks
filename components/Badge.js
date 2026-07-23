@@ -8,8 +8,9 @@
  *   Fixo      → variant="brand"    (teal)
  *   Aberta    → variant="warning"  (laranja)
  *
- * Atributos: variant (brand|danger|success|warning|yellow|neutral), size (small|medium).
- *   warning = laranja/alert ("Aberta"); yellow = amarelo ("Aguardando Auditoria").
+ * Atributos: variant (brand|blue|danger|success|warning|yellow|neutral), size (small|medium).
+ *   warning = laranja/alert ("Aberta"); yellow = amarelo ("Aguardando Auditoria");
+ *   blue = azul/primária ("Auditoria em Progresso" — espelha o color="blue" do LabelBadge).
  * Slots: default (texto), start (ícone).
  * Part: base.
  */
@@ -49,6 +50,8 @@ template.innerHTML = `
     :host([variant="danger"])  .badge { --_color: var(--me-color-negative-50, #DA1E28); --_bg: #fef2f2; }
     :host([variant="warning"]) .badge { --_color: var(--me-color-alert-50, #F18F1B);    --_bg: #fff7ed; }
     :host([variant="yellow"])  .badge { --_color: var(--me-color-warning-50, #F1C21B);  --_bg: #fefce8; }
+    /* blue = paleta primária (teal): mesma cor do color="blue" do LabelBadge (border-primary bg-primary5) */
+    :host([variant="blue"])    .badge { --_color: var(--me-color-primary-30, #2F7F91); --_bg: var(--me-color-primary-5, #D8EEF3); }
     /* neutral/gray espelha o LabelBadge gray: borda cinza clara, ícone gray-50 */
     :host([variant="neutral"]) .badge { --_color: #d1d5db; --_bg: #f3f4f6; }
     :host([variant="neutral"]) ::slotted(me-icon) { color: var(--me-color-gray-50, #323232); }

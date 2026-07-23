@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aprovações · Registro de plantão — Minha Escala (me-bricks)</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: flex;
+      font-family: var(--me-font-family);
+      font-size: var(--me-font-size-body);
+      line-height: var(--me-line-height-body);
+      letter-spacing: var(--me-letter-spacing);
+      color: var(--me-color-text);
+      background: var(--me-color-page);
+    }
+    me-sidebar { flex: none; height: 100vh; position: sticky; top: 0; }
+    main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .content { padding: 24px 32px 48px; }
+
+    /* ---- Toolbar (Ordenar / Exportar / Novo registro) ---- */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .toolbar .sort { display: flex; align-items: center; gap: 12px; }
+    .toolbar .sort-label {
+      color: var(--me-color-primary-30);
+      font-size: var(--me-font-size-small);
+      font-weight: var(--me-font-weight-bold);
+      white-space: nowrap;
+    }
+    .toolbar .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    /* ---- Barra de filtros (pílulas rounded-full) ---- */
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid var(--me-color-neutral-40);
+      border-radius: 999px;
+      background: var(--me-color-surface);
+      color: var(--me-color-secondary-10);
+      font: inherit;
+      font-size: var(--me-font-size-small);
+      line-height: 20px;            /* casa com a altura do me-select-filter (38px) */
+      cursor: pointer;
+      transition: background var(--me-transition);
+      white-space: nowrap;
+    }
+    .filter-pill:hover { background: var(--me-color-neutral-10); }
+    .filter-pill me-icon { font-size: 18px; }
+
+    /* ---- Tags de filtro ativo ---- */
+    .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .clear-filters {
+      border: 0; background: none; cursor: pointer;
+      color: var(--me-color-primary-30); font-weight: var(--me-font-weight-bold);
+      font-size: var(--me-font-size-small); font-family: inherit; margin-left: 4px;
+    }
+    .clear-filters:hover { text-decoration: underline; }
+
+    /* ---- Lista de cards ---- */
+    .list { display: flex; flex-direction: column; }
+    .attendance-card {
+      border: 1px solid var(--me-color-neutral-20);
+      border-radius: var(--me-radius-l);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      background: var(--me-color-surface);
+    }
+    .attendance-card .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px 0;
+    }
+    .col { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; font-size: var(--me-font-size-small); }
+    .col.id { flex: 0 0 150px; }
+    .col.upload,
+    .col.escala,
+    .col.turno,
+    .col.status { flex: 1 1 130px; padding-left: 16px; border-left: 1px solid var(--me-color-neutral-20); }
+    .col .idtag {
+      color: var(--me-color-secondary-20);
+      font-size: 12px; font-weight: var(--me-font-weight-bold);
+      line-height: 14px; letter-spacing: 0.06px;
+    }
+    .col .label { color: var(--me-color-text); font-weight: var(--me-font-weight-bold); margin-bottom: 2px; }
+    .col .value { color: var(--me-color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .col .sub { color: var(--me-color-text-muted); font-size: 13px; }
+    .col.turno .label { display: inline-flex; align-items: center; gap: 8px; }
+    .turno-icon { position: relative; display: inline-flex; align-items: center; color: var(--me-color-primary-30); }
+    .turno-icon me-icon { font-size: 18px; }
+    .turno-icon .badge-count {
+      position: absolute; top: -8px; right: -10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 15px; height: 15px; padding: 0 4px;
+      border-radius: 999px; background: var(--me-color-primary-20); color: #fff;
+      font-size: 10px; font-weight: 700;
+    }
+    .col.detalhes { flex: 0 0 auto; margin-left: auto; padding-left: 16px; }
+
+    /* ---- Paginação ---- */
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 24px; }
+    .pagination button {
+      min-width: 36px; height: 36px; padding: 0 8px;
+      border: 0; border-radius: 999px; background: none; cursor: pointer;
+      font: inherit; font-size: var(--me-font-size-small); color: var(--me-color-text);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .pagination button:hover:not(.active) { background: var(--me-color-neutral-10); }
+    .pagination button.active { background: var(--me-color-primary-30); color: #fff; font-weight: var(--me-font-weight-bold); }
+    .pagination button.nav { color: var(--me-color-text-muted); }
+  </style>
+</head>
+<body>
+  <me-sidebar expanded id="nav">
+    <me-sidebar-item href="#"><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
+    <me-sidebar-item href="#" active><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
+    <me-sidebar-item href="#"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
+  </me-sidebar>
+
+  <main>
+    <me-page-header id="hdr" menu menu-open
+      heading="Registro de plantão"
+      subheading="Visualize e gerencie os registros de plantão dos colaboradores">
+      <span slot="end" style="display:flex; align-items:center; gap:16px;">
+        <me-icon name="bell-outline" label="Notificações"></me-icon>
+        <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>
+        <me-icon name="chevron-down"></me-icon>
+      </span>
+    </me-page-header>
+
+    <div class="content">
+      <me-tab-group active="attendance">
+        <me-tab panel="handover">Trocas pelo aplicativo</me-tab>
+        <me-tab panel="exceptionality">Pedidos de excepcionalidade</me-tab>
+        <me-tab panel="attendance">Registro de plantão</me-tab>
+        <me-tab panel="biometry">Biometria facial</me-tab>
+
+        <me-tab-panel name="handover"></me-tab-panel>
+        <me-tab-panel name="exceptionality"></me-tab-panel>
+        <me-tab-panel name="biometry"></me-tab-panel>
+
+        <me-tab-panel name="attendance">
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <div class="sort">
+              <span class="sort-label">Ordenar por:</span>
+              <me-button appearance="outlined" size="small">
+                <me-icon slot="start" name="chevron-down"></me-icon>Status
+              </me-button>
+            </div>
+            <div class="actions">
+              <me-button appearance="outlined" size="small">
+                <me-icon slot="start" name="tray-arrow-down"></me-icon>Exportar registros
+              </me-button>
+              <me-button appearance="outlined" size="small">
+                <me-icon slot="start" name="plus"></me-icon>Novo registro
+              </me-button>
+            </div>
+          </div>
+
+          <!-- Filtros -->
+          <div class="filters" id="filters">
+            <me-select-filter id="status-filter" label="Status" multiple>
+              <me-icon slot="start" name="format-list-checks"></me-icon>
+              <me-option value="PENDING_SUBMISSION">Aguardando Envio</me-option>
+              <me-option value="PENDING_AUDIT" selected>Aguardando Auditoria</me-option>
+              <me-option value="AUDIT_IN_PROGRESS">Auditoria em Progresso</me-option>
+              <me-option value="APPROVED">Aprovado</me-option>
+              <me-option value="REJECTED">Reprovado</me-option>
+              <me-option value="DELETED">Excluído</me-option>
+            </me-select-filter>
+
+            <!-- Data plantão / Data upload: seriam um me-date-filter (seletor de
+                 datas), brick ainda inexistente no kit — pílula estática aqui. -->
+            <button class="filter-pill">
+              <me-icon name="calendar-outline"></me-icon>
+              <span>Data plantão</span>
+            </button>
+            <button class="filter-pill">
+              <me-icon name="calendar-arrow-up"></me-icon>
+              <span>Data upload</span>
+            </button>
+
+            <me-select-filter label="Unidades" multiple searchable>
+              <me-icon slot="start" name="office-building-outline"></me-icon>
+              <me-option value="1">Hospital São Lucas</me-option>
+              <me-option value="2">Hospital Santa Casa</me-option>
+              <me-option value="3">Hospital Infantil</me-option>
+              <me-option value="4">Hospital Regional Norte</me-option>
+              <me-option value="5">Hospital Municipal</me-option>
+            </me-select-filter>
+
+            <me-select-filter label="Escala" multiple searchable disabled>
+              <me-icon slot="start" name="calendar-edit"></me-icon>
+            </me-select-filter>
+
+            <me-select-filter label="Turno" multiple searchable disabled>
+              <me-icon slot="start" name="clock-outline"></me-icon>
+            </me-select-filter>
+          </div>
+
+          <!-- Tags de filtro ativo -->
+          <div class="active-filters" id="active-tags">
+            <button class="clear-filters">Limpar filtros</button>
+          </div>
+
+          <!-- Lista de registros -->
+          <div class="list">
+            <!-- Card 1 — Aguardando Auditoria -->
+            <div class="attendance-card">
+              <div class="row">
+                <div class="col id">
+                  <span class="idtag">#15258</span>
+                  <span class="label">Data do plantão</span>
+                  <span class="value">21/04/2025</span>
+                </div>
+                <div class="col upload">
+                  <span class="label">Data upload</span>
+                  <span class="value">22/04/2025</span>
+                </div>
+                <div class="col escala">
+                  <span class="label">Escala</span>
+                  <span class="value">Clínica Médica</span>
+                  <small class="sub">Hospital São Lucas</small>
+                </div>
+                <div class="col turno">
+                  <span class="label">
+                    <span class="turno-icon"><me-icon name="briefcase-outline"></me-icon><span class="badge-count">2</span></span>
+                    Turno(s)
+                  </span>
+                  <span class="value">Manhã, Tarde</span>
+                </div>
+                <div class="col status">
+                  <span class="label">Status</span>
+                  <me-badge variant="yellow">Aguardando Auditoria</me-badge>
+                </div>
+                <div class="col detalhes">
+                  <me-button appearance="outlined" size="small">Ver detalhes</me-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2 — Aprovado -->
+            <div class="attendance-card">
+              <div class="row">
+                <div class="col id">
+                  <span class="idtag">#15242</span>
+                  <span class="label">Data do plantão</span>
+                  <span class="value">20/04/2025</span>
+                </div>
+                <div class="col upload">
+                  <span class="label">Data upload</span>
+                  <span class="value">21/04/2025</span>
+                </div>
+                <div class="col escala">
+                  <span class="label">Escala</span>
+                  <span class="value">UTI Adulto</span>
+                  <small class="sub">Hospital Santa Casa</small>
+                </div>
+                <div class="col turno">
+                  <span class="label">
+                    <span class="turno-icon"><me-icon name="briefcase-outline"></me-icon></span>
+                    Turno(s)
+                  </span>
+                  <span class="value">Noturno</span>
+                </div>
+                <div class="col status">
+                  <span class="label">Status</span>
+                  <me-badge variant="success">Aprovado</me-badge>
+                </div>
+                <div class="col detalhes">
+                  <me-button appearance="outlined" size="small">Ver detalhes</me-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3 — Reprovado -->
+            <div class="attendance-card">
+              <div class="row">
+                <div class="col id">
+                  <span class="idtag">#15230</span>
+                  <span class="label">Data do plantão</span>
+                  <span class="value">19/04/2025</span>
+                </div>
+                <div class="col upload">
+                  <span class="label">Data upload</span>
+                  <span class="value">20/04/2025</span>
+                </div>
+                <div class="col escala">
+                  <span class="label">Escala</span>
+                  <span class="value">Pronto Socorro</span>
+                  <small class="sub">Hospital São Lucas</small>
+                </div>
+                <div class="col turno">
+                  <span class="label">
+                    <span class="turno-icon"><me-icon name="briefcase-outline"></me-icon></span>
+                    Turno(s)
+                  </span>
+                  <span class="value">Manhã</span>
+                </div>
+                <div class="col status">
+                  <span class="label">Status</span>
+                  <me-badge variant="danger">Reprovado</me-badge>
+                </div>
+                <div class="col detalhes">
+                  <me-button appearance="outlined" size="small">Ver detalhes</me-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4 — Auditoria em Progresso (chip azul local) -->
+            <div class="attendance-card">
+              <div class="row">
+                <div class="col id">
+                  <span class="idtag">#15221</span>
+                  <span class="label">Data do plantão</span>
+                  <span class="value">18/04/2025</span>
+                </div>
+                <div class="col upload">
+                  <span class="label">Data upload</span>
+                  <span class="value">19/04/2025</span>
+                </div>
+                <div class="col escala">
+                  <span class="label">Escala</span>
+                  <span class="value">Maternidade</span>
+                  <small class="sub">Hospital Santa Casa</small>
+                </div>
+                <div class="col turno">
+                  <span class="label">
+                    <span class="turno-icon"><me-icon name="briefcase-outline"></me-icon><span class="badge-count">2</span></span>
+                    Turno(s)
+                  </span>
+                  <span class="value">Tarde, Noite</span>
+                </div>
+                <div class="col status">
+                  <span class="label">Status</span>
+                  <me-badge variant="blue">Auditoria em Progresso</me-badge>
+                </div>
+                <div class="col detalhes">
+                  <me-button appearance="outlined" size="small">Ver detalhes</me-button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 5 — Aguardando Envio -->
+            <div class="attendance-card">
+              <div class="row">
+                <div class="col id">
+                  <span class="idtag">#15210</span>
+                  <span class="label">Data do plantão</span>
+                  <span class="value">17/04/2025</span>
+                </div>
+                <div class="col upload">
+                  <span class="label">Data upload</span>
+                  <span class="value" style="color: var(--me-color-text-muted);">—</span>
+                </div>
+                <div class="col escala">
+                  <span class="label">Escala</span>
+                  <span class="value">Pediatria</span>
+                  <small class="sub">Hospital Infantil</small>
+                </div>
+                <div class="col turno">
+                  <span class="label">
+                    <span class="turno-icon"><me-icon name="briefcase-outline"></me-icon></span>
+                    Turno(s)
+                  </span>
+                  <span class="value">Manhã</span>
+                </div>
+                <div class="col status">
+                  <span class="label">Status</span>
+                  <me-badge variant="neutral">Aguardando Envio</me-badge>
+                </div>
+                <div class="col detalhes">
+                  <me-button appearance="outlined" size="small">Ver detalhes</me-button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Paginação -->
+          <div class="pagination">
+            <button class="nav" aria-label="Página anterior"><me-icon name="chevron-left"></me-icon></button>
+            <button class="active">1</button>
+            <button>2</button>
+            <button>3</button>
+            <button>4</button>
+            <button>5</button>
+            <button class="nav" aria-label="Próxima página"><me-icon name="chevron-right"></me-icon></button>
+          </div>
+        </me-tab-panel>
+      </me-tab-group>
+    </div>
+  </main>
+
+  <script type="module">
+    // Liga o botão mobile do header à sidebar (< 800px).
+    const nav = document.getElementById('nav');
+    const hdr = document.getElementById('hdr');
+    hdr.menuOpen = nav.expanded;
+    hdr.addEventListener('me-menu', (e) => { nav.expanded = hdr.menuOpen = e.detail.open; });
+    nav.addEventListener('me-toggle', (e) => { hdr.menuOpen = e.detail.expanded; });
+
+    // Abrir um filtro fecha os demais (como no app, que usa openFilterName único).
+    const filtersRow = document.getElementById('filters');
+    filtersRow.addEventListener('me-toggle', (e) => {
+      if (!e.detail.open) return;
+      for (const f of filtersRow.querySelectorAll('me-select-filter')) {
+        if (f !== e.target) f.open = false;
+      }
+    });
+
+    // Tags de filtro ativo sincronizadas com o filtro de Status.
+    const statusFilter = document.getElementById('status-filter');
+    const tagsRow = document.getElementById('active-tags');
+    const clearBtn = tagsRow.querySelector('.clear-filters');
+    const STATUS_LABELS = {
+      PENDING_SUBMISSION: 'Aguardando Envio',
+      PENDING_AUDIT: 'Aguardando Auditoria',
+      AUDIT_IN_PROGRESS: 'Auditoria em Progresso',
+      APPROVED: 'Aprovado',
+      REJECTED: 'Reprovado',
+      DELETED: 'Excluído',
+    };
+
+    function renderTags() {
+      const values = statusFilter.value;
+      for (const t of tagsRow.querySelectorAll('me-filter-tag')) t.remove();
+      for (const v of values) {
+        const tag = document.createElement('me-filter-tag');
+        tag.setAttribute('value', v);
+        tag.textContent = STATUS_LABELS[v] ?? v;
+        tagsRow.insertBefore(tag, clearBtn);
+      }
+      tagsRow.style.display = values.length ? 'flex' : 'none';
+    }
+
+    statusFilter.addEventListener('change', renderTags);
+
+    // Remover uma tag desmarca a opção correspondente (dispara o change do filtro).
+    tagsRow.addEventListener('me-remove', (e) => {
+      const opt = [...statusFilter.querySelectorAll('me-option')]
+        .find((o) => o.value === e.detail.value);
+      if (opt && opt.selected) opt.click();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      [...statusFilter.querySelectorAll('me-option')]
+        .filter((o) => o.selected)
+        .forEach((o) => o.click());
+    });
+
+    renderTags();
+  </script>
+</body>
+</html>

@@ -155,7 +155,7 @@
   <aside>
     <a class="brand" href="#/inicio">
       <me-logo variant="variant"></me-logo>
-      <small id="version-badge">Design System · v0.3.0</small>
+      <small id="version-badge">Design System · v0.3.2</small>
     </a>
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
@@ -169,6 +169,7 @@
       <a href="#/switch" data-page="switch">Switch</a>
       <a href="#/checkbox" data-page="checkbox">Checkbox</a>
       <a href="#/radio" data-page="radio">Radio</a>
+      <a href="#/filtros" data-page="filtros">Filtros</a>
       <a href="#/tabs" data-page="tabs">Tabs</a>
       <a href="#/icones" data-page="icones">Ícones</a>
       <a href="#/logo" data-page="logo">Logo</a>
@@ -240,6 +241,7 @@
           <a href="#/switch"><strong>Switch</strong><small>toggle com estados disabled/loading</small></a>
           <a href="#/checkbox"><strong>Checkbox</strong><small>seleção múltipla e CheckboxSelect</small></a>
           <a href="#/radio"><strong>Radio</strong><small>seleção única e cards selecionáveis</small></a>
+          <a href="#/filtros"><strong>Filtros</strong><small>pílula com dropdown e tags ativas</small></a>
           <a href="#/tabs"><strong>Tabs</strong><small>abas com sublinhado teal e fade</small></a>
           <a href="#/icones"><strong>Ícones</strong><small>Material Design Icons via CDN</small></a>
           <a href="#/logo"><strong>Logo</strong><small>5 variantes em SVG do Figma</small></a>
@@ -558,6 +560,81 @@
   &lt;/me-radio&gt;
   ...
 &lt;/me-radio-group&gt;</pre>
+      </me-page>
+
+      <me-page name="filtros">
+        <h2>&lt;me-select-filter&gt; + &lt;me-option&gt; + &lt;me-filter-tag&gt; — Filtros</h2>
+        <p class="desc">
+          Espelham o <code>SelectFilter.vue</code> e o <code>ActiveFilters.vue</code> do app:
+          pílula <code>rounded-full</code> que abre um dropdown de opções (filhas <code>me-option</code>),
+          e chip teal removível de filtro ativo. Abre/fecha sozinho (clique fora, <kbd>Esc</kbd>).
+          A propriedade de leitura <code>.value</code> devolve o array de values selecionados.
+        </p>
+
+        <h3 class="section">Seleção múltipla e badge de contagem</h3>
+        <p class="desc">
+          <code>multiple</code> mantém o dropdown aberto ao escolher e mostra um badge com a
+          quantidade selecionada. Cada alternância emite <code>me-select</code>
+          (<code>detail: { value, selected }</code>) e <code>change</code>
+          (<code>detail: { value: [...] }</code>).
+        </p>
+        <div class="example column" style="align-items: flex-start; background: var(--me-color-brand-soft);">
+          <me-select-filter id="demo-status-filter" label="Status" multiple>
+            <me-icon slot="start" name="format-list-checks"></me-icon>
+            <me-option value="PENDING_SUBMISSION">Aguardando Envio</me-option>
+            <me-option value="PENDING_AUDIT" selected>Aguardando Auditoria</me-option>
+            <me-option value="AUDIT_IN_PROGRESS">Auditoria em Progresso</me-option>
+            <me-option value="APPROVED">Aprovado</me-option>
+            <me-option value="REJECTED">Reprovado</me-option>
+          </me-select-filter>
+          <output id="filter-output">Selecionados: PENDING_AUDIT</output>
+        </div>
+        <pre>&lt;me-select-filter label="Status" multiple&gt;
+  &lt;me-icon slot="start" name="format-list-checks"&gt;&lt;/me-icon&gt;
+  &lt;me-option value="PENDING_AUDIT" selected&gt;Aguardando Auditoria&lt;/me-option&gt;
+  &lt;me-option value="APPROVED"&gt;Aprovado&lt;/me-option&gt;
+&lt;/me-select-filter&gt;</pre>
+
+        <h3 class="section">Com busca</h3>
+        <p class="desc">
+          <code>searchable</code> adiciona um campo que filtra as opções por texto. Use
+          <code>disabled</code> para desativar a pílula (ex.: filtro dependente de outro ainda vazio).
+        </p>
+        <div class="example" style="align-items: flex-start;">
+          <me-select-filter label="Unidades" multiple searchable>
+            <me-icon slot="start" name="office-building-outline"></me-icon>
+            <me-option value="1">Hospital São Lucas</me-option>
+            <me-option value="2">Hospital Santa Casa</me-option>
+            <me-option value="3">Hospital Infantil</me-option>
+            <me-option value="4">Hospital Regional Norte</me-option>
+          </me-select-filter>
+          <me-select-filter label="Escala" multiple searchable disabled>
+            <me-icon slot="start" name="calendar-edit"></me-icon>
+          </me-select-filter>
+        </div>
+        <pre>&lt;me-select-filter label="Unidades" multiple searchable&gt;
+  &lt;me-icon slot="start" name="office-building-outline"&gt;&lt;/me-icon&gt;
+  &lt;me-option value="1"&gt;Hospital São Lucas&lt;/me-option&gt;
+  &lt;me-option value="2"&gt;Hospital Santa Casa&lt;/me-option&gt;
+&lt;/me-select-filter&gt;</pre>
+
+        <h3 class="section">Tags de filtro ativo</h3>
+        <p class="desc">
+          <code>me-filter-tag</code> é o chip removível do <code>ActiveFilters.vue</code>. O clique
+          no <code>×</code> emite <code>me-remove</code> (<code>detail: { value }</code>). Ligue-o à
+          seleção dos filtros para montar a barra de filtros ativos (veja a
+          <a href="demo/registro-plantao.html">demo Registro de plantão</a>).
+        </p>
+        <div class="example">
+          <me-filter-tag value="PENDING_AUDIT">Aguardando Auditoria</me-filter-tag>
+          <me-filter-tag value="APPROVED">Aprovado</me-filter-tag>
+          <me-filter-tag no-remove>Fixo (sem ×)</me-filter-tag>
+        </div>
+        <pre>&lt;me-filter-tag value="PENDING_AUDIT"&gt;Aguardando Auditoria&lt;/me-filter-tag&gt;
+
+&lt;script&gt;
+  tag.addEventListener('me-remove', (e) =&gt; console.log(e.detail.value));
+&lt;/script&gt;</pre>
       </me-page>
 
       <me-page name="tabs">
@@ -881,6 +958,18 @@
     document.getElementById('icon-grid').innerHTML = icons.map((name) =>
       `<figure><me-icon name="${name}"></me-icon><figcaption>${name}</figcaption></figure>`
     ).join('');
+
+    // Demo do me-select-filter: mostra os values selecionados ao vivo
+    const demoStatusFilter = document.getElementById('demo-status-filter');
+    if (demoStatusFilter) {
+      const filterOutput = document.getElementById('filter-output');
+      const renderFilter = () => {
+        filterOutput.textContent =
+          'Selecionados: ' + (demoStatusFilter.value.join(', ') || '(nenhum)');
+      };
+      demoStatusFilter.addEventListener('change', renderFilter);
+      renderFilter();
+    }
 
     // Demo do me-checkbox-select: mostra a lista agregada de marcados
     const checkboxSelect = document.getElementById('demo-checkbox-select');
