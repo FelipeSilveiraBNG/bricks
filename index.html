@@ -155,7 +155,7 @@
   <aside>
     <a class="brand" href="#/inicio">
       <me-logo variant="variant"></me-logo>
-      <small>Design System · v0.1.0</small>
+      <small id="version-badge">Design System · v0.3.0</small>
     </a>
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
@@ -730,6 +730,29 @@
   </main>
 
   <script type="module">
+    // ===== Versão no menu lateral: reflete a última tag vX.Y.Z do repo =====
+    // O texto embutido em #version-badge é o fallback (última versão conhecida
+    // no deploy); em runtime buscamos a maior tag publicada no GitHub para que
+    // ele acompanhe sozinho os releases, sem precisar editar o HTML a cada tag.
+    (async () => {
+      const badge = document.getElementById('version-badge');
+      if (!badge) return;
+      try {
+        const res = await fetch('https://api.github.com/repos/FelipeSilveiraBNG/bricks/tags?per_page=100');
+        if (!res.ok) return; // offline / rate-limit: mantém o fallback
+        const tags = await res.json();
+        // A API não garante ordem semver — parseamos vX.Y.Z e pegamos a maior.
+        const latest = tags
+          .map((t) => (t.name.match(/^v?(\d+)\.(\d+)\.(\d+)$/) || null))
+          .filter(Boolean)
+          .map((m) => ({ major: +m[1], minor: +m[2], patch: +m[3] }))
+          .sort((a, b) => b.major - a.major || b.minor - a.minor || b.patch - a.patch)[0];
+        if (latest) badge.textContent = `Design System · v${latest.major}.${latest.minor}.${latest.patch}`;
+      } catch {
+        // rede indisponível: o fallback embutido continua valendo.
+      }
+    })();
+
     // Marca no menu lateral a rota ativa do roteador de docs
     const router = document.getElementById('docs-router');
     const syncNav = (page) => {
