@@ -101,6 +101,18 @@
       padding-bottom: 8px; margin-top: 0;
     }
     p.desc { color: var(--me-color-text-muted); font-size: var(--me-font-size-small); }
+    /* Subtítulo de seção dentro de uma página (um eixo por seção, padrão Web Awesome) */
+    me-page h3.section {
+      font-size: 16px; font-weight: var(--me-font-weight-semibold);
+      margin: 36px 0 4px;
+    }
+    me-page h3.section + p.desc { margin-top: 0; }
+    /* Linha de exemplos rotulada dentro de uma matriz (.example.column) */
+    .matrix-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .matrix-row .matrix-label {
+      width: 84px; flex: none;
+      font-size: 12px; color: var(--me-color-text-muted);
+    }
     .example {
       display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
       padding: 24px; background: var(--me-color-surface);
@@ -255,35 +267,118 @@
         <p class="desc">
           Espelha os botões do app: primário = FilledButton (fundo <code>#3CA2B9</code>, hover teal escuro) ·
           secundário = OutlineButton (borda 2px) · terciário = GhostButton ·
-          <code>variant="danger"</code> = PolarButton (radius 4px, hovers próprios).
-          Tipografia semibold 14px. Variantes extras do kit: success, warning, neutral.
+          <code>variant="danger"</code> = PolarButton (hovers próprios).
+          Tipografia semibold 14px, radius 4px em todos.
+        </p>
+
+        <h3 class="section">Aparências</h3>
+        <p class="desc">
+          O atributo <code>appearance</code> define o nível do botão. Sem ele = primário (FilledButton);
+          <code>outlined</code> = secundário (borda 2px); <code>plain</code> = terciário (GhostButton).
         </p>
         <div class="example">
           <me-button>Confirmar</me-button>
           <me-button appearance="outlined">Cancelar</me-button>
           <me-button appearance="plain">Ver mais</me-button>
-          <me-button variant="danger">Excluir</me-button>
-          <me-button variant="danger" appearance="outlined">Reprovar</me-button>
-          <me-button variant="danger" appearance="plain">Cancelar plantão</me-button>
-          <me-button disabled>Desabilitado</me-button>
         </div>
         <pre>&lt;me-button&gt;Confirmar&lt;/me-button&gt;
 &lt;me-button appearance="outlined"&gt;Cancelar&lt;/me-button&gt;
-&lt;me-button appearance="plain"&gt;Ver mais&lt;/me-button&gt;
-&lt;me-button variant="danger"&gt;Excluir&lt;/me-button&gt;
-&lt;me-button variant="danger" appearance="outlined"&gt;Reprovar&lt;/me-button&gt;
-&lt;me-button variant="danger" appearance="plain"&gt;Cancelar plantão&lt;/me-button&gt;
-&lt;me-button disabled&gt;Desabilitado&lt;/me-button&gt;</pre>
-        <div class="example">
-          <me-button size="small"><me-icon slot="start" name="plus"></me-icon>Nova regra</me-button>
-          <me-button size="small" appearance="outlined">Novo grupo</me-button>
-          <me-button size="large">Candidatar-se</me-button>
-          <me-button href="https://minhaescala.app" appearance="plain"><me-icon slot="start" name="open-in-new"></me-icon>Como link</me-button>
+&lt;me-button appearance="plain"&gt;Ver mais&lt;/me-button&gt;</pre>
+
+        <h3 class="section">Variantes semânticas</h3>
+        <p class="desc">
+          O atributo <code>variant</code> define a cor. <code>brand</code> (padrão) e <code>danger</code>
+          espelham o app; <code>success</code>, <code>warning</code> e <code>neutral</code> são extensões do kit.
+          Combine <code>variant</code> com qualquer <code>appearance</code>.
+        </p>
+        <div class="example column">
+          <div class="matrix-row">
+            <span class="matrix-label">brand</span>
+            <me-button>Filled</me-button>
+            <me-button appearance="outlined">Outlined</me-button>
+            <me-button appearance="plain">Plain</me-button>
+          </div>
+          <div class="matrix-row">
+            <span class="matrix-label">danger</span>
+            <me-button variant="danger">Filled</me-button>
+            <me-button variant="danger" appearance="outlined">Outlined</me-button>
+            <me-button variant="danger" appearance="plain">Plain</me-button>
+          </div>
+          <div class="matrix-row">
+            <span class="matrix-label">success</span>
+            <me-button variant="success">Filled</me-button>
+            <me-button variant="success" appearance="outlined">Outlined</me-button>
+            <me-button variant="success" appearance="plain">Plain</me-button>
+          </div>
+          <div class="matrix-row">
+            <span class="matrix-label">warning</span>
+            <me-button variant="warning">Filled</me-button>
+            <me-button variant="warning" appearance="outlined">Outlined</me-button>
+            <me-button variant="warning" appearance="plain">Plain</me-button>
+          </div>
+          <div class="matrix-row">
+            <span class="matrix-label">neutral</span>
+            <me-button variant="neutral">Filled</me-button>
+            <me-button variant="neutral" appearance="outlined">Outlined</me-button>
+            <me-button variant="neutral" appearance="plain">Plain</me-button>
+          </div>
         </div>
-        <pre>&lt;me-button size="small"&gt;&lt;me-icon slot="start" name="plus"&gt;&lt;/me-icon&gt;Nova regra&lt;/me-button&gt;
-&lt;me-button size="small" appearance="outlined"&gt;Novo grupo&lt;/me-button&gt;
-&lt;me-button size="large"&gt;Candidatar-se&lt;/me-button&gt;
-&lt;me-button href="https://minhaescala.app" appearance="plain"&gt;Como link&lt;/me-button&gt;</pre>
+        <pre>&lt;me-button variant="danger"&gt;Excluir&lt;/me-button&gt;
+&lt;me-button variant="danger" appearance="outlined"&gt;Reprovar&lt;/me-button&gt;
+&lt;me-button variant="success" appearance="plain"&gt;Aprovar&lt;/me-button&gt;</pre>
+
+        <h3 class="section">Tamanhos</h3>
+        <p class="desc">
+          O atributo <code>size</code> controla a altura: <code>small</code> (32px), padrão (40px) e
+          <code>large</code> (48px).
+        </p>
+        <div class="example">
+          <me-button size="small">Small</me-button>
+          <me-button>Medium</me-button>
+          <me-button size="large">Large</me-button>
+        </div>
+        <pre>&lt;me-button size="small"&gt;Small&lt;/me-button&gt;
+&lt;me-button&gt;Medium&lt;/me-button&gt;
+&lt;me-button size="large"&gt;Large&lt;/me-button&gt;</pre>
+
+        <h3 class="section">Com ícones</h3>
+        <p class="desc">
+          Use os slots <code>start</code> e <code>end</code> para colocar um <code>me-icon</code>
+          antes ou depois do texto.
+        </p>
+        <div class="example">
+          <me-button><me-icon slot="start" name="plus"></me-icon>Nova regra</me-button>
+          <me-button appearance="outlined"><me-icon slot="start" name="plus"></me-icon>Novo grupo</me-button>
+          <me-button appearance="plain">Ver mais<me-icon slot="end" name="chevron-right"></me-icon></me-button>
+        </div>
+        <pre>&lt;me-button&gt;&lt;me-icon slot="start" name="plus"&gt;&lt;/me-icon&gt;Nova regra&lt;/me-button&gt;
+&lt;me-button appearance="plain"&gt;Ver mais&lt;me-icon slot="end" name="chevron-right"&gt;&lt;/me-icon&gt;&lt;/me-button&gt;</pre>
+
+        <h3 class="section">Como link</h3>
+        <p class="desc">
+          Com o atributo <code>href</code> o botão é renderizado como <code>&lt;a&gt;</code>, mantendo a
+          aparência de botão e o comportamento nativo de link.
+        </p>
+        <div class="example">
+          <me-button href="https://minhaescala.app">Abrir o app</me-button>
+          <me-button href="https://minhaescala.app" appearance="plain"><me-icon slot="start" name="open-in-new"></me-icon>Nova aba</me-button>
+        </div>
+        <pre>&lt;me-button href="https://minhaescala.app"&gt;Abrir o app&lt;/me-button&gt;
+&lt;me-button href="https://minhaescala.app" appearance="plain"&gt;Nova aba&lt;/me-button&gt;</pre>
+
+        <h3 class="section">Desabilitado</h3>
+        <p class="desc">
+          O atributo <code>disabled</code> mantém as cores a 40% de opacidade e bloqueia o clique
+          (inclusive o ripple). Funciona também no botão como link.
+        </p>
+        <div class="example">
+          <me-button disabled>Confirmar</me-button>
+          <me-button appearance="outlined" disabled>Cancelar</me-button>
+          <me-button variant="danger" disabled>Excluir</me-button>
+        </div>
+        <pre>&lt;me-button disabled&gt;Confirmar&lt;/me-button&gt;
+&lt;me-button appearance="outlined" disabled&gt;Cancelar&lt;/me-button&gt;
+&lt;me-button variant="danger" disabled&gt;Excluir&lt;/me-button&gt;</pre>
       </me-page>
 
       <me-page name="badges">
@@ -508,11 +603,11 @@
             <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="checkbox-multiple-outline"></me-icon>Aprovações</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
+            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="invoice-list-outline"></me-icon>Relatórios</me-sidebar-item>
             <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
           </me-sidebar>
         </div>

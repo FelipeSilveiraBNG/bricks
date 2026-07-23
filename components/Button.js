@@ -42,7 +42,7 @@ template.innerHTML = `
       padding: 0 20px;
       /* Borda transparente em todos os appearances: outlined (2px) não muda a altura */
       border: 2px solid transparent;
-      border-radius: var(--me-radius-m, 6px);
+      border-radius: var(--me-radius-s, 4px);
       font-family: inherit;
       /* GenericButton: font-semibold text-sm, sem uppercase, tracking normal */
       font-size: var(--me-font-size-small, 14px);
@@ -77,9 +77,8 @@ template.innerHTML = `
       background: var(--me-color-brand-soft, #D8EEF3);
     }
 
-    /* ===== danger — PolarButton do app (cores/radius próprios) ===== */
+    /* ===== danger — PolarButton do app (cores próprias) ===== */
     :host([variant="danger"]) .btn {
-      border-radius: var(--me-radius-s, 4px);
       background: var(--me-color-negative-50, #DA1E28);
       color: var(--me-color-white, #FFFFFF);
     }
