@@ -178,26 +178,30 @@ Métodos: `movePageTo(n)`, `reset(totalItems?)`, `setItemsPerPage(n)`,
 ```
 
 ### Shell de aplicação (sidebar + header)
+Sidebar e header ficam **fixos**; só o conteúdo rola. Para isso o `body` não
+rola (`height:100vh; overflow:hidden`) e a rolagem fica na área de conteúdo
+(`overflow-y:auto`) — evite `position:sticky` + scroll no documento, que deixa
+a sidebar escapar ao rolar.
 ```html
-<body style="display:flex; margin:0;">
-  <me-sidebar expanded id="nav" style="height:100vh; position:sticky; top:0;">
+<body style="display:flex; margin:0; height:100vh; overflow:hidden;">
+  <me-sidebar expanded id="nav" style="flex:none; height:100vh;">
     <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
     <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
     <!-- Como no app real, a sidebar NÃO tem item "Sair" (logout fica no menu
          do header). O slot="footer" existe para casos especiais. -->
   </me-sidebar>
-  <main style="flex:1; display:flex; flex-direction:column;">
+  <main style="flex:1; min-width:0; display:flex; flex-direction:column; height:100vh; overflow:hidden;">
     <!-- me-page-header já é uma barra branca com padding próprio (16px/32px):
-         deixe-o full-bleed no topo e dê padding só ao conteúdo abaixo.
+         deixe-o full-bleed e fixo no topo (flex:none) e role só o conteúdo.
          O atributo "menu" mostra o botão de abrir a sidebar em telas < 800px. -->
-    <me-page-header id="hdr" menu menu-open heading="Dashboard" subheading="Visão geral">
+    <me-page-header id="hdr" menu menu-open heading="Dashboard" subheading="Visão geral" style="flex:none;">
       <span slot="end" style="display:flex; align-items:center; gap:16px;">
         <me-icon name="bell-outline" label="Notificações"></me-icon>
         <me-icon name="account-circle" label="Perfil" style="font-size:36px; color:var(--me-color-brand);"></me-icon>
       </span>
     </me-page-header>
-    <div style="padding:24px 32px;">
-      <!-- conteúdo -->
+    <div style="flex:1; overflow-y:auto; padding:24px 32px;">
+      <!-- conteúdo (rola aqui) -->
     </div>
   </main>
   <script type="module">
