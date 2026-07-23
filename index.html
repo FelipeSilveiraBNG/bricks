@@ -169,6 +169,7 @@
       <a href="#/switch" data-page="switch">Switch</a>
       <a href="#/checkbox" data-page="checkbox">Checkbox</a>
       <a href="#/radio" data-page="radio">Radio</a>
+      <a href="#/tabs" data-page="tabs">Tabs</a>
       <a href="#/icones" data-page="icones">Ícones</a>
       <a href="#/logo" data-page="logo">Logo</a>
       <a href="#/page-header" data-page="page-header">PageHeader</a>
@@ -239,6 +240,7 @@
           <a href="#/switch"><strong>Switch</strong><small>toggle com estados disabled/loading</small></a>
           <a href="#/checkbox"><strong>Checkbox</strong><small>seleção múltipla e CheckboxSelect</small></a>
           <a href="#/radio"><strong>Radio</strong><small>seleção única e cards selecionáveis</small></a>
+          <a href="#/tabs"><strong>Tabs</strong><small>abas com sublinhado teal e fade</small></a>
           <a href="#/icones"><strong>Ícones</strong><small>Material Design Icons via CDN</small></a>
           <a href="#/logo"><strong>Logo</strong><small>5 variantes em SVG do Figma</small></a>
           <a href="#/page-header"><strong>PageHeader</strong><small>título, subtítulo e ações</small></a>
@@ -556,6 +558,36 @@
   &lt;/me-radio&gt;
   ...
 &lt;/me-radio-group&gt;</pre>
+      </me-page>
+
+      <me-page name="tabs">
+        <h2>&lt;me-tab-group&gt; + &lt;me-tab&gt; + &lt;me-tab-panel&gt; — Abas</h2>
+        <p class="desc">Funcionamento no padrão <code>wa-tab-group</code>; aparência do Tabs.vue do app: nav centralizada, abas de largura igual, sublinhado teal e texto bold na ativa, com fade ao trocar de painel. Setas/Home/End navegam (ativação automática, um único tab stop). Emite <code>change</code> (<code>detail.name</code>).</p>
+        <div class="example column" style="align-items: stretch;">
+          <me-tab-group active="escalas">
+            <me-tab panel="escalas">Minhas Escalas</me-tab>
+            <me-tab panel="plantoes">Meus Plantões</me-tab>
+            <me-tab panel="trocas">Trocas</me-tab>
+            <me-tab-panel name="escalas">
+              <p>Visão geral das suas escalas do mês, com dias e turnos alocados.</p>
+            </me-tab-panel>
+            <me-tab-panel name="plantoes">
+              <p>Lista dos plantões confirmados, em aberto e já registrados.</p>
+            </me-tab-panel>
+            <me-tab-panel name="trocas">
+              <p>Solicitações de troca enviadas e recebidas, aguardando aprovação.</p>
+            </me-tab-panel>
+          </me-tab-group>
+        </div>
+        <pre>&lt;me-tab-group active="escalas"&gt;
+  &lt;me-tab panel="escalas"&gt;Minhas Escalas&lt;/me-tab&gt;
+  &lt;me-tab panel="plantoes"&gt;Meus Plantões&lt;/me-tab&gt;
+  &lt;me-tab panel="trocas"&gt;Trocas&lt;/me-tab&gt;
+
+  &lt;me-tab-panel name="escalas"&gt;...&lt;/me-tab-panel&gt;
+  &lt;me-tab-panel name="plantoes"&gt;...&lt;/me-tab-panel&gt;
+  &lt;me-tab-panel name="trocas"&gt;...&lt;/me-tab-panel&gt;
+&lt;/me-tab-group&gt;</pre>
       </me-page>
 
       <me-page name="logo">
