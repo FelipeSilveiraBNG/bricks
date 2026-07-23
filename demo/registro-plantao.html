@@ -97,17 +97,6 @@
     }
     .col.detalhes { flex: 0 0 auto; margin-left: auto; padding-left: 16px; }
 
-    /* ---- Paginação ---- */
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 24px; }
-    .pagination button {
-      min-width: 36px; height: 36px; padding: 0 8px;
-      border: 0; border-radius: 999px; background: none; cursor: pointer;
-      font: inherit; font-size: var(--me-font-size-small); color: var(--me-color-text);
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .pagination button:hover:not(.active) { background: var(--me-color-neutral-10); }
-    .pagination button.active { background: var(--me-color-primary-30); color: #fff; font-weight: var(--me-font-weight-bold); }
-    .pagination button.nav { color: var(--me-color-text-muted); }
   </style>
 </head>
 <body>
@@ -383,15 +372,7 @@
           </div>
 
           <!-- Paginação -->
-          <div class="pagination">
-            <button class="nav" aria-label="Página anterior"><me-icon name="chevron-left"></me-icon></button>
-            <button class="active">1</button>
-            <button>2</button>
-            <button>3</button>
-            <button>4</button>
-            <button>5</button>
-            <button class="nav" aria-label="Próxima página"><me-icon name="chevron-right"></me-icon></button>
-          </div>
+          <me-pagination total-pages="8" page="1" style="margin-top: 24px;"></me-pagination>
         </me-tab-panel>
       </me-tab-group>
     </div>

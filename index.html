@@ -170,6 +170,7 @@
       <a href="#/checkbox" data-page="checkbox">Checkbox</a>
       <a href="#/radio" data-page="radio">Radio</a>
       <a href="#/filtros" data-page="filtros">Filtros</a>
+      <a href="#/paginacao" data-page="paginacao">Paginação</a>
       <a href="#/tabs" data-page="tabs">Tabs</a>
       <a href="#/icones" data-page="icones">Ícones</a>
       <a href="#/logo" data-page="logo">Logo</a>
@@ -242,6 +243,7 @@
           <a href="#/checkbox"><strong>Checkbox</strong><small>seleção múltipla e CheckboxSelect</small></a>
           <a href="#/radio"><strong>Radio</strong><small>seleção única e cards selecionáveis</small></a>
           <a href="#/filtros"><strong>Filtros</strong><small>pílula com dropdown e tags ativas</small></a>
+          <a href="#/paginacao"><strong>Paginação</strong><small>páginas com reticências e prev/next</small></a>
           <a href="#/tabs"><strong>Tabs</strong><small>abas com sublinhado teal e fade</small></a>
           <a href="#/icones"><strong>Ícones</strong><small>Material Design Icons via CDN</small></a>
           <a href="#/logo"><strong>Logo</strong><small>5 variantes em SVG do Figma</small></a>
@@ -637,6 +639,67 @@
 &lt;/script&gt;</pre>
       </me-page>
 
+      <me-page name="paginacao">
+        <h2>&lt;me-pagination&gt; — Paginação</h2>
+        <p class="desc">
+          Funcionamento inspirado na <a href="https://github.com/nhn/tui.pagination" target="_blank" rel="noopener">TOAST UI Pagination</a>
+          (JS puro) e janela de páginas com reticências igual ao <code>v-pagination</code> do app,
+          cuja aparência também espelha (número ativo em teal, botões arredondados, setas ‹ › nas
+          pontas). Define-se o total por <code>total-pages</code> ou por
+          <code>total-items</code> + <code>items-per-page</code>.
+        </p>
+
+        <h3 class="section">Básico</h3>
+        <p class="desc">
+          <code>page</code> é a página atual (refletida); <code>visible-pages</code> limita quantos
+          números aparecem antes de truncar com reticências. Navegar emite <code>change</code>
+          (<code>detail.page</code>); o componente cuida do próprio estado.
+        </p>
+        <div class="example column" style="align-items: center; background: var(--me-color-brand-soft);">
+          <me-pagination id="demo-pagination" total-pages="20" page="1" visible-pages="5"></me-pagination>
+          <output id="pagination-output">Página atual: 1</output>
+        </div>
+        <pre>&lt;me-pagination total-pages="20" page="1" visible-pages="5"&gt;&lt;/me-pagination&gt;
+
+&lt;script&gt;
+  pag.addEventListener('change', (e) =&gt; console.log(e.detail.page));
+&lt;/script&gt;</pre>
+
+        <h3 class="section">Por total de itens (estilo TOAST UI)</h3>
+        <p class="desc">
+          Em vez de <code>total-pages</code>, informe <code>total-items</code> e
+          <code>items-per-page</code> — o total de páginas é calculado
+          (<code>ceil(total-items / items-per-page)</code>).
+        </p>
+        <div class="example" style="justify-content: center;">
+          <me-pagination total-items="95" items-per-page="10" page="1"></me-pagination>
+        </div>
+        <pre>&lt;me-pagination total-items="95" items-per-page="10"&gt;&lt;/me-pagination&gt;</pre>
+
+        <h3 class="section">Com primeira/última (« »)</h3>
+        <p class="desc">
+          O atributo <code>first-last</code> adiciona os botões de ir para a primeira e a última
+          página. Use <code>disabled</code> para desativar toda a navegação.
+        </p>
+        <div class="example" style="justify-content: center;">
+          <me-pagination total-pages="20" page="10" first-last></me-pagination>
+        </div>
+        <pre>&lt;me-pagination total-pages="20" page="10" first-last&gt;&lt;/me-pagination&gt;</pre>
+
+        <h3 class="section">Métodos e evento cancelável</h3>
+        <p class="desc">
+          Paridade com a TOAST UI: <code>movePageTo(n)</code>, <code>reset(totalItems?)</code>,
+          <code>setItemsPerPage(n)</code>, <code>setTotalItems(n)</code>, <code>getCurrentPage()</code>,
+          <code>getTotalPages()</code>. O evento <code>me-before-move</code> é cancelável —
+          <code>preventDefault()</code> impede a troca de página (equivale ao <code>return false</code>
+          do <code>beforeMove</code>).
+        </p>
+        <pre>pag.addEventListener('me-before-move', (e) =&gt; {
+  if (temAlteracoesNaoSalvas) e.preventDefault(); // cancela a navegação
+});
+pag.movePageTo(3);</pre>
+      </me-page>
+
       <me-page name="tabs">
         <h2>&lt;me-tab-group&gt; + &lt;me-tab&gt; + &lt;me-tab-panel&gt; — Abas</h2>
         <p class="desc">Funcionamento no padrão <code>wa-tab-group</code>; aparência do Tabs.vue do app: nav centralizada, abas de largura igual, sublinhado teal e texto bold na ativa, com fade ao trocar de painel. Setas/Home/End navegam (ativação automática, um único tab stop). Emite <code>change</code> (<code>detail.name</code>).</p>
@@ -958,6 +1021,15 @@
     document.getElementById('icon-grid').innerHTML = icons.map((name) =>
       `<figure><me-icon name="${name}"></me-icon><figcaption>${name}</figcaption></figure>`
     ).join('');
+
+    // Demo do me-pagination: reflete a página atual ao navegar
+    const demoPagination = document.getElementById('demo-pagination');
+    if (demoPagination) {
+      const pagOutput = document.getElementById('pagination-output');
+      demoPagination.addEventListener('change', (event) => {
+        pagOutput.textContent = 'Página atual: ' + event.detail.page;
+      });
+    }
 
     // Demo do me-select-filter: mostra os values selecionados ao vivo
     const demoStatusFilter = document.getElementById('demo-status-filter');

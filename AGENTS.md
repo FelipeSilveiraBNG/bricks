@@ -142,6 +142,19 @@ contagem; `searchable` adiciona campo de busca; `disabled` desativa a pílula.
 Abre/fecha sozinho (clique fora, Esc). Para "abrir um fecha os outros", ouça
 `me-toggle` no contêiner e feche os irmãos (`f.open = false`).
 
+### Paginação
+Funcionamento inspirado na TOAST UI Pagination (JS puro), janela com reticências
+igual ao `v-pagination` e aparência teal do app. Total via `total-pages` ou
+`total-items`+`items-per-page`. Auto-gerencia o estado; navegar emite `change`.
+```html
+<me-pagination total-pages="20" page="1" visible-pages="5"></me-pagination>
+<me-pagination total-items="95" items-per-page="10"></me-pagination>
+<me-pagination total-pages="20" page="10" first-last></me-pagination>
+```
+Métodos: `movePageTo(n)`, `reset(totalItems?)`, `setItemsPerPage(n)`,
+`setTotalItems(n)`, `getCurrentPage()`, `getTotalPages()`. O evento
+`me-before-move` é cancelável (`preventDefault()` impede a troca).
+
 ### Card (e dialog de confirmação)
 ```html
 <me-card closable>
@@ -281,6 +294,8 @@ Os controles são form-associated: basta um `<form>` nativo.
 | `change` | `me-select-filter` (lista completa após alternar) | `{ value: [values] }` |
 | `me-toggle` | `me-select-filter` (dropdown abre/fecha) | `{ open }` |
 | `me-remove` | `me-filter-tag` (clique no ×) | `{ value }` |
+| `me-before-move` | `me-pagination` (antes de trocar de página; cancelável) | `{ page }` |
+| `change` | `me-pagination` (após trocar de página) | `{ page }` |
 
 ## Tokens mais usados
 

@@ -24,3 +24,4 @@ import './Sidebar.js';
 import './Pages.js';
 import './Tabs.js';
 import './Filters.js';
+import './Pagination.js';
