@@ -171,6 +171,15 @@ body {
 </body>
 ```
 
+**Presets de menu (`me-sidebar-preset`)**: para alternar entre conjuntos
+completos de itens (ex.: menu por perfil), envolva cada conjunto em
+`<me-sidebar-preset name="…" [label] [default]>` como filho direto do
+`me-sidebar`. O ativo é escolhido pela propriedade/atributo `preset` (seleção
+é feita pelo consumidor — o componente não renderiza seletor) e pode ser
+persistido em `localStorage` via `persist-key` (armazenado vence o markup).
+Troca emite `me-preset-change` (`{ name }`). Sem presets, o `me-sidebar` se
+comporta como antes (itens direto como filhos).
+
 ### Logo
 ```html
 <me-logo style="height:48px"></me-logo>                <!-- horizontal (default) -->
@@ -239,6 +248,7 @@ Os controles são form-associated: basta um `<form>` nativo.
 | `change` | `me-checkbox-select` | `{ value: [marcados] }` |
 | `change` | `me-radio-group` | `{ value }` |
 | `me-toggle` | `me-sidebar` | `{ expanded }` |
+| `me-preset-change` | `me-sidebar` (ao trocar de preset via `preset`/API) | `{ name }` |
 | `me-menu` | `me-page-header` (botão mobile, atributo `menu`) | `{ open }` |
 | `change` | `me-pages` (ao trocar de rota) | `{ page }` |
 | `me-close` | `me-card` (cancelável; sem `preventDefault` o card se esconde) | — |

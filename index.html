@@ -598,25 +598,58 @@
       <me-page name="sidebar">
         <h2>&lt;me-sidebar&gt; — Menu lateral</h2>
         <p class="desc">Espelha o Sidebar do app: recolhida 64px / aberta 288px (300ms), borda direita cinza, header 80px com logo "variant" + toggle rosa 24px, item ativo teal com texto semibold, hover teal a 8%. Clique no botão rosa para alternar (emite <code>me-toggle</code>). Como no app, não há "Sair" na sidebar (o <code>slot="footer"</code> existe para casos especiais).</p>
+
+        <h3 class="section">Presets de menu</h3>
+        <p class="desc">
+          Envolva conjuntos completos de itens em <code>&lt;me-sidebar-preset name="…"&gt;</code> e
+          escolha o ativo pelo atributo/propriedade <code>preset</code>. A seleção é feita por
+          <strong>você</strong> (seletor externo) — o componente não renderiza seletor. Com
+          <code>persist-key</code>, a escolha é lembrada em <code>localStorage</code> entre reloads
+          (o valor armazenado vence o <code>preset</code> do markup). Troque abaixo e recarregue a
+          página para ver persistir. Emite <code>me-preset-change</code> (<code>detail.name</code>).
+        </p>
+        <div class="live-row">
+          <span style="font-size:14px; color: var(--me-color-text-muted);">Preset:</span>
+          <me-button size="small" appearance="outlined" data-preset="gestor">Gestor</me-button>
+          <me-button size="small" appearance="outlined" data-preset="medico">Médico</me-button>
+        </div>
         <div class="example" style="align-items: stretch; height: 560px; background: var(--me-color-brand-soft); overflow: hidden;">
-          <me-sidebar expanded>
-            <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="checkbox-multiple-outline"></me-icon>Aprovações</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="invoice-list-outline"></me-icon>Relatórios</me-sidebar-item>
-            <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
+          <me-sidebar expanded id="demo-sidebar" preset="gestor" persist-key="me-bricks:sidebar-demo">
+            <me-sidebar-preset name="gestor" label="Gestor" default>
+              <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="checkbox-multiple-outline"></me-icon>Aprovações</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="invoice-list-outline"></me-icon>Relatórios</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
+            </me-sidebar-preset>
+            <me-sidebar-preset name="medico" label="Médico">
+              <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="calendar"></me-icon>Minhas Escalas</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clock-outline"></me-icon>Meus Plantões</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="swap-horizontal"></me-icon>Trocas</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="file-document-outline"></me-icon>Documentos</me-sidebar-item>
+              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-circle"></me-icon>Perfil</me-sidebar-item>
+            </me-sidebar-preset>
           </me-sidebar>
         </div>
-        <pre>&lt;me-sidebar expanded&gt;
-  &lt;me-sidebar-item href="/dashboard" active&gt;
-    &lt;me-icon slot="start" name="monitor"&gt;&lt;/me-icon&gt;Dashboard
-  &lt;/me-sidebar-item&gt;
-  ...
-&lt;/me-sidebar&gt;</pre>
+        <pre>&lt;me-sidebar expanded preset="gestor" persist-key="me-bricks:sidebar-demo"&gt;
+  &lt;me-sidebar-preset name="gestor" label="Gestor" default&gt;
+    &lt;me-sidebar-item href="/dashboard" active&gt;
+      &lt;me-icon slot="start" name="monitor"&gt;&lt;/me-icon&gt;Dashboard
+    &lt;/me-sidebar-item&gt;
+    ...
+  &lt;/me-sidebar-preset&gt;
+  &lt;me-sidebar-preset name="medico" label="Médico"&gt; ... &lt;/me-sidebar-preset&gt;
+&lt;/me-sidebar&gt;
+
+&lt;script&gt;
+  const sidebar = document.querySelector('me-sidebar');
+  sidebar.preset = 'medico'; // troca, persiste e emite me-preset-change
+&lt;/script&gt;</pre>
+        <p class="desc">Sem nenhum <code>&lt;me-sidebar-preset&gt;</code>, o <code>&lt;me-sidebar&gt;</code> funciona como antes: os <code>&lt;me-sidebar-item&gt;</code> são filhos diretos e nada de preset/persistência é ativado.</p>
       </me-page>
 
       <me-page name="pages">
@@ -679,6 +712,25 @@
       syncNav(event.detail.page);
     });
     syncNav(router.getAttribute('page')); // estado inicial (inclusive deep-link)
+
+    // Seletor externo de preset do <me-sidebar> (seleção é via API, não embutida).
+    const demoSidebar = document.getElementById('demo-sidebar');
+    if (demoSidebar) {
+      const presetButtons = [...document.querySelectorAll('[data-preset]')];
+      const highlight = (name) => {
+        for (const btn of presetButtons) {
+          // ativo = filled (sem appearance); inativo = outlined
+          btn.dataset.preset === name
+            ? btn.removeAttribute('appearance')
+            : btn.setAttribute('appearance', 'outlined');
+        }
+      };
+      for (const btn of presetButtons) {
+        btn.addEventListener('click', () => { demoSidebar.preset = btn.dataset.preset; });
+      }
+      demoSidebar.addEventListener('me-preset-change', (event) => highlight(event.detail.name));
+      highlight(demoSidebar.preset); // estado inicial (pode vir do localStorage)
+    }
 
     // Botão "Copiar" dos blocos de código da homepage
     for (const button of document.querySelectorAll('.code-card .copy')) {
