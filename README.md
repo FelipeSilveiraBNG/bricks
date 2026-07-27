@@ -37,11 +37,12 @@ Fora dele (editor de HTML online, CodePen, outro projeto), pelo CDN — caminho 
 e nenhuma tag `<me-*>` se registraria:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/components/index.js"></script>
 ```
 
-`@main` serve o último commit; troque por uma tag (ex.: `@v0.4.1`) para travar a versão.
+A URL usa a tag de versão (`@v0.4.1`) — imutável e livre do cache de branch do CDN. Ao publicar
+uma tag nova, atualize este número aqui, no `AGENTS.md` e no snippet do `index.html`.
 
 O `tokens.css` já importa a fonte **Inter** e a webfont de ícones **Material Design Icons** (CDN).
 No `<body>` do seu protótipo, use fallback nos tokens de tipografia — `font-family: var(--me-font-family)`

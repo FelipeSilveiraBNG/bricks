@@ -25,13 +25,14 @@ rodar em qualquer outro lugar (editor de HTML online, CodePen, um HTML solto, ou
 precisam das URLs absolutas do CDN:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/components/index.js"></script>
 ```
 
-Trocar `@main` por uma tag (ex.: `@v0.4.1`) trava a versão. Se as tags `<me-*>` renderizarem
-como texto cru sem estilo, é porque o `index.js` não carregou (404 no caminho relativo, CSP do
-editor, etc.) — nenhum componente se registra quando isso acontece.
+Use sempre a tag de versão (`@v0.4.1`), nunca `@main` — a tag é imutável e não fica presa ao
+cache de branch do CDN. Se as tags `<me-*>` renderizarem como texto cru sem estilo, é porque o
+`index.js` não carregou (404 no caminho relativo, CSP do editor, etc.) — nenhum componente se
+registra quando isso acontece.
 
 Estilo base recomendado para o `<body>` (sempre com fallback nos `var()`: sem o `tokens.css`,
 `font-family: var(--me-font-family)` sozinho é inválido e o texto cai em Times New Roman):
