@@ -1,5 +1,5 @@
 /*
- * <me-sidebar> + <me-sidebar-item> (+ <me-sidebar-preset>) — Menu lateral do Minha Escala.
+ * <me-sidebar> + <me-sidebar-item> — Menu lateral do Minha Escala.
  *
  * Espelha o Sidebar real do app (src/components/Sidebar.vue do
  * minhaescala_web): aberta 288px / recolhida 64px (transição 300ms),
@@ -8,47 +8,36 @@
  * chevrons duplos brancos), itens com 16px de padding vertical, radius
  * 4px, ativo = teal #2F7F91 com texto branco semibold, hover teal a 8%.
  *
- * Extensão do kit (não existe no app): slot "footer" para fixar itens
- * embaixo (ex.: "Sair").
+ * PRESETS (menus por perfil) ficam DENTRO do componente: as listas de itens são
+ * definidas em ./sidebar-presets.js (fonte única de verdade), NÃO no HTML que usa
+ * o me-sidebar. O consumidor só escolhe o preset e qual item está ativo:
  *
- * Sidebar — atributos: expanded (refletido); preset (nome do preset ativo,
- *           refletido); persist-key (chave de localStorage p/ lembrar o preset).
+ *   <me-sidebar expanded preset="gestor" active-item="aprovacoes"></me-sidebar>
+ *
+ * O me-sidebar gera os <me-sidebar-item> a partir do preset (não se declaram
+ * itens de menu no markup). Para adicionar/editar menus, edite sidebar-presets.js.
+ *
+ * Sidebar — atributos: expanded (refletido); preset (nome de um preset em
+ *           sidebar-presets.js; refletido); active-item (key do item ativo);
+ *           persist-key (chave de localStorage p/ lembrar o preset).
+ *           Propriedades: expanded, preset, activeItem.
  *           Eventos: me-toggle (detail.expanded), me-preset-change (detail.name).
- *           Propriedades: expanded, preset. Slots: default (itens ou presets),
- *           footer. Parts: base, header, toggle, nav, footer.
- * Item — atributos: href, active, collapsed (gerido pelo pai).
- *        Slots: start (me-icon), default (rótulo). Parts: base, icon, label.
- * Preset — agrupa um CONJUNTO COMPLETO de itens; o sidebar mostra só o ativo.
- *          Atributos: name (id, obrigatório), label (rótulo humano p/ o seletor
- *          externo do consumidor — não é renderizado), default (fallback).
- *          Seleção é via API/atributo: o me-sidebar NÃO renderiza seletor.
+ *           Slot: footer (itens fixos embaixo, ex.: "Sair" — caso especial; o app
+ *           real não tem "Sair" na sidebar). Parts: base, header, toggle, nav, footer.
+ * Item — gerado pelo me-sidebar; encapsula a linha (link/ícone/rótulo, estado
+ *        ativo e recolhido). Atributos: href, active, collapsed. Slots: start
+ *        (me-icon), default (rótulo). Parts: base, icon, label.
  *
- * Persistência: quando há presets + persist-key, a escolha é lembrada em
- * localStorage. Ordem de resolução do preset ativo: armazenado → atributo
- * preset → preset com [default] → primeiro. O valor ARMAZENADO vence o
- * atributo autorado no markup. Sem presets, o componente se comporta como
- * antes (itens direto como filhos).
+ * Persistência: com persist-key, a escolha do preset é lembrada em localStorage.
+ * Ordem de resolução: armazenado → atributo preset → primeiro preset do objeto.
  *
- * Exemplo (uso clássico, sem presets):
- *   <me-sidebar expanded>
- *     <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
- *     <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
- *     <me-sidebar-item slot="footer" href="#"><me-icon slot="start" name="logout"></me-icon>Sair</me-sidebar-item>
- *   </me-sidebar>
- *
- * Exemplo (com presets + persistência):
- *   <me-sidebar expanded preset="gestor" persist-key="me-bricks:sidebar">
- *     <me-sidebar-preset name="gestor" label="Gestor" default>
- *       <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
- *     </me-sidebar-preset>
- *     <me-sidebar-preset name="medico" label="Médico">
- *       <me-sidebar-item href="#" active><me-icon slot="start" name="calendar"></me-icon>Minhas Escalas</me-sidebar-item>
- *     </me-sidebar-preset>
- *   </me-sidebar>
- *   // sidebar.preset = 'medico'  → troca, persiste e emite me-preset-change
+ * Troca de preset via API (o seletor é do consumidor; o componente não o renderiza):
+ *   sidebar.preset = 'medico'  // troca, persiste e emite me-preset-change
  */
 
 import './Logo.js'; // o header da sidebar renderiza <me-logo>
+import './Icon.js'; // os itens gerados usam <me-icon>
+import { SIDEBAR_PRESETS } from './sidebar-presets.js';
 
 /* --------------------------------------------------------- me-sidebar-item */
 const itemTemplate = document.createElement('template');
@@ -171,50 +160,6 @@ class MeSidebarItem extends HTMLElement {
 }
 
 window.customElements.define('me-sidebar-item', MeSidebarItem);
-
-/* ------------------------------------------------------ me-sidebar-preset */
-/* Agrupa um conjunto completo de itens. O me-sidebar mostra apenas o preset
- * ativo: display:contents faz o host não gerar caixa, então seus itens viram
- * filhos flex DIRETOS do <nav> (mesmo gap/coluna dos itens sem preset). */
-const presetTemplate = document.createElement('template');
-presetTemplate.innerHTML = `
-  <style>
-    :host { display: none; }                /* inativo: fora do fluxo do nav */
-    :host([active]) { display: contents; }  /* ativo: itens entram direto no flex do nav */
-  </style>
-  <slot></slot>
-`;
-
-class MeSidebarPreset extends HTMLElement {
-  constructor() {
-    super();
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.appendChild(presetTemplate.content.cloneNode(true));
-
-    // slotchange não é composed; avisa o pai (me-sidebar) para re-sincronizar
-    // o collapsed quando itens chegam a um preset já conectado.
-    this.shadowRoot.querySelector('slot').addEventListener('slotchange', () => {
-      this.dispatchEvent(new CustomEvent('me-sidebar-preset-itemschange', {
-        bubbles: true,
-        composed: true,
-      }));
-    });
-  }
-
-  get name() { return this.getAttribute('name'); }
-  set name(value) {
-    value == null ? this.removeAttribute('name') : this.setAttribute('name', value);
-  }
-
-  get default() { return this.hasAttribute('default'); }
-
-  get active() { return this.hasAttribute('active'); }
-  set active(value) {
-    value ? this.setAttribute('active', '') : this.removeAttribute('active');
-  }
-}
-
-window.customElements.define('me-sidebar-preset', MeSidebarPreset);
 
 /* -------------------------------------------------------------- me-sidebar */
 const sidebarTemplate = document.createElement('template');
@@ -340,35 +285,29 @@ class MeSidebar extends HTMLElement {
       }));
     });
 
-    // Propaga o estado para os itens (inclusive os que chegarem depois) e
-    // hidrata presets que sejam adicionados após o connect.
+    // Mantém o collapsed em dia quando itens entram/saem (modo custom sem preset,
+    // ou itens de footer). É idempotente com a geração via preset.
     for (const slot of this.shadowRoot.querySelectorAll('slot')) {
-      slot.addEventListener('slotchange', () => {
-        this.#syncItems();
-        if (!this.#hydrated) this.#hydrate();
-      });
+      slot.addEventListener('slotchange', () => { if (this.#hydrated) this.#syncCollapsed(); });
     }
-
-    // Itens que chegam a um preset já conectado → re-sincroniza collapsed.
-    this.addEventListener('me-sidebar-preset-itemschange', () => this.#syncItems());
   }
 
   static get observedAttributes() {
-    return ['expanded', 'preset'];
+    return ['expanded', 'preset', 'active-item'];
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
-    if (name === 'expanded') { this.#syncItems(); return; }
+    if (!this.#hydrated) return;                  // ignora writes durante upgrade/hydrate
+    if (name === 'expanded') { this.#syncCollapsed(); return; }
+    if (name === 'active-item') { this.#syncActive(); return; }
     if (name === 'preset') {
-      if (!this.#hydrated) return;                // ignora writes durante upgrade/hydrate
       if (newValue === this.#activeName) return;  // idempotente, evita loop
-      this.#setActivePreset(newValue, { emit: true, persist: true });
+      this.#setPreset(newValue, { emit: true, persist: true });
     }
   }
 
   connectedCallback() {
     this.#hydrate();
-    this.#syncItems();
   }
 
   get expanded() { return this.hasAttribute('expanded'); }
@@ -381,20 +320,12 @@ class MeSidebar extends HTMLElement {
     value == null ? this.removeAttribute('preset') : this.setAttribute('preset', value);
   }
 
-  #syncItems() {
-    const expanded = this.expanded;
-    this.toggleButton.setAttribute('aria-expanded', String(expanded));
-    this.toggleButton.setAttribute('aria-label', expanded ? 'Recolher menu' : 'Expandir menu');
-    for (const item of this.querySelectorAll('me-sidebar-item')) {
-      expanded ? item.removeAttribute('collapsed') : item.setAttribute('collapsed', '');
-    }
+  get activeItem() { return this.getAttribute('active-item'); }
+  set activeItem(value) {
+    value == null ? this.removeAttribute('active-item') : this.setAttribute('active-item', value);
   }
 
-  /* -------- Presets (conjuntos completos de itens) -------- */
-  #presets() {
-    return [...this.querySelectorAll(':scope > me-sidebar-preset')];
-  }
-
+  /* -------- persistência do preset -------- */
   #persistKey() { return this.getAttribute('persist-key'); }
 
   #readStored() {
@@ -409,51 +340,92 @@ class MeSidebar extends HTMLElement {
     try { localStorage.setItem(key, name); } catch { /* modo privado/bloqueado */ }
   }
 
-  /* Resolve o preset ativo (armazenado → atributo → default → primeiro) sem
-   * emitir evento nem gravar storage. Sem presets: no-op (modo compatível). */
+  /* Presets são opt-in: só quando há preset (armazenado ou atributo) o componente
+   * gera os itens. Sem preset, o consumidor declara <me-sidebar-item> à mão
+   * (menu custom) e nós só cuidamos do collapsed. */
   #hydrate() {
-    const presets = this.#presets();
-    if (!presets.length) return;
-    const names = presets.map((p) => p.getAttribute('name'));
+    const names = Object.keys(SIDEBAR_PRESETS);
     const stored = this.#readStored();
     const attr = this.getAttribute('preset');
-    const def = presets.find((p) => p.hasAttribute('default'));
     const target =
       (stored && names.includes(stored)) ? stored :
       (attr && names.includes(attr))     ? attr :
-      def                                ? def.getAttribute('name') :
-                                           names[0];
-    this.#applyActive(target);
-    // Reflete o atributo sem re-emitir: #hydrated ainda é false (o callback
-    // ignora) e #activeName já é target (segundo guard).
-    if (this.getAttribute('preset') !== target) this.setAttribute('preset', target ?? '');
+                                           null;
+    this.#activeName = target;
     this.#hydrated = true;
-  }
-
-  #applyActive(name) {
-    for (const preset of this.#presets()) {
-      preset.toggleAttribute('active', preset.getAttribute('name') === name);
+    if (target) {
+      if (this.getAttribute('preset') !== target) this.setAttribute('preset', target);
+      this.#renderItems();
+    } else {
+      this.#syncCollapsed(); // menu custom (itens declarados no markup)
     }
-    this.#activeName = name;
   }
 
-  #setActivePreset(name, { emit, persist }) {
-    const names = this.#presets().map((p) => p.getAttribute('name'));
-    if (!names.includes(name)) {                 // nome inexistente: reverte e sai
+  #setPreset(name, { emit, persist }) {
+    if (!(name in SIDEBAR_PRESETS)) {             // nome inexistente: reverte e sai
       if (this.getAttribute('preset') !== this.#activeName) {
         this.setAttribute('preset', this.#activeName ?? '');
       }
       return;
     }
     if (name === this.#activeName) return;
-    this.#applyActive(name);
+    this.#activeName = name;
     if (persist) this.#writeStored(name);
+    this.#renderItems();
     if (emit) {
       this.dispatchEvent(new CustomEvent('me-preset-change', {
         bubbles: true,
         composed: true,
         detail: { name },
       }));
+    }
+  }
+
+  /* Gera os <me-sidebar-item> do preset ativo como filhos (light DOM), para que
+   * o <me-icon> herde a webfont MDI do documento. Itens do slot footer são
+   * preservados (não fazem parte do preset). */
+  #renderItems() {
+    const preset = SIDEBAR_PRESETS[this.#activeName];
+    if (!preset) return;
+
+    for (const child of [...this.children]) {
+      if (child.getAttribute && child.getAttribute('slot') === 'footer') continue;
+      child.remove();
+    }
+
+    const active = this.getAttribute('active-item');
+    const collapsed = !this.expanded;
+    const frag = document.createDocumentFragment();
+    for (const item of preset.items) {
+      const el = document.createElement('me-sidebar-item');
+      el.dataset.key = item.key;
+      if (item.href != null) el.setAttribute('href', item.href);
+      if (item.key === active) el.setAttribute('active', '');
+      if (collapsed) el.setAttribute('collapsed', '');
+      const icon = document.createElement('me-icon');
+      icon.setAttribute('slot', 'start');
+      icon.setAttribute('name', item.icon);
+      el.append(icon, document.createTextNode(item.label));
+      frag.append(el);
+    }
+    this.append(frag);
+
+    this.#syncCollapsed();
+  }
+
+  #syncActive() {
+    const active = this.getAttribute('active-item');
+    for (const item of this.querySelectorAll('me-sidebar-item[data-key]')) {
+      item.toggleAttribute('active', item.dataset.key === active);
+    }
+  }
+
+  #syncCollapsed() {
+    const expanded = this.expanded;
+    this.toggleButton.setAttribute('aria-expanded', String(expanded));
+    this.toggleButton.setAttribute('aria-label', expanded ? 'Recolher menu' : 'Expandir menu');
+    for (const item of this.querySelectorAll('me-sidebar-item')) {
+      expanded ? item.removeAttribute('collapsed') : item.setAttribute('collapsed', '');
     }
   }
 }

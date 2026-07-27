@@ -26,14 +26,30 @@ Depois abra:
 
 ## Usando num protótipo
 
-Duas tags no `<head>` e pronto:
+Duas tags no `<head>` e pronto. Dentro deste repositório, por caminho relativo:
 
 ```html
 <link rel="stylesheet" href="./tokens.css" />
 <script type="module" src="./components/index.js"></script>
 ```
 
+Fora dele (editor de HTML online, CodePen, outro projeto), pelo CDN — caminho relativo daria 404
+e nenhuma tag `<me-*>` se registraria:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/components/index.js"></script>
+```
+
+`@main` serve o último commit; troque por uma tag (ex.: `@v0.4.1`) para travar a versão.
+
 O `tokens.css` já importa a fonte **Inter** e a webfont de ícones **Material Design Icons** (CDN).
+No `<body>` do seu protótipo, use fallback nos tokens de tipografia — `font-family: var(--me-font-family)`
+sem fallback vira Times New Roman se o `tokens.css` não carregar:
+
+```css
+body { font-family: var(--me-font-family, 'Inter', system-ui, sans-serif); }
+```
 
 ```html
 <me-button>Confirmar</me-button>

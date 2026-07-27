@@ -10,7 +10,7 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: var(--me-font-family);
+      font-family: var(--me-font-family, 'Inter', system-ui, -apple-system, sans-serif);
       font-size: var(--me-font-size-body);
       line-height: var(--me-line-height-body);
       letter-spacing: var(--me-letter-spacing);
@@ -155,7 +155,7 @@
   <aside>
     <a class="brand" href="#/inicio">
       <me-logo variant="variant"></me-logo>
-      <small id="version-badge">Design System · v0.4.0</small>
+      <small id="version-badge">Design System · v0.4.1</small>
     </a>
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
@@ -206,15 +206,37 @@
           <code>start</code>/<code>end</code> e participação nativa em formulários.
         </p>
         <h3>Instalação rápida</h3>
-        <p class="desc">Duas linhas no <code>&lt;head&gt;</code> e todas as tags <code>&lt;me-*&gt;</code> ficam disponíveis:</p>
+        <p class="desc">Cole isto no <code>&lt;head&gt;</code> e todas as tags <code>&lt;me-*&gt;</code> ficam disponíveis:</p>
         <div class="code-card">
           <button class="copy" type="button" data-copy="install-snippet">Copiar</button>
           <pre id="install-snippet"><code>&lt;!-- 1. Design tokens (cores, tipografia, fonte Inter e ícones MDI) --&gt;
-&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/SUA-ORG/me-bricks@main/tokens.css" /&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/tokens.css" /&gt;
 
 &lt;!-- 2. Componentes (registra todas as tags &lt;me-*&gt;) --&gt;
-&lt;script type="module" src="https://cdn.jsdelivr.net/gh/SUA-ORG/me-bricks@main/components/index.js"&gt;&lt;/script&gt;</code></pre>
+&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/components/index.js"&gt;&lt;/script&gt;
+
+&lt;!-- 3. Base do body (a fonte tem fallback: se o tokens.css falhar, não cai em Times New Roman) --&gt;
+&lt;style&gt;
+  body {
+    margin: 0;
+    font-family: var(--me-font-family, 'Inter', system-ui, -apple-system, sans-serif);
+    color: var(--me-color-text, #16161D);
+    background: var(--me-color-page, #FAFAFA);
+    letter-spacing: var(--me-letter-spacing, 0.5px);
+  }
+&lt;/style&gt;</code></pre>
         </div>
+        <p class="desc">
+          Funciona em editores de HTML online (as URLs são absolutas) — nunca use caminhos
+          relativos como <code>./components/index.js</code> fora deste repositório.
+          Para travar a versão, troque <code>@main</code> por uma tag (ex.: <code>@v0.4.1</code>);
+          <code>@main</code> serve sempre o último commit, mas o CDN cacheia por algumas horas.
+        </p>
+        <p class="desc">
+          Se as tags <code>&lt;me-*&gt;</code> aparecerem como texto cru sem estilo, o
+          <code>components/index.js</code> não carregou — confira o console: um único 404 no
+          grafo de módulos impede o registro de <em>todos</em> os componentes.
+        </p>
         <p>Pronto — qualquer tag do kit já funciona no seu HTML:</p>
         <div class="code-card">
           <pre><code>&lt;me-button&gt;Candidatar-se&lt;/me-button&gt;
@@ -773,12 +795,14 @@ pag.movePageTo(3);</pre>
 
         <h3 class="section">Presets de menu</h3>
         <p class="desc">
-          Envolva conjuntos completos de itens em <code>&lt;me-sidebar-preset name="…"&gt;</code> e
-          escolha o ativo pelo atributo/propriedade <code>preset</code>. A seleção é feita por
-          <strong>você</strong> (seletor externo) — o componente não renderiza seletor. Com
-          <code>persist-key</code>, a escolha é lembrada em <code>localStorage</code> entre reloads
-          (o valor armazenado vence o <code>preset</code> do markup). Troque abaixo e recarregue a
-          página para ver persistir. Emite <code>me-preset-change</code> (<code>detail.name</code>).
+          Os menus por perfil vivem <strong>dentro do componente</strong>, em
+          <code>components/sidebar-presets.js</code> (fonte única de verdade) — você não declara
+          itens no HTML. Basta escolher o <code>preset</code> e qual item está ativo
+          (<code>active-item</code>, pela <em>key</em> do item). A seleção do preset é feita por
+          <strong>você</strong> (seletor externo) — o componente não o renderiza. Com
+          <code>persist-key</code>, a escolha é lembrada em <code>localStorage</code> entre reloads.
+          Troque abaixo e recarregue para ver persistir. Emite <code>me-preset-change</code>
+          (<code>detail.name</code>).
         </p>
         <div class="live-row">
           <span style="font-size:14px; color: var(--me-color-text-muted);">Preset:</span>
@@ -786,42 +810,17 @@ pag.movePageTo(3);</pre>
           <me-button size="small" appearance="outlined" data-preset="medico">Médico</me-button>
         </div>
         <div class="example" style="align-items: stretch; height: 560px; background: var(--me-color-brand-soft); overflow: hidden;">
-          <me-sidebar expanded id="demo-sidebar" preset="gestor" persist-key="me-bricks:sidebar-demo">
-            <me-sidebar-preset name="gestor" label="Gestor" default>
-              <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="checkbox-multiple-outline"></me-icon>Aprovações</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="invoice-list-outline"></me-icon>Relatórios</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
-            </me-sidebar-preset>
-            <me-sidebar-preset name="medico" label="Médico">
-              <me-sidebar-item href="#/sidebar" active><me-icon slot="start" name="calendar"></me-icon>Minhas Escalas</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="clock-outline"></me-icon>Meus Plantões</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="swap-horizontal"></me-icon>Trocas</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="file-document-outline"></me-icon>Documentos</me-sidebar-item>
-              <me-sidebar-item href="#/sidebar"><me-icon slot="start" name="account-circle"></me-icon>Perfil</me-sidebar-item>
-            </me-sidebar-preset>
-          </me-sidebar>
+          <me-sidebar expanded id="demo-sidebar" preset="gestor" active-item="dashboard" persist-key="me-bricks:sidebar-demo"></me-sidebar>
         </div>
-        <pre>&lt;me-sidebar expanded preset="gestor" persist-key="me-bricks:sidebar-demo"&gt;
-  &lt;me-sidebar-preset name="gestor" label="Gestor" default&gt;
-    &lt;me-sidebar-item href="/dashboard" active&gt;
-      &lt;me-icon slot="start" name="monitor"&gt;&lt;/me-icon&gt;Dashboard
-    &lt;/me-sidebar-item&gt;
-    ...
-  &lt;/me-sidebar-preset&gt;
-  &lt;me-sidebar-preset name="medico" label="Médico"&gt; ... &lt;/me-sidebar-preset&gt;
-&lt;/me-sidebar&gt;
+        <pre>&lt;!-- Menus definidos em components/sidebar-presets.js --&gt;
+&lt;me-sidebar expanded preset="gestor" active-item="aprovacoes"
+            persist-key="me-bricks:sidebar-demo"&gt;&lt;/me-sidebar&gt;
 
 &lt;script&gt;
   const sidebar = document.querySelector('me-sidebar');
   sidebar.preset = 'medico'; // troca, persiste e emite me-preset-change
 &lt;/script&gt;</pre>
-        <p class="desc">Sem nenhum <code>&lt;me-sidebar-preset&gt;</code>, o <code>&lt;me-sidebar&gt;</code> funciona como antes: os <code>&lt;me-sidebar-item&gt;</code> são filhos diretos e nada de preset/persistência é ativado.</p>
+        <p class="desc">Para adicionar ou editar um menu (itens, ícones, rótulos), edite <code>components/sidebar-presets.js</code> — a mudança reflete em todos os protótipos que usam o <code>me-sidebar</code>.</p>
       </me-page>
 
       <me-page name="pages">

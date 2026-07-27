@@ -14,7 +14,7 @@
       display: flex;
       height: 100vh;
       overflow: hidden;               /* o body não rola: quem rola é o conteúdo */
-      font-family: var(--me-font-family);
+      font-family: var(--me-font-family, 'Inter', system-ui, -apple-system, sans-serif);
       font-size: var(--me-font-size-body);
       line-height: var(--me-line-height-body);
       letter-spacing: var(--me-letter-spacing);
@@ -104,17 +104,7 @@
   </style>
 </head>
 <body>
-  <me-sidebar expanded id="nav">
-    <me-sidebar-item href="#"><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="clipboard-text-outline"></me-icon>Políticas</me-sidebar-item>
-    <me-sidebar-item href="#" active><me-icon slot="start" name="checkbox-marked-outline"></me-icon>Aprovações</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="office-building-outline"></me-icon>Unidades</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="magnify"></me-icon>Consultar</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="doctor"></me-icon>Médicos</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="file-chart-outline"></me-icon>Relatórios</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="account-group"></me-icon>Usuários</me-sidebar-item>
-  </me-sidebar>
+  <me-sidebar expanded id="nav" preset="gestor" active-item="aprovacoes"></me-sidebar>
 
   <main>
     <me-page-header id="hdr" menu menu-open

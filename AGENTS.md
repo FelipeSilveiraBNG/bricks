@@ -20,15 +20,29 @@ Minha Escala. Leia antes de escrever qualquer HTML de protótipo.
 Ajuste os caminhos relativos conforme a pasta da página (ex.: `../tokens.css` dentro de `demo/`).
 A página precisa ser servida via HTTP (`npx serve .`) — ES modules não funcionam em `file://`.
 
-Estilo base recomendado para o `<body>`:
+**Os caminhos relativos só valem para páginas dentro deste repositório.** Protótipos que vão
+rodar em qualquer outro lugar (editor de HTML online, CodePen, um HTML solto, outro projeto)
+precisam das URLs absolutas do CDN:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@main/components/index.js"></script>
+```
+
+Trocar `@main` por uma tag (ex.: `@v0.4.1`) trava a versão. Se as tags `<me-*>` renderizarem
+como texto cru sem estilo, é porque o `index.js` não carregou (404 no caminho relativo, CSP do
+editor, etc.) — nenhum componente se registra quando isso acontece.
+
+Estilo base recomendado para o `<body>` (sempre com fallback nos `var()`: sem o `tokens.css`,
+`font-family: var(--me-font-family)` sozinho é inválido e o texto cai em Times New Roman):
 
 ```css
 body {
   margin: 0;
-  font-family: var(--me-font-family);
-  color: var(--me-color-text);
-  background: var(--me-color-page);
-  letter-spacing: var(--me-letter-spacing);
+  font-family: var(--me-font-family, 'Inter', system-ui, -apple-system, sans-serif);
+  color: var(--me-color-text, #16161D);
+  background: var(--me-color-page, #FAFAFA);
+  letter-spacing: var(--me-letter-spacing, 0.5px);
 }
 ```
 
@@ -184,12 +198,9 @@ rola (`height:100vh; overflow:hidden`) e a rolagem fica na área de conteúdo
 a sidebar escapar ao rolar.
 ```html
 <body style="display:flex; margin:0; height:100vh; overflow:hidden;">
-  <me-sidebar expanded id="nav" style="flex:none; height:100vh;">
-    <me-sidebar-item href="#" active><me-icon slot="start" name="monitor"></me-icon>Dashboard</me-sidebar-item>
-    <me-sidebar-item href="#"><me-icon slot="start" name="calendar-edit"></me-icon>Gerenciar Escalas</me-sidebar-item>
-    <!-- Como no app real, a sidebar NÃO tem item "Sair" (logout fica no menu
-         do header). O slot="footer" existe para casos especiais. -->
-  </me-sidebar>
+  <!-- Menu por perfil vem de components/sidebar-presets.js (não se declaram
+       itens aqui). Escolha o preset e o item ativo pela key. -->
+  <me-sidebar expanded id="nav" preset="gestor" active-item="dashboard" style="flex:none; height:100vh;"></me-sidebar>
   <main style="flex:1; min-width:0; display:flex; flex-direction:column; height:100vh; overflow:hidden;">
     <!-- me-page-header já é uma barra branca com padding próprio (16px/32px):
          deixe-o full-bleed e fixo no topo (flex:none) e role só o conteúdo.
@@ -213,14 +224,14 @@ a sidebar escapar ao rolar.
 </body>
 ```
 
-**Presets de menu (`me-sidebar-preset`)**: para alternar entre conjuntos
-completos de itens (ex.: menu por perfil), envolva cada conjunto em
-`<me-sidebar-preset name="…" [label] [default]>` como filho direto do
-`me-sidebar`. O ativo é escolhido pela propriedade/atributo `preset` (seleção
-é feita pelo consumidor — o componente não renderiza seletor) e pode ser
-persistido em `localStorage` via `persist-key` (armazenado vence o markup).
-Troca emite `me-preset-change` (`{ name }`). Sem presets, o `me-sidebar` se
-comporta como antes (itens direto como filhos).
+**Presets de menu (dentro do componente)**: os menus por perfil ficam em
+`components/sidebar-presets.js` (fonte única de verdade). O consumidor não
+declara itens — só escolhe o `preset` (ex.: `gestor`, `medico`) e o item ativo
+via `active-item` (a `key` do item). A seleção do preset é do consumidor (o
+componente não renderiza seletor) e pode ser persistida em `localStorage` via
+`persist-key`. Trocar emite `me-preset-change` (`{ name }`). Para adicionar ou
+editar um menu, edite `sidebar-presets.js`. **Sem** `preset`, você ainda pode
+declarar `<me-sidebar-item>` à mão para um menu custom (ver rotas por hash abaixo).
 
 ### Logo
 ```html
