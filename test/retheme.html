@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste de re-tematização — me-bricks</title>
+
+  <link rel="stylesheet" href="../tokens.css" />
+
+  <!--
+    A receita de re-tematização do README: sobrescrever o GRUPO --me-color-brand-*.
+    Fica DEPOIS do tokens.css e no <head>, como um consumidor faria — é o único
+    jeito válido de testar. Injetar o override por JS depois do load não vale:
+    elementos já renderizados não recalculam de forma confiável, e isso é
+    artefato do teste, não comportamento que um protótipo veja.
+
+    Rosa da própria paleta do kit (tertiary), para o teste não depender de
+    valores inventados.
+  -->
+  <style>
+    :root {
+      --me-color-brand:       #CB2957;  /* tertiary-30 */
+      --me-color-brand-light: #E37796;  /* tertiary-10 */
+      --me-color-brand-dark:  #A12145;  /* tertiary-40 */
+      --me-color-brand-soft:  #FBE3EA;
+    }
+    body {
+      margin: 0; padding: 32px;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-page, #FAFAFA);
+    }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    p { max-width: 70ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); }
+    table { border-collapse: collapse; margin-top: 24px; font-size: 14px; }
+    th, td { padding: 6px 12px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); }
+    .pass { color: #198038; font-weight: 700; }
+    .fail { color: #DA1E28; font-weight: 700; }
+    #summary { margin-top: 24px; font-size: 18px; font-weight: 700; }
+    .palco { position: absolute; left: -9999px; }
+  </style>
+  <script type="module" src="../components/index.js"></script>
+</head>
+<body>
+  <h1>Teste de re-tematização</h1>
+  <p>
+    Sobrescreve o grupo <code>--me-color-brand-*</code> no <code>&lt;head&gt;</code> e afirma que
+    <strong>nenhuma superfície de marca continua teal</strong>. Pega a regressão em que um
+    componente lê a escala crua (<code>--me-color-primary-30</code>) em vez do alias semântico —
+    era o que deixava o botão primário teal enquanto o resto virava rosa.
+  </p>
+
+  <!-- Palco: uma instância de cada superfície de marca que o teste mede. -->
+  <div class="palco" aria-hidden="true">
+    <me-button>Primário</me-button>
+    <me-button appearance="outlined">Outlined</me-button>
+    <me-button appearance="plain">Plain</me-button>
+    <me-input label="Campo"></me-input>
+    <me-switch checked>Ligado</me-switch>
+    <me-badge>Fixo</me-badge>
+    <me-badge variant="blue">Em progresso</me-badge>
+    <me-radio-group name="r" value="a"><me-radio value="a">A</me-radio></me-radio-group>
+    <me-pagination total-pages="5" page="2"></me-pagination>
+    <me-tab-group active="um"><me-tab panel="um">Um</me-tab><me-tab-panel name="um">.</me-tab-panel></me-tab-group>
+    <me-page-header heading="Título" subheading="Subtítulo"></me-page-header>
+    <me-filter-tag value="x">Tag</me-filter-tag>
+    <me-select-filter label="Filtro"><me-option value="a" selected>A</me-option></me-select-filter>
+    <me-logo variant="monotone"></me-logo>
+    <me-sidebar expanded preset="gestor" active-item="dashboard"></me-sidebar>
+  </div>
+
+  <div id="report"></div>
+  <div id="summary"></div>
+
+  <script type="module">
+    // Teals do UI Kit: se algum deles sobreviver ao override, um componente
+    // está lendo a escala crua em vez do alias.
+    const TEAL = {
+      'rgb(60, 162, 185)':   'primary-20 #3CA2B9',
+      'rgb(47, 127, 145)':   'primary-30 #2F7F91',
+      'rgb(35, 94, 108)':    'primary-40 #235E6C',
+      'rgb(22, 61, 69)':     'primary-50 #163D45',
+      'rgb(216, 238, 243)':  'primary-5 #D8EEF3',
+      'rgb(132, 200, 215)':  'primary-10 #84C8D7',
+    };
+
+    // [rótulo, seletor do host, seletor interno no shadow, propriedade]
+    const ALVOS = [
+      ['botão primário (fundo)',      'me-button:not([appearance])', '.btn', 'backgroundColor'],
+      ['botão outlined (borda)',      'me-button[appearance="outlined"]', '.btn', 'borderTopColor'],
+      ['botão outlined (texto)',      'me-button[appearance="outlined"]', '.btn', 'color'],
+      ['botão plain (texto)',         'me-button[appearance="plain"]', '.btn', 'color'],
+      ['switch ligado (track)',       'me-switch[checked]', '.track', 'backgroundColor'],
+      ['badge default (borda)',       'me-badge:not([variant])', '.badge', 'borderTopColor'],
+      ['badge blue (borda)',          'me-badge[variant="blue"]', '.badge', 'borderTopColor'],
+      ['badge blue (fundo)',          'me-badge[variant="blue"]', '.badge', 'backgroundColor'],
+      ['radio marcado (borda)',       'me-radio[checked]', '.control', 'borderTopColor'],
+      ['radio marcado (ponto)',       'me-radio[checked]', '.dot', 'backgroundColor'],
+      ['paginação ativa (fundo)',     'me-pagination', '.item.active', 'backgroundColor'],
+      ['tab ativa (sublinhado)',      'me-tab[active]', '.button', 'borderBottomColor'],
+      ['header subtítulo (cor)',      'me-page-header', '.subheading', 'color'],
+      ['filter-tag (borda)',          'me-filter-tag', '.base', 'borderTopColor'],
+      ['filter-tag (fundo)',          'me-filter-tag', '.base', 'backgroundColor'],
+      ['filter-tag (texto)',          'me-filter-tag', '.base', 'color'],
+      ['option selecionada (texto)',  'me-option[selected]', '.base', 'color'],
+      ['sidebar item ativo (fundo)',  'me-sidebar-item[active]', '.base', 'backgroundColor'],
+      ['logo monotone (cor)',         'me-logo', null, 'color'],
+    ];
+
+    setTimeout(() => {
+      const linhas = ALVOS.map(([rotulo, hostSel, innerSel, prop]) => {
+        const host = document.querySelector(hostSel);
+        if (!host) return { rotulo, valor: 'HOST AUSENTE', ok: false };
+        const el = innerSel ? host.shadowRoot?.querySelector(innerSel) : host;
+        if (!el) return { rotulo, valor: 'INTERNO AUSENTE', ok: false };
+        const valor = getComputedStyle(el)[prop];
+        const teal = TEAL[valor];
+        return { rotulo, valor, teal, ok: !teal };
+      });
+
+      document.getElementById('report').innerHTML = `
+        <table>
+          <tr><th>Superfície</th><th>Resultado</th><th>Valor computado</th></tr>
+          ${linhas.map((l) => `
+            <tr>
+              <td>${l.rotulo}</td>
+              <td class="${l.ok ? 'pass' : 'fail'}">${l.ok ? 'PASS' : 'FAIL'}</td>
+              <td>${l.valor}${l.teal ? ` — ainda ${l.teal}` : ''}</td>
+            </tr>`).join('')}
+        </table>`;
+
+      const falhas = linhas.filter((l) => !l.ok);
+      const s = document.getElementById('summary');
+      s.textContent = falhas.length === 0
+        ? `PASS — ${linhas.length}/${linhas.length} superfícies seguiram o tema`
+        : `FAIL — ${falhas.length} de ${linhas.length} não seguiram: ${falhas.map((f) => f.rotulo).join(', ')}`;
+      s.className = falhas.length === 0 ? 'pass' : 'fail';
+
+      document.title = `${falhas.length === 0 ? 'PASS' : 'FAIL'} — re-tematização`;
+      window.__meResult = { falhas: falhas.length, linhas };
+    }, 0);
+  </script>
+</body>
+</html>

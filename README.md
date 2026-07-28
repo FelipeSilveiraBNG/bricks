@@ -44,6 +44,12 @@ e nenhuma tag `<me-*>` se registraria:
 A URL usa a tag de versão (`@v0.4.1`) — imutável e livre do cache de branch do CDN. Ao publicar
 uma tag nova, atualize este número aqui, no `AGENTS.md` e no snippet do `index.html`.
 
+> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.1`, ou o `index.js`
+> mais um componente avulso) são dois grafos de módulo: ambos tentam registrar as mesmas tags.
+> A primeira cópia avaliada vence — o registro de custom elements não permite substituir uma
+> tag já definida — e a segunda apenas avisa no console. Se um protótipo se comportar como uma
+> versão que não é a declarada no `<head>`, procure o aviso `[me-bricks]` no console.
+
 O `tokens.css` já importa a fonte **Inter** e a webfont de ícones **Material Design Icons** (CDN).
 No `<body>` do seu protótipo, use fallback nos tokens de tipografia — `font-family: var(--me-font-family)`
 sem fallback vira Times New Roman se o `tokens.css` não carregar:
@@ -95,13 +101,32 @@ body { font-family: var(--me-font-family, 'Inter', system-ui, sans-serif); }
 ## Customização
 
 **Tokens** (`tokens.css`, prefixo `--me-*`) são a única fonte de verdade de cor/tipografia/forma.
-Para re-tematizar um protótipo inteiro, basta sobrescrever no seu HTML:
+Os componentes consomem **aliases semânticos**, nunca a escala crua (`--me-color-primary-30`) —
+é isso que faz um override chegar a todas as superfícies.
+
+Para re-tematizar, sobrescreva o **grupo de marca** no `<head>` do seu HTML, depois do `tokens.css`:
 
 ```html
 <style>
-  :root { --me-color-brand: #CB2957; }
+  :root {
+    --me-color-brand:       #CB2957;  /* canônica: item ativo, marcado, foco */
+    --me-color-brand-light: #E37796;  /* botão primário em repouso, foco do input */
+    --me-color-brand-dark:  #A12145;  /* subtítulo do header */
+    --me-color-brand-soft:  #FBE3EA;  /* fundos tintados */
+  }
 </style>
 ```
+
+São quatro tokens e não um porque o app usa dois teais distintos como marca (o botão primário é
+mais claro que o item ativo da sidebar), e os defaults do kit são os passos exatos do UI Kit em
+vez de derivações calculadas. O quinto, `--me-color-brand-hover` (tint de 8% para hover de menu),
+é derivado de `--me-color-brand` e acompanha sozinho.
+
+> O override precisa estar no `<head>`, junto do carregamento. Injetar o `<style>` por JavaScript
+> depois da página montar não re-estiliza de forma confiável os componentes já renderizados.
+
+Para conferir uma re-tematização, sirva o repo e abra `test/retheme.html` — ele afirma que nenhuma
+superfície de marca continua teal (19 verificações).
 
 **Partes internas** são estilizáveis via `::part()`:
 
@@ -115,9 +140,19 @@ default) mesmo sem o `tokens.css`.
 ## Adicionando um componente
 
 1. Crie `components/MeuComponente.js` seguindo a receita dos existentes
-   (template em escopo de módulo + `attachShadow` + `customElements.define('me-...')`).
-2. Adicione o import em `components/index.js`.
-3. Documente uma seção nova no `index.html`.
+   (template em escopo de módulo + `attachShadow` + registro no final do arquivo).
+2. Registre com o helper, **nunca** com `customElements.define` direto:
+   ```js
+   import { define } from './define.js';
+   // ...
+   define('me-meu-componente', MeMeuComponente);
+   ```
+   O `define()` ignora tags já registradas em vez de lançar — sem ele, uma
+   colisão aborta a avaliação do módulo e derruba os componentes importados
+   depois dele. O CI reprova `customElements.define` cru.
+3. Adicione o import em `components/index.js`.
+4. Documente uma seção nova no `index.html`.
+5. Rode `test/collision.html` (com o repo servido) — deve dar PASS nas 4 verificações.
 
 ## Suporte
 

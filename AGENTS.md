@@ -30,9 +30,20 @@ precisam das URLs absolutas do CDN:
 ```
 
 Use sempre a tag de versão (`@v0.4.1`), nunca `@main` — a tag é imutável e não fica presa ao
-cache de branch do CDN. Se as tags `<me-*>` renderizarem como texto cru sem estilo, é porque o
-`index.js` não carregou (404 no caminho relativo, CSP do editor, etc.) — nenhum componente se
-registra quando isso acontece.
+cache de branch do CDN.
+
+**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.4.1`, ou o
+`index.js` mais um componente avulso como `Sidebar.js`) são dois grafos de módulo distintos e
+ambos tentam registrar as mesmas tags. A primeira cópia avaliada vence e a segunda emite um
+aviso `[me-bricks]` no console — as tags seguem funcionando, mas com a definição da primeira,
+que pode não ser a versão declarada no `<head>`.
+
+Se as tags `<me-*>` renderizarem como texto cru sem estilo, verifique nesta ordem:
+
+1. **O `index.js` não carregou** — 404 no caminho relativo, CSP do editor. Sem ele, nenhum
+   componente se registra. Confira a aba Network.
+2. **Duas cópias do kit** — procure o aviso `[me-bricks]` no console e remova a duplicada.
+3. **Tag `<me-*>` self-closing** (`<me-icon />`) — o parser HTML engole o resto do markup.
 
 Estilo base recomendado para o `<body>` (sempre com fallback nos `var()`: sem o `tokens.css`,
 `font-family: var(--me-font-family)` sozinho é inválido e o texto cai em Times New Roman):

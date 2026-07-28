@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  guardas:
+    name: Guardas de registro de componente
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # customElements.define cru lança NotSupportedError quando a tag já
+      # existe, e por estar no topo do módulo a exceção aborta a avaliação e
+      # derruba os imports seguintes: duas cópias do kit na mesma página
+      # deixavam 14 das 23 tags registradas. Ver components/define.js.
+      - name: define() em vez de customElements.define cru
+        run: |
+          encontrados=$(grep -rn 'customElements\.define' components/ \
+            | grep -v 'components/define.js' || true)
+          if [ -n "$encontrados" ]; then
+            echo "::error::Registre componentes com define() de ./define.js, não com customElements.define:"
+            echo "$encontrados"
+            exit 1
+          fi
+          echo "OK — nenhuma chamada crua fora do define.js"
+
+      - name: Todo arquivo que chama define() importa o helper
+        run: |
+          falhas=0
+          for arquivo in $(grep -rl "^define('me-" components/*.js); do
+            if ! grep -q "from './define.js'" "$arquivo"; then
+              echo "::error file=$arquivo::chama define() sem importar de './define.js'"
+              falhas=1
+            fi
+          done
+          if [ "$falhas" -ne 0 ]; then exit 1; fi
+          echo "OK — todos os arquivos que registram tag importam define()"
+
+      # Componentes devem ler aliases semânticos (--me-color-brand*), nunca a
+      # escala crua: --me-color-brand é ALIAS de --me-color-primary-30, então
+      # quem lê a escala direto ignora o override de tema do consumidor. Era o
+      # que deixava o botão primário teal enquanto o resto virava rosa.
+      #
+      # ESCOPO: só a família primary (a da marca), já normalizada. As escalas
+      # secondary/tertiary têm 7 usos crus que ainda esperam aliases novos
+      # (--me-color-text-strong p/ secondary-40, --me-color-accent p/ o rosa
+      # tertiary-30 do toggle da sidebar). Ao criá-los, inclua-as no regex:
+      #   Button.js:107  Filters.js:57,132  Sidebar.js:64,256,260  Tabs.js:66
+      - name: Componentes não leem a escala de cor da marca crua
+        run: |
+          encontrados=$(grep -nE 'var\(--me-color-primary-[0-9]+' components/*.js || true)
+          if [ -n "$encontrados" ]; then
+            echo "::error::Use um alias semântico (--me-color-brand / -light / -dark / -soft) em vez da escala primary crua:"
+            echo "$encontrados"
+            exit 1
+          fi
+          echo "OK — nenhum componente lê a escala primary crua"
+
+      - name: Todo componente entra no agregador
+        run: |
+          falhas=0
+          for arquivo in $(grep -rl "^define('me-" components/*.js); do
+            nome=$(basename "$arquivo")
+            # Sidebar.js importa Logo.js e Icon.js; ambos já estão no index.js.
+            if ! grep -q "import './$nome'" components/index.js; then
+              echo "::error file=components/index.js::falta 'import ./$nome' no agregador"
+              falhas=1
+            fi
+          done
+          if [ "$falhas" -ne 0 ]; then exit 1; fi
+          echo "OK — todos os componentes estão em components/index.js"
+
+# NOTA: test/collision.html verifica o comportamento em runtime (23 tags
+# registradas, nenhuma exceção, 1 aviso agregado) e precisa de navegador —
+# roda à mão com `npx serve .`. Automatizar exige Playwright; quando houver
+# build/npm no projeto, vale trazer para cá.

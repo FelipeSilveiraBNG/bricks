@@ -15,7 +15,21 @@
 @import url('https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css');
 
 :root {
-  /* ===== Paleta (escalas completas do Figma UI Kit) ===== */
+  /* ===== Paleta — escalas COMPLETAS do Figma UI Kit =====
+   *
+   * Fonte: página "Estilos" > frame "Colors"
+   * figma.com/design/XlKsWdmlbDL4OweSCddSj4/UI-Kit-Minha-Escala?node-id=64-522
+   *
+   * As quatro escalas cromáticas têm SEIS passos cada: 5/10/20/30/40/50, do
+   * mais claro ao mais escuro. Mantenha-as completas mesmo quando um passo
+   * ainda não tem consumidor — isto é a paleta, não a API. Quem escolhe o que
+   * os componentes usam é a camada de aliases semânticos abaixo.
+   *
+   * MAPA DE NOMES (o Figma tem duas famílias cinza sob "Neutral/"):
+   *   --me-color-neutral-*  =  Figma "Neutral/LightGray"  (arroxeado)
+   *   --me-color-gray-*     =  Figma "Neutral/Gray"       (neutro puro)
+   * A nomenclatura é confusa, mas renomear quebraria os 16 usos existentes.
+   */
   --me-color-primary-5: #D8EEF3;
   --me-color-primary-10: #84C8D7;
   --me-color-primary-20: #3CA2B9;
@@ -26,22 +40,39 @@
   --me-color-secondary-5: #8484A4;
   --me-color-secondary-10: #68688D;
   --me-color-secondary-20: #52526F;
+  --me-color-secondary-30: #272735;
   --me-color-secondary-40: #1E1E29;
   --me-color-secondary-50: #16161D; /* texto padrão */
 
+  --me-color-tertiary-5: #ECA2B7;
   --me-color-tertiary-10: #E37796;
+  --me-color-tertiary-20: #DB4D75;
   --me-color-tertiary-30: #CB2957;  /* rosa (toggle da sidebar) */
   --me-color-tertiary-40: #A12145;
+  --me-color-tertiary-50: #771833;
 
-  /* Neutral/LightGray */
+  /* Neutral/LightGray (arroxeado) */
   --me-color-neutral-5: #FAFAFA;
   --me-color-neutral-10: #F0F0F4;
   --me-color-neutral-20: #E2E2E9;
   --me-color-neutral-30: #D8D8E2;   /* track do switch desligado */
   --me-color-neutral-40: #BCBCCD;
   --me-color-neutral-50: #9E9EB7;
-  /* Neutral/Gray */
+
+  /* Neutral/Gray (neutro puro)
+   *
+   * ATENÇÃO: no Figma, Gray/5 e Gray/10 são o MESMO valor (#999999).
+   * Confirmado amostrando o pixel do swatch — não é rótulo desatualizado.
+   * Provável engano no arquivo: os outros passos andam ~25 por canal
+   * (99 → 80 → 66 → 4D → 32), o que colocaria o /5 perto de #B3B3B3.
+   * Replicado como está para não divergir da fonte de verdade; se o design
+   * confirmar o engano, o conserto é aqui e em nenhum outro lugar.
+   */
+  --me-color-gray-5: #999999;
+  --me-color-gray-10: #999999;      /* == gray-5 no Figma (ver acima) */
+  --me-color-gray-20: #808080;
   --me-color-gray-30: #666666;
+  --me-color-gray-40: #4D4D4D;
   --me-color-gray-50: #323232;
   --me-color-white: #FFFFFF;
 
@@ -56,10 +87,33 @@
   --me-color-alert-5: #FEF3E7;
   --me-color-warning-50: #F1C21B;
   --me-color-warning-5: #FEF9E7;
+  /* Negative tem só dois passos no guia (5 e 50) — os hover/active do botão
+     danger (#E76F75 / #A01118) NÃO vêm daqui, vêm do PolarButton do app.
+     Ver Button.js: são valores de implementação, não de design system. */
 
-  /* ===== Aliases semânticos (o que os componentes consomem) ===== */
-  --me-color-brand: var(--me-color-primary-30);
-  --me-color-brand-soft: var(--me-color-primary-5);
+  /* Link (seção LINK do guia; ainda sem consumidor no kit) */
+  --me-color-link: #0043CE;
+  --me-color-link-visited: #5B00CE;
+
+  /* ===== Aliases semânticos (o que os componentes consomem) =====
+   *
+   * REGRA: os componentes consomem SÓ estes aliases. A escala crua
+   * (--me-color-primary-20 etc.) aparece apenas aqui, na definição dos
+   * aliases. Ler a escala direto de dentro de um componente faz o override
+   * de tema passar batido — era o que deixava o botão primário teal quando
+   * o consumidor sobrescrevia --me-color-brand.
+   *
+   * Para re-tematizar, sobrescreva o GRUPO --me-color-brand-* abaixo. Os
+   * defaults dos quatro primeiros são passos da escala do Figma e NÃO são
+   * derivados uns dos outros: fidelidade ao UI Kit vale mais, num kit de
+   * protótipo de um app só, que re-tematizar girando um botão. O -hover é
+   * derivado, porque é um tint da marca e não um passo da paleta.
+   */
+  --me-color-brand: var(--me-color-primary-30);        /* canônica: item ativo, marcado, foco */
+  --me-color-brand-light: var(--me-color-primary-20);  /* botão filled em repouso, foco do input */
+  --me-color-brand-dark: var(--me-color-primary-50);   /* subtítulo do header, wordmark */
+  --me-color-brand-soft: var(--me-color-primary-5);    /* fundos tintados */
+  --me-color-brand-hover: color-mix(in srgb, var(--me-color-brand) 8%, transparent); /* hover de item de menu */
   --me-color-text: var(--me-color-secondary-50);
   --me-color-text-muted: var(--me-color-secondary-10);
   --me-color-border: var(--me-color-neutral-20);

@@ -38,6 +38,7 @@
 import './Logo.js'; // o header da sidebar renderiza <me-logo>
 import './Icon.js'; // os itens gerados usam <me-icon>
 import { SIDEBAR_PRESETS } from './sidebar-presets.js';
+import { define } from './define.js';
 
 /* --------------------------------------------------------- me-sidebar-item */
 const itemTemplate = document.createElement('template');
@@ -68,8 +69,8 @@ itemTemplate.innerHTML = `
       cursor: pointer;
       transition: background var(--me-transition, 0.2s ease), color var(--me-transition, 0.2s ease);
     }
-    /* hover do app: rgba(47,127,145,0.08) */
-    .base:hover { background: rgb(47 127 145 / 0.08); }
+    /* hover do app: rgba(47,127,145,0.08) — tint da marca, derivado no token */
+    .base:hover { background: var(--me-color-brand-hover, rgb(47 127 145 / 0.08)); }
     .base:focus-visible {
       outline: none;
       box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
@@ -159,7 +160,7 @@ class MeSidebarItem extends HTMLElement {
   }
 }
 
-window.customElements.define('me-sidebar-item', MeSidebarItem);
+define('me-sidebar-item', MeSidebarItem);
 
 /* -------------------------------------------------------------- me-sidebar */
 const sidebarTemplate = document.createElement('template');
@@ -430,4 +431,4 @@ class MeSidebar extends HTMLElement {
   }
 }
 
-window.customElements.define('me-sidebar', MeSidebar);
+define('me-sidebar', MeSidebar);

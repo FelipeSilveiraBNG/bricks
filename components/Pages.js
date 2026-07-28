@@ -25,6 +25,7 @@
  * Evento: change (detail.page) ao trocar de página.
  * O host reflete a página atual: me-pages[page="inicio"].
  */
+import { define } from './define.js';
 
 /* ----------------------- <me-page> ----------------------- */
 
@@ -147,5 +148,5 @@ class MePages extends HTMLElement {
   }
 }
 
-window.customElements.define('me-page', MePage);
-window.customElements.define('me-pages', MePages);
+define('me-page', MePage);
+define('me-pages', MePages);

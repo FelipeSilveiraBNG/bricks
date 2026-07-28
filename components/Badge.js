@@ -14,6 +14,8 @@
  * Slots: default (texto), start (ícone).
  * Part: base.
  */
+import { define } from './define.js';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -51,7 +53,7 @@ template.innerHTML = `
     :host([variant="warning"]) .badge { --_color: var(--me-color-alert-50, #F18F1B);    --_bg: #fff7ed; }
     :host([variant="yellow"])  .badge { --_color: var(--me-color-warning-50, #F1C21B);  --_bg: #fefce8; }
     /* blue = paleta primária (teal): mesma cor do color="blue" do LabelBadge (border-primary bg-primary5) */
-    :host([variant="blue"])    .badge { --_color: var(--me-color-primary-30, #2F7F91); --_bg: var(--me-color-primary-5, #D8EEF3); }
+    :host([variant="blue"])    .badge { --_color: var(--me-color-brand, #2F7F91); --_bg: var(--me-color-brand-soft, #D8EEF3); }
     /* neutral/gray espelha o LabelBadge gray: borda cinza clara, ícone gray-50 */
     :host([variant="neutral"]) .badge { --_color: #d1d5db; --_bg: #f3f4f6; }
     :host([variant="neutral"]) ::slotted(me-icon) { color: var(--me-color-gray-50, #323232); }
@@ -72,4 +74,4 @@ class MeBadge extends HTMLElement {
   }
 }
 
-window.customElements.define('me-badge', MeBadge);
+define('me-badge', MeBadge);

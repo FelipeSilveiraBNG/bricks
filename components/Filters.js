@@ -37,6 +37,7 @@
  *   Atributos: value, no-remove (esconde o ×).
  *   Slot: default (rótulo). Evento: me-remove (detail { value }). Parts: base, remove.
  */
+import { define } from './define.js';
 
 /* --------------------------------------------------------------- me-option */
 const optionTemplate = document.createElement('template');
@@ -63,7 +64,7 @@ optionTemplate.innerHTML = `
     /* Selecionado = bg-gray-100 font-semibold text-primary30 */
     :host([selected]) .base {
       background: var(--me-color-neutral-10, #F0F0F4);
-      color: var(--me-color-primary-30, #2F7F91);
+      color: var(--me-color-brand, #2F7F91);
       font-weight: var(--me-font-weight-semibold, 600);
     }
 
@@ -105,7 +106,7 @@ class MeOption extends HTMLElement {
   get label() { return this.textContent.trim(); }
 }
 
-window.customElements.define('me-option', MeOption);
+define('me-option', MeOption);
 
 /* -------------------------------------------------------- me-select-filter */
 const filterTemplate = document.createElement('template');
@@ -160,7 +161,7 @@ filterTemplate.innerHTML = `
       height: 18px;
       padding: 0 5px;
       border-radius: 999px;
-      background: var(--me-color-primary-30, #2F7F91);
+      background: var(--me-color-brand, #2F7F91);
       color: #fff;
       font-size: 11px;
       font-weight: var(--me-font-weight-bold, 700);
@@ -370,7 +371,7 @@ class MeSelectFilter extends HTMLElement {
   }
 }
 
-window.customElements.define('me-select-filter', MeSelectFilter);
+define('me-select-filter', MeSelectFilter);
 
 /* ------------------------------------------------------------ me-filter-tag */
 const tagTemplate = document.createElement('template');
@@ -388,10 +389,10 @@ tagTemplate.innerHTML = `
       align-items: center;
       gap: 8px;
       padding: 6px 14px;
-      border: 1px solid var(--me-color-primary-30, #2F7F91);
+      border: 1px solid var(--me-color-brand, #2F7F91);
       border-radius: 999px;
-      background: var(--me-color-primary-5, #D8EEF3);
-      color: var(--me-color-primary-30, #2F7F91);
+      background: var(--me-color-brand-soft, #D8EEF3);
+      color: var(--me-color-brand, #2F7F91);
       font-size: var(--me-font-size-small, 14px);
       line-height: 18px;
     }
@@ -443,4 +444,4 @@ class MeFilterTag extends HTMLElement {
   set value(v) { v == null ? this.removeAttribute('value') : this.setAttribute('value', v); }
 }
 
-window.customElements.define('me-filter-tag', MeFilterTag);
+define('me-filter-tag', MeFilterTag);

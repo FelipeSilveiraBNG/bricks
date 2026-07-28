@@ -20,6 +20,7 @@
  *   cancela a navegação) e change (detail { page } = página atual, após mover).
  * Parts: base, item, control, page, active, prev, next, first, last, ellipsis.
  */
+import { define } from './define.js';
 
 // [start, start+1, …, start+length-1]
 function createRange(length, start = 1) {
@@ -279,4 +280,4 @@ class MePagination extends HTMLElement {
   }
 }
 
-window.customElements.define('me-pagination', MePagination);
+define('me-pagination', MePagination);

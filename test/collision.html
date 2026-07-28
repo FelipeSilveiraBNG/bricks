@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste de colisão de tags — me-bricks</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 32px;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-page, #FAFAFA);
+    }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    p  { max-width: 70ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); }
+    table { border-collapse: collapse; margin-top: 24px; font-size: 14px; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); }
+    th { font-weight: 600; }
+    code { font-family: ui-monospace, monospace; font-size: 13px; }
+    .pass { color: #198038; font-weight: 700; }
+    .fail { color: #DA1E28; font-weight: 700; }
+    #summary { margin-top: 24px; font-size: 18px; font-weight: 700; }
+    #detail { margin-top: 16px; font-size: 13px; white-space: pre-wrap; font-family: ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <h1>Teste de colisão de tags</h1>
+  <p>
+    Reproduz o cenário de <strong>duas cópias do me-bricks na mesma página</strong>. A query string
+    (<code>?copia=2</code>) produz uma URL distinta: o module map é indexado por URL resolvida, então
+    o navegador baixa e avalia um segundo grafo de módulos, exatamente como aconteceria com
+    <code>@v0.4.0/components/Sidebar.js</code> + <code>@v0.4.1/components/index.js</code>.
+  </p>
+  <p>
+    A cópia 1 é um componente avulso (<code>Sidebar.js</code>, que registra 4 tags). A cópia 2 é o
+    <code>index.js</code> completo, que ao chegar em <code>Sidebar.js</code> colide. Sem guarda no
+    <code>customElements.define</code>, a exceção aborta a avaliação do módulo e derruba com ela os
+    imports seguintes (<code>Pages</code>, <code>Tabs</code>, <code>Filters</code>,
+    <code>Pagination</code>) — 9 tags nunca se registram.
+  </p>
+
+  <!-- Captura de console/erros: script clássico, roda antes de qualquer módulo (que é deferido). -->
+  <script>
+    window.__meWarnings = [];
+    window.__meErrors = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => {
+      window.__meWarnings.push(args.join(' '));
+      originalWarn.apply(console, args);
+    };
+    // Exceção na avaliação de um módulo sobe como ErrorEvent na window.
+    window.addEventListener('error', (event) => {
+      window.__meErrors.push(String(event.message || event.error || event));
+    });
+  </script>
+
+  <!-- Cópia 1: componente avulso, URL com query = grafo próprio. -->
+  <script type="module" src="../components/Sidebar.js?copia=2"></script>
+  <!-- Cópia 2: o kit completo, URLs sem query. -->
+  <script type="module" src="../components/index.js"></script>
+
+  <!-- Um consumidor de verdade, para checar que o upgrade acontece de fato. -->
+  <div style="position:absolute; left:-9999px;">
+    <me-button>Botão</me-button>
+    <me-pagination total-pages="5"></me-pagination>
+  </div>
+
+  <div id="report"></div>
+  <div id="summary"></div>
+  <div id="detail"></div>
+
+  <script type="module">
+    // As 23 tags que o kit registra (15 arquivos em components/).
+    const EXPECTED_TAGS = [
+      'me-icon', 'me-button', 'me-badge', 'me-card', 'me-input', 'me-switch',
+      'me-checkbox', 'me-checkbox-select', 'me-radio', 'me-radio-group', 'me-logo',
+      'me-page-header', 'me-sidebar', 'me-sidebar-item', 'me-page', 'me-pages',
+      'me-tab', 'me-tab-panel', 'me-tab-group', 'me-option', 'me-select-filter',
+      'me-filter-tag', 'me-pagination',
+    ];
+
+    // setTimeout garante que os microtasks (o aviso agregado do define.js) já
+    // tenham drenado antes de conferir.
+    setTimeout(() => {
+      const missing = EXPECTED_TAGS.filter((tag) => !customElements.get(tag));
+      const warnings = window.__meWarnings.filter((w) => w.includes('me-bricks'));
+      const errors = window.__meErrors;
+      const upgraded = !!document.querySelector('me-button')?.shadowRoot
+                    && !!document.querySelector('me-pagination')?.shadowRoot;
+
+      const checks = [
+        {
+          name: `Todas as ${EXPECTED_TAGS.length} tags registradas`,
+          ok: missing.length === 0,
+          got: `${EXPECTED_TAGS.length - missing.length}/${EXPECTED_TAGS.length}`
+             + (missing.length ? ` — faltando: ${missing.join(', ')}` : ''),
+        },
+        {
+          name: 'Nenhuma exceção não capturada',
+          ok: errors.length === 0,
+          got: errors.length ? errors.join(' | ') : 'nenhuma',
+        },
+        {
+          name: 'Exatamente 1 aviso agregado do me-bricks',
+          ok: warnings.length === 1,
+          got: `${warnings.length} aviso(s)`,
+        },
+        {
+          name: 'Componentes sofreram upgrade (shadowRoot presente)',
+          ok: upgraded,
+          got: upgraded ? 'sim' : 'não',
+        },
+      ];
+
+      document.getElementById('report').innerHTML = `
+        <table>
+          <tr><th>Verificação</th><th>Resultado</th><th>Observado</th></tr>
+          ${checks.map((c) => `
+            <tr>
+              <td>${c.name}</td>
+              <td class="${c.ok ? 'pass' : 'fail'}">${c.ok ? 'PASS' : 'FAIL'}</td>
+              <td>${c.got}</td>
+            </tr>`).join('')}
+        </table>`;
+
+      const failed = checks.filter((c) => !c.ok).length;
+      const summary = document.getElementById('summary');
+      summary.textContent = failed === 0
+        ? `PASS — ${checks.length}/${checks.length} verificações`
+        : `FAIL — ${failed} de ${checks.length} verificações falharam`;
+      summary.className = failed === 0 ? 'pass' : 'fail';
+
+      if (warnings.length) document.getElementById('detail').textContent = warnings.join('\n\n');
+
+      // Marcadores para automação futura (Playwright etc.).
+      document.title = `${failed === 0 ? 'PASS' : 'FAIL'} — colisão de tags`;
+      window.__meResult = { failed, checks, missing, warnings, errors };
+    }, 0);
+  </script>
+</body>
+</html>

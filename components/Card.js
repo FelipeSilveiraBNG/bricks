@@ -10,6 +10,8 @@
  * Slots: header, default (corpo), footer.
  * Parts: base, header, body, footer, close-button.
  */
+import { define } from './define.js';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -152,4 +154,4 @@ class MeCard extends HTMLElement {
   }
 }
 
-window.customElements.define('me-card', MeCard);
+define('me-card', MeCard);

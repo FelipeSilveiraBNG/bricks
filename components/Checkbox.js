@@ -29,6 +29,7 @@
  *     <me-checkbox name="turno" value="noturno">Noturno</me-checkbox>
  *   </me-checkbox-select>
  */
+import { define } from './define.js';
 
 /* Check branco do app (FontAwesome 6.2.0, mesmo data URI do Checkbox Vue) */
 const CHECK_ICON = `url('data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IndoaXRlIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PCEtLSEgRm9udCBBd2Vzb21lIFBybyA2LjIuMCBieSBAZm9udGF3ZXNvbWUgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbSBMaWNlbnNlIC0gaHR0cHM6Ly9mb250YXdlc29tZS5jb20vbGljZW5zZSAoQ29tbWVyY2lhbCBMaWNlbnNlKSBDb3B5cmlnaHQgMjAyMiBGb250aWNvbnMsIEluYy4gLS0+PHBhdGggZD0iTTQ3MC42IDEwNS40YzEyLjUgMTIuNSAxMi41IDMyLjggMCA0NS4zbC0yNTYgMjU2Yy0xMi41IDEyLjUtMzIuOCAxMi41LTQ1LjMgMGwtMTI4LTEyOGMtMTIuNS0xMi41LTEyLjUtMzIuOCAwLTQ1LjNzMzIuOC0xMi41IDQ1LjMgMEwxOTIgMzM4LjcgNDI1LjQgMTA1LjRjMTIuNS0xMi41IDMyLjgtMTIuNSA0NS4zIDB6Ii8+PC9zdmc+')`;
@@ -178,7 +179,7 @@ class MeCheckbox extends HTMLElement {
   }
 }
 
-window.customElements.define('me-checkbox', MeCheckbox);
+define('me-checkbox', MeCheckbox);
 
 /* ------------------------------------------------------- me-checkbox-select */
 const selectTemplate = document.createElement('template');
@@ -280,4 +281,4 @@ class MeCheckboxSelect extends HTMLElement {
   }
 }
 
-window.customElements.define('me-checkbox-select', MeCheckboxSelect);
+define('me-checkbox-select', MeCheckboxSelect);

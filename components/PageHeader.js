@@ -16,6 +16,8 @@
  * Eventos: me-menu (detail.open) — clique no botão mobile.
  * Parts: base, menu, heading, subheading, end.
  */
+import { define } from './define.js';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -52,7 +54,7 @@ template.innerHTML = `
       color: var(--me-color-text-muted, #68688D);
       cursor: pointer;
     }
-    .menu:hover { background: rgb(47 127 145 / 0.08); }
+    .menu:hover { background: var(--me-color-brand-hover, rgb(47 127 145 / 0.08)); }
     .menu:focus-visible {
       outline: none;
       box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
@@ -89,7 +91,7 @@ template.innerHTML = `
       font-size: var(--me-font-size-small, 14px);
       line-height: var(--me-line-height-small, 18px);
       letter-spacing: var(--me-letter-spacing, 0.5px);
-      color: var(--me-color-primary-50, #163D45); /* teal escuro do wordmark, como no app */
+      color: var(--me-color-brand-dark, #163D45); /* teal escuro do wordmark, como no app */
     }
     .subheading:empty { display: none; }
 
@@ -173,4 +175,4 @@ class MePageHeader extends HTMLElement {
   }
 }
 
-window.customElements.define('me-page-header', MePageHeader);
+define('me-page-header', MePageHeader);

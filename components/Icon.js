@@ -13,6 +13,8 @@
  * Tamanho e cor herdam de font-size/color do contexto.
  * Catálogo de nomes: https://pictogrammers.com/library/mdi/
  */
+import { define } from './define.js';
+
 class MeIcon extends HTMLElement {
   static get observedAttributes() {
     return ['name', 'label'];
@@ -49,4 +51,4 @@ class MeIcon extends HTMLElement {
   }
 }
 
-window.customElements.define('me-icon', MeIcon);
+define('me-icon', MeIcon);

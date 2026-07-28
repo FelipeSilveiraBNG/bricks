@@ -16,6 +16,8 @@
  *
  * Participa de <form> nativo via ElementInternals (FormData inclui name/value).
  */
+import { define } from './define.js';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -47,8 +49,8 @@ template.innerHTML = `
     /* App engrossa a borda para 2px em primary-20 no foco; o inset dobra a
        espessura sem deslocar o layout (evita o "pulo" de 1px). */
     .field:focus-within {
-      border-color: var(--me-color-primary-20, #3CA2B9);
-      box-shadow: inset 0 0 0 1px var(--me-color-primary-20, #3CA2B9);
+      border-color: var(--me-color-brand-light, #3CA2B9);
+      box-shadow: inset 0 0 0 1px var(--me-color-brand-light, #3CA2B9);
     }
     :host([disabled]) .field {
       opacity: 0.45;
@@ -90,7 +92,7 @@ template.innerHTML = `
       background: var(--me-color-surface, #FFFFFF);
       padding: 0 4px;
     }
-    .field:focus-within label { color: var(--me-color-primary-20, #3CA2B9); }
+    .field:focus-within label { color: var(--me-color-brand-light, #3CA2B9); }
     .asterisk { color: var(--me-color-negative-50, #DA1E28); }
 
     input {
@@ -320,4 +322,4 @@ class MeInput extends HTMLElement {
   }
 }
 
-window.customElements.define('me-input', MeInput);
+define('me-input', MeInput);

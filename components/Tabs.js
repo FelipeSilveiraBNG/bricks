@@ -26,6 +26,7 @@
  *         Slot: default (rótulo). Parts: base, button.
  * Panel — atributo: name, active (gerido pelo grupo). Slot: default. Part: base.
  */
+import { define } from './define.js';
 
 // Contador para IDs únicos — usado só quando a aba/painel não traz id próprio,
 // para amarrar aria-controls (tab -> painel) e aria-labelledby (painel -> tab).
@@ -117,7 +118,7 @@ class MeTab extends HTMLElement {
   }
 }
 
-window.customElements.define('me-tab', MeTab);
+define('me-tab', MeTab);
 
 /* ------------------------------------------------------------- me-tab-panel */
 const panelTemplate = document.createElement('template');
@@ -168,7 +169,7 @@ class MeTabPanel extends HTMLElement {
   }
 }
 
-window.customElements.define('me-tab-panel', MeTabPanel);
+define('me-tab-panel', MeTabPanel);
 
 /* ------------------------------------------------------------- me-tab-group */
 const groupTemplate = document.createElement('template');
@@ -314,4 +315,4 @@ class MeTabGroup extends HTMLElement {
   }
 }
 
-window.customElements.define('me-tab-group', MeTabGroup);
+define('me-tab-group', MeTabGroup);

@@ -20,6 +20,7 @@
  *     ...
  *   </me-radio-group>
  */
+import { define } from './define.js';
 
 /* ---------------------------------------------------------------- me-radio */
 const radioTemplate = document.createElement('template');
@@ -146,7 +147,7 @@ class MeRadio extends HTMLElement {
   }
 }
 
-window.customElements.define('me-radio', MeRadio);
+define('me-radio', MeRadio);
 
 /* ---------------------------------------------------------- me-radio-group */
 const groupTemplate = document.createElement('template');
@@ -287,4 +288,4 @@ class MeRadioGroup extends HTMLElement {
   }
 }
 
-window.customElements.define('me-radio-group', MeRadioGroup);
+define('me-radio-group', MeRadioGroup);

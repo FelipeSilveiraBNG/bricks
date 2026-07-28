@@ -17,6 +17,8 @@
  * Parts: base, control, track, thumb, label.
  * Evento: change (detail.checked).
  */
+import { define } from './define.js';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -213,4 +215,4 @@ class MeSwitch extends HTMLElement {
   }
 }
 
-window.customElements.define('me-switch', MeSwitch);
+define('me-switch', MeSwitch);

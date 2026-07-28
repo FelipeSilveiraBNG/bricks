@@ -20,6 +20,8 @@
  * Slots: default (rótulo), start, end (ícones).
  * Parts: base, label.
  */
+import { define } from './define.js';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -57,7 +59,7 @@ template.innerHTML = `
 
     /* ===== brand (default) — Filled/Outline/GhostButton do app ===== */
     .btn {
-      background: var(--me-color-primary-20, #3CA2B9);
+      background: var(--me-color-brand-light, #3CA2B9);
       color: var(--me-color-white, #FFFFFF);
     }
     .btn:hover,
@@ -268,4 +270,4 @@ class MeButton extends HTMLElement {
   }
 }
 
-window.customElements.define('me-button', MeButton);
+define('me-button', MeButton);
