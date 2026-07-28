@@ -162,7 +162,11 @@ filterTemplate.innerHTML = `
       padding: 0 5px;
       border-radius: 999px;
       background: var(--me-color-brand, #2F7F91);
-      color: #fff;
+      /* Conteúdo sobre preenchimento de marca: precisa continuar branco se o
+         tema de superfície mudar, por isso --me-color-white e não -surface.
+         É o mesmo token dos demais "sobre cor" do kit (Button, Pagination,
+         Sidebar, Switch); quando existir um alias próprio, todos migram juntos. */
+      color: var(--me-color-white, #FFFFFF);
       font-size: 11px;
       font-weight: var(--me-font-weight-bold, 700);
     }

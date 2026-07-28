@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste de variantes do badge — me-bricks</title>
+
+  <link rel="stylesheet" href="../tokens.css" />
+
+  <!--
+    Dois eixos, num arquivo só porque medem o mesmo componente:
+
+    (A) SINONÍMIA — <me-badge>, variant="brand" e variant="blue" têm que
+        computar idêntico. Os três nomes existem porque o LabelBadge do app
+        chama a variante de marca de color="blue"; se um refactor apertar a
+        especificidade do default, os sinônimos caem em silêncio e só um teste
+        pega.
+
+    (B) SÓ CORES DO DS — cada variante tem que computar exatamente o valor do
+        token declarado no tokens.css. Foi por falta deste teste que seis
+        valores Tailwind (#f0fdf4, #fef2f2, #fff7ed, #fefce8, #f3f4f6,
+        #d1d5db) viveram no Badge.js.
+
+    Os valores esperados abaixo são os do tokens.css. Se um token mudar lá, este
+    teste falha de propósito — é o sinal de que o valor duplicado aqui precisa
+    acompanhar.
+  -->
+  <style>
+    body {
+      margin: 0; padding: 32px;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-page, #FAFAFA);
+      letter-spacing: var(--me-letter-spacing, 0.5px);
+    }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    h2 { font-size: 16px; margin: 32px 0 4px; }
+    p { max-width: 70ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); }
+    table { border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { padding: 6px 12px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); }
+    code { font-size: 13px; }
+    .pass { color: #198038; font-weight: 700; }
+    .fail { color: #DA1E28; font-weight: 700; }
+    #summary { margin-top: 24px; font-size: 18px; font-weight: 700; }
+    .palco { position: absolute; left: -9999px; }
+  </style>
+  <script type="module" src="../components/index.js"></script>
+</head>
+<body>
+  <h1>Variantes do <code>&lt;me-badge&gt;</code></h1>
+  <p>
+    Afirma que as sete variantes usam <strong>só cores do <code>tokens.css</code></strong> e que
+    <code>brand</code>, <code>blue</code> e sem-atributo são a mesma coisa.
+  </p>
+
+  <!-- Palco: uma instância de cada variante, cada uma com ícone no slot start
+       (é o ícone que expõe --_icon ao getComputedStyle). -->
+  <div class="palco" aria-hidden="true">
+    <me-badge id="default"><me-icon slot="start" name="circle"></me-icon>Fixo</me-badge>
+    <me-badge id="brand"   variant="brand"><me-icon slot="start" name="circle"></me-icon>Fixo</me-badge>
+    <me-badge id="blue"    variant="blue"><me-icon slot="start" name="circle"></me-icon>Em progresso</me-badge>
+    <me-badge id="success" variant="success"><me-icon slot="start" name="circle"></me-icon>Extra</me-badge>
+    <me-badge id="danger"  variant="danger"><me-icon slot="start" name="circle"></me-icon>Cobertura</me-badge>
+    <me-badge id="warning" variant="warning"><me-icon slot="start" name="circle"></me-icon>Aberta</me-badge>
+    <me-badge id="yellow"  variant="yellow"><me-icon slot="start" name="circle"></me-icon>Aguardando</me-badge>
+    <me-badge id="neutral" variant="neutral"><me-icon slot="start" name="circle"></me-icon>Externo</me-badge>
+  </div>
+
+  <h2>A — sinonímia</h2>
+  <div id="report-sin"></div>
+
+  <h2>B — só cores do design system</h2>
+  <div id="report-ds"></div>
+
+  <div id="summary"></div>
+
+  <script type="module">
+    const rgb = (h) => {
+      const n = h.replace('#', '');
+      return `rgb(${parseInt(n.slice(0, 2), 16)}, ${parseInt(n.slice(2, 4), 16)}, ${parseInt(n.slice(4, 6), 16)})`;
+    };
+
+    // Valores esperados = os do tokens.css. Cruzamento de nomes proposital:
+    // warning → família alert (laranja), yellow → família warning (amarelo).
+    const ESPERADO = {
+      default: { token: 'brand / brand-soft',        borda: '#2F7F91', fundo: '#D8EEF3', icone: '#2F7F91' },
+      brand:   { token: 'brand / brand-soft',        borda: '#2F7F91', fundo: '#D8EEF3', icone: '#2F7F91' },
+      blue:    { token: 'brand / brand-soft',        borda: '#2F7F91', fundo: '#D8EEF3', icone: '#2F7F91' },
+      success: { token: 'success-50 / success-5',    borda: '#198038', fundo: '#EAFBEF', icone: '#198038' },
+      danger:  { token: 'negative-50 / negative-5',  borda: '#DA1E28', fundo: '#FCE9EA', icone: '#DA1E28' },
+      warning: { token: 'alert-50 / alert-5',        borda: '#F18F1B', fundo: '#FEF3E7', icone: '#F18F1B' },
+      yellow:  { token: 'warning-50 / warning-5',    borda: '#F1C21B', fundo: '#FEF9E7', icone: '#F1C21B' },
+      neutral: { token: 'neutral-30 / neutral-10',   borda: '#D8D8E2', fundo: '#F0F0F4', icone: '#16161D' },
+    };
+
+    // O ícone renderiza em light DOM (webfont MDI), então é filho do host.
+    const medir = (id) => {
+      const host = document.getElementById(id);
+      const badge = host?.shadowRoot?.querySelector('.badge');
+      const icone = host?.querySelector('me-icon');
+      if (!badge) return null;
+      const cs = getComputedStyle(badge);
+      return {
+        borda: cs.borderTopColor,
+        fundo: cs.backgroundColor,
+        icone: icone ? getComputedStyle(icone).color : 'ÍCONE AUSENTE',
+      };
+    };
+
+    const tabela = (linhas, colunas) => `
+      <table>
+        <tr>${colunas.map((c) => `<th>${c}</th>`).join('')}</tr>
+        ${linhas.map((l) => `
+          <tr>
+            ${l.celulas.map((c) => `<td>${c}</td>`).join('')}
+            <td class="${l.ok ? 'pass' : 'fail'}">${l.ok ? 'PASS' : 'FAIL'}</td>
+          </tr>`).join('')}
+      </table>`;
+
+    setTimeout(() => {
+      const medido = Object.fromEntries(Object.keys(ESPERADO).map((id) => [id, medir(id)]));
+
+      // ===== A — sinonímia =====
+      const base = medido.default;
+      const sinonimos = ['brand', 'blue'].flatMap((id) =>
+        ['borda', 'fundo', 'icone'].map((prop) => {
+          const m = medido[id];
+          const ok = !!base && !!m && m[prop] === base[prop];
+          return {
+            ok,
+            celulas: [
+              `variant="${id}" — ${prop}`,
+              m ? m[prop] : 'HOST AUSENTE',
+              base ? base[prop] : '—',
+            ],
+          };
+        })
+      );
+
+      document.getElementById('report-sin').innerHTML =
+        tabela(sinonimos, ['Alvo', 'Computado', 'Default (referência)', 'Resultado']);
+
+      // ===== B — só cores do DS =====
+      const ds = Object.entries(ESPERADO).flatMap(([id, exp]) =>
+        ['borda', 'fundo', 'icone'].map((prop) => {
+          const m = medido[id];
+          const alvo = rgb(exp[prop]);
+          const ok = !!m && m[prop] === alvo;
+          return {
+            ok,
+            celulas: [
+              `${id} — ${prop}`,
+              `<code>${exp.token}</code>`,
+              m ? m[prop] : 'HOST AUSENTE',
+              `${alvo} <code>${exp[prop]}</code>`,
+            ],
+          };
+        })
+      );
+
+      document.getElementById('report-ds').innerHTML =
+        tabela(ds, ['Alvo', 'Token esperado', 'Computado', 'Valor do token', 'Resultado']);
+
+      // ===== Resumo =====
+      const todas = [...sinonimos, ...ds];
+      const falhas = todas.filter((l) => !l.ok);
+      const s = document.getElementById('summary');
+      s.textContent = falhas.length === 0
+        ? `PASS — ${todas.length}/${todas.length} verificações`
+        : `FAIL — ${falhas.length} de ${todas.length}: ${falhas.map((f) => f.celulas[0]).join(', ')}`;
+      s.className = falhas.length === 0 ? 'pass' : 'fail';
+
+      document.title = `${falhas.length === 0 ? 'PASS' : 'FAIL'} — variantes do badge`;
+      window.__meResult = { falhas: falhas.length, total: todas.length };
+    }, 0);
+  </script>
+</body>
+</html>

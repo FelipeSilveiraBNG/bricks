@@ -51,7 +51,11 @@ radioTemplate.innerHTML = `
       justify-content: center;
       width: 18px;                     /* w-[18px] do app */
       height: 18px;
-      border: 2px solid #9ca3af;       /* gray-400 do app (não selecionado) */
+      /* gray-400 no app. Escolhido gray-5 (cinza puro) em vez de neutral-50:
+         mesmo ΔE (~7,9), mas erra na claridade e não no matiz, então não puxa
+         para o lilás. O Figma desenha este anel em primary-30 — divergência
+         consciente, ver test/danger-audit.html para o padrão app-vs-Figma. */
+      border: 2px solid var(--me-color-gray-5, #999999);
       border-radius: 50%;
       background: var(--me-color-surface, #FFFFFF);
       transition: border-color var(--me-transition, 0.2s ease);
@@ -81,7 +85,10 @@ radioTemplate.innerHTML = `
       display: none;
       font-size: var(--me-font-size-small, 14px);
       line-height: 20px;
-      color: #4b5563;                  /* gray-600 do app */
+      /* gray-600 no app; aqui o passo da família secondary, que é a família de
+         texto do kit. Contraste preservado (7,51 vs 7,56 sobre branco) — é um
+         terceiro nível de texto, entre --me-color-text e --me-color-text-muted. */
+      color: var(--me-color-secondary-20, #52526F);
     }
 
     /* Modo card (SelecaoProporcionalidade do app) */
@@ -92,9 +99,10 @@ radioTemplate.innerHTML = `
       padding: 16px;
       border-radius: var(--me-radius-l, 8px);
       background: var(--me-color-surface, #FFFFFF);
-      /* Borda #d1d5db (gray-300 do app) via inset — engrossa selecionado sem
-         layout shift — composta com a shadow-sm base do card. */
-      box-shadow: inset 0 0 0 1px #d1d5db, 0 1px 2px rgb(0 0 0 / 0.05);
+      /* Borda via inset — engrossa selecionado sem layout shift — composta com
+         a shadow-sm base do card. gray-300 no app; aqui o passo equivalente da
+         paleta do kit (mesma troca feita no variant neutral do me-badge). */
+      box-shadow: inset 0 0 0 1px var(--me-color-neutral-30, #D8D8E2), 0 1px 2px rgb(0 0 0 / 0.05);
       transition: box-shadow var(--me-transition, 0.2s ease), background var(--me-transition, 0.2s ease);
     }
     :host([appearance="card"][checked]) .base {

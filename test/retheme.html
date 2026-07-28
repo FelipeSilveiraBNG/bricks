@@ -58,7 +58,6 @@
     <me-input label="Campo"></me-input>
     <me-switch checked>Ligado</me-switch>
     <me-badge>Fixo</me-badge>
-    <me-badge variant="blue">Em progresso</me-badge>
     <me-radio-group name="r" value="a"><me-radio value="a">A</me-radio></me-radio-group>
     <me-pagination total-pages="5" page="2"></me-pagination>
     <me-tab-group active="um"><me-tab panel="um">Um</me-tab><me-tab-panel name="um">.</me-tab-panel></me-tab-group>
@@ -91,9 +90,11 @@
       ['botão outlined (texto)',      'me-button[appearance="outlined"]', '.btn', 'color'],
       ['botão plain (texto)',         'me-button[appearance="plain"]', '.btn', 'color'],
       ['switch ligado (track)',       'me-switch[checked]', '.track', 'backgroundColor'],
+      // brand/blue/default são a mesma regra CSS — medir os três aqui inflaria
+      // a contagem sem cobrir nada a mais. A sinonímia é assunto do
+      // badge-variants.html; aqui basta a variante de marca uma vez.
       ['badge default (borda)',       'me-badge:not([variant])', '.badge', 'borderTopColor'],
-      ['badge blue (borda)',          'me-badge[variant="blue"]', '.badge', 'borderTopColor'],
-      ['badge blue (fundo)',          'me-badge[variant="blue"]', '.badge', 'backgroundColor'],
+      ['badge default (fundo)',       'me-badge:not([variant])', '.badge', 'backgroundColor'],
       ['radio marcado (borda)',       'me-radio[checked]', '.control', 'borderTopColor'],
       ['radio marcado (ponto)',       'me-radio[checked]', '.dot', 'backgroundColor'],
       ['paginação ativa (fundo)',     'me-pagination', '.item.active', 'backgroundColor'],

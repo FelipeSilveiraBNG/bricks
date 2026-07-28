@@ -155,7 +155,7 @@
   <aside>
     <a class="brand" href="#/inicio">
       <me-logo variant="variant"></me-logo>
-      <small id="version-badge">Design System · v0.4.1</small>
+      <small id="version-badge">Design System · v0.4.5</small>
     </a>
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
@@ -210,10 +210,10 @@
         <div class="code-card">
           <button class="copy" type="button" data-copy="install-snippet">Copiar</button>
           <pre id="install-snippet"><code>&lt;!-- 1. Design tokens (cores, tipografia, fonte Inter e ícones MDI) --&gt;
-&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/tokens.css" /&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/tokens.css" /&gt;
 
 &lt;!-- 2. Componentes (registra todas as tags &lt;me-*&gt;) --&gt;
-&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/components/index.js"&gt;&lt;/script&gt;
+&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/components/index.js"&gt;&lt;/script&gt;
 
 &lt;!-- 3. Base do body (a fonte tem fallback: se o tokens.css falhar, não cai em Times New Roman) --&gt;
 &lt;style&gt;
@@ -229,7 +229,7 @@
         <p class="desc">
           Funciona em editores de HTML online (as URLs são absolutas) — nunca use caminhos
           relativos como <code>./components/index.js</code> fora deste repositório.
-          A versão fica travada na tag <code>@v0.4.1</code>: atualize-a ao subir um release novo.
+          A versão fica travada na tag <code>@v0.4.5</code>: atualize-a ao subir um release novo.
         </p>
         <p class="desc">
           Se as tags <code>&lt;me-*&gt;</code> aparecerem como texto cru sem estilo, o
@@ -939,24 +939,90 @@ pag.movePageTo(3);</pre>
     const styles = getComputedStyle(document.documentElement);
     const cssVal = (name) => styles.getPropertyValue(`--me-${name}`).trim();
 
-    // Cores: uma linha por família (escalas do Figma)
-    const colorFamilies = [
-      ['Primária (teal)', 'primary', [5, 10, 20, 30, 40, 50]],
-      ['Secundária', 'secondary', [5, 10, 20, 40, 50]],
-      ['Terciária (rosa)', 'tertiary', [10, 30, 40]],
-      ['Neutral', 'neutral', [5, 10, 20, 30, 40, 50]],
-      ['Gray', 'gray', [30, 50]],
-    ];
-    const feedbackTokens = ['success-50', 'success-5', 'negative-50', 'negative-5', 'alert-50', 'alert-5', 'warning-50', 'warning-5'];
-    const aliasTokens = ['brand', 'brand-soft', 'text', 'text-muted', 'border', 'surface', 'page', 'white'];
+    /* Cores: lidas do tokens.css, não digitadas aqui.
+     *
+     * Esta lista já foi três arrays literais e dessincronizou: 13 tokens
+     * existiam no tokens.css sem aparecer nesta página (secondary-30, três
+     * passos de tertiary, quatro de gray, os aliases brand-light/dark/hover e
+     * os dois de link). As famílias que estavam completas eram justamente as
+     * que tinham consumidor — a vitrine documentava o que o kit usava, não o
+     * que o kit tem. Agora um token novo aparece sozinho.
+     */
+    function lerTokensDeCor() {
+      const achados = [];
+      for (const folha of document.styleSheets) {
+        let regras;
+        try { regras = folha.cssRules; } catch { continue; }  // folha cross-origin (CDN)
+        for (const regra of regras || []) {
+          if (!regra.style || regra.selectorText !== ':root') continue;
+          for (const prop of regra.style) {
+            if (!prop.startsWith('--me-color-')) continue;
+            achados.push({
+              nome: prop.replace('--me-color-', ''),
+              origem: regra.style.getPropertyValue(prop).trim(),  // o que está escrito no arquivo
+            });
+          }
+        }
+      }
+      return achados;
+    }
 
-    const swatch = (token) =>
-      `<div class="swatch">
-        <div class="color" style="background: var(--me-color-${token})"></div>
-        <div class="info"><strong>${token}</strong><br /><code>${cssVal(`color-${token}`)}</code></div>
+    const TITULO_FAMILIA = {
+      primary: 'Primária (teal)',
+      secondary: 'Secundária',
+      tertiary: 'Terciária (rosa)',
+      neutral: 'Neutral / LightGray',   // Figma "Neutral/LightGray" — o arroxeado
+      gray: 'Neutral / Gray',           // Figma "Neutral/Gray" — o neutro puro
+    };
+    const FAMILIAS_FEEDBACK = ['success', 'negative', 'alert', 'warning'];
+
+    /* Classifica pela estrutura do próprio arquivo: alias é o token cujo valor
+     * aponta para outro token (var()) ou o deriva (color-mix()). O resto é
+     * valor cru = paleta. É a mesma divisão que o tokens.css descreve em prosa. */
+    function agruparCores(tokens) {
+      const escalas = new Map(), feedback = [], avulsos = [], aliases = [];
+      for (const t of tokens) {
+        if (/var\(--me-|color-mix\(/.test(t.origem)) { aliases.push(t); continue; }
+        const m = t.nome.match(/^([a-z]+)-(\d+)$/);
+        if (!m) { avulsos.push(t); continue; }
+        if (FAMILIAS_FEEDBACK.includes(m[1])) { feedback.push(t); continue; }
+        if (!escalas.has(m[1])) escalas.set(m[1], []);
+        escalas.get(m[1]).push({ ...t, passo: Number(m[2]) });
+      }
+      for (const lista of escalas.values()) lista.sort((a, b) => a.passo - b.passo);
+      return { escalas, feedback, avulsos, aliases };
+    }
+
+    const swatch = ({ nome, origem }) => {
+      const resolvido = cssVal(`color-${nome}`);
+      // Só mostra a origem quando ela difere do valor final (ou seja, nos aliases).
+      const aponta = origem && origem !== resolvido
+        ? `<br /><code style="opacity:.7">← ${origem.replace(/</g, '&lt;')}</code>` : '';
+      return `<div class="swatch">
+        <div class="color" style="background: var(--me-color-${nome})"></div>
+        <div class="info"><strong>${nome}</strong><br /><code>${resolvido}</code>${aponta}</div>
       </div>`;
+    };
     const colorRow = (title, tokens) =>
-      `<div class="token-group"><h3>${title}</h3><div class="swatch-row">${tokens.map(swatch).join('')}</div></div>`;
+      tokens.length
+        ? `<div class="token-group"><h3>${title}</h3><div class="swatch-row">${tokens.map(swatch).join('')}</div></div>`
+        : '';
+
+    function secoesDeCor() {
+      const tokens = lerTokensDeCor();
+      if (!tokens.length) {
+        return `<div class="token-group"><h3>Cor</h3><p>Não foi possível ler o
+          <code>tokens.css</code> pelo CSSOM — sirva o repo por HTTP em vez de abrir
+          o arquivo direto, ou carregue o <code>tokens.css</code> da mesma origem.</p></div>`;
+      }
+      const { escalas, feedback, avulsos, aliases } = agruparCores(tokens);
+      return [
+        ...[...escalas].map(([fam, lista]) => colorRow(`Cor · ${TITULO_FAMILIA[fam] || fam}`, lista)),
+        colorRow('Cor · Feedback', feedback),
+        colorRow('Cor · Paleta — avulsos', avulsos),
+        colorRow('Cor · Aliases semânticos', aliases),
+      ].join('');
+    }
 
     // Tokens não-cor: tabela Token · Valor · Amostra
     const specTable = (title, rows) =>
@@ -1000,9 +1066,7 @@ pag.movePageTo(3);</pre>
     ];
 
     document.getElementById('tokens-view').innerHTML = [
-      colorFamilies.map(([title, prefix, steps]) => colorRow(`Cor · ${title}`, steps.map((s) => `${prefix}-${s}`))).join(''),
-      colorRow('Cor · Feedback', feedbackTokens),
-      colorRow('Cor · Aliases semânticos', aliasTokens),
+      secoesDeCor(),
       specTable('Tipografia', typography),
       specTable('Forma e elevação', shape),
       specTable('Controles', controls),

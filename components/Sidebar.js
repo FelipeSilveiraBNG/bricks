@@ -182,7 +182,8 @@ sidebarTemplate.innerHTML = `
       flex-direction: column;
       height: 100%;
       background: var(--me-color-surface, #FFFFFF);
-      border-right: 1px solid #E5E7EB; /* border-gray-200 do app */
+      /* border-gray-200 no app; aqui o passo equivalente da paleta do kit */
+      border-right: 1px solid var(--me-color-neutral-20, #E2E2E9);
       overflow: hidden;
     }
 
@@ -254,11 +255,11 @@ sidebarTemplate.innerHTML = `
       <button class="toggle" part="toggle" type="button" aria-label="Expandir menu" aria-expanded="false">
         <svg class="expand-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect width="24" height="24" rx="6" fill="var(--me-color-tertiary-30, #CB2957)"/>
-          <path d="M7.5 7l5 5-5 5M13 7l5 5-5 5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7.5 7l5 5-5 5M13 7l5 5-5 5" stroke="var(--me-color-white, #FFFFFF)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <svg class="collapse-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect width="24" height="24" rx="6" fill="var(--me-color-tertiary-30, #CB2957)"/>
-          <path d="M16.5 17l-5-5 5-5M11 17l-5-5 5-5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16.5 17l-5-5 5-5M11 17l-5-5 5-5" stroke="var(--me-color-white, #FFFFFF)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
     </div>

@@ -25,14 +25,14 @@ rodar em qualquer outro lugar (editor de HTML online, CodePen, um HTML solto, ou
 precisam das URLs absolutas do CDN:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/components/index.js"></script>
 ```
 
-Use sempre a tag de versão (`@v0.4.1`), nunca `@main` — a tag é imutável e não fica presa ao
+Use sempre a tag de versão (`@v0.4.5`), nunca `@main` — a tag é imutável e não fica presa ao
 cache de branch do CDN.
 
-**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.4.1`, ou o
+**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.4.5`, ou o
 `index.js` mais um componente avulso como `Sidebar.js`) são dois grafos de módulo distintos e
 ambos tentam registrar as mesmas tags. A primeira cópia avaliada vence e a segunda emite um
 aviso `[me-bricks]` no console — as tags seguem funcionando, mas com a definição da primeira,
@@ -140,7 +140,7 @@ body {
 <me-badge>Fixo</me-badge>
 <me-badge variant="warning">Aberta</me-badge>       <!-- laranja -->
 <me-badge variant="yellow">Aguardando</me-badge>  <!-- amarelo -->
-<me-badge variant="blue">Em progresso</me-badge>  <!-- azul/primária (teal) -->
+<me-badge variant="blue">Em progresso</me-badge>  <!-- sinônimo de brand = o default -->
 <me-badge variant="neutral">Externo</me-badge>    <!-- cinza -->
 ```
 

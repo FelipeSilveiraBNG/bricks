@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auditoria — botão destrutivo (PolarButton)</title>
+
+  <link rel="stylesheet" href="../tokens.css" />
+
+  <!--
+    DIAGNÓSTICO, não teste. Não emite PASS/FAIL — mostra o estado atual do
+    <me-button variant="danger"> para embasar a decisão sobre tokenizar as
+    cores do PolarButton.
+
+    Três coisas:
+
+    (A) Os 9 estados renderizados de verdade. hover e :active não são
+        alcançáveis por script, então a página lê o <style> do próprio shadow
+        root do componente, troca ":hover" por ".__h" e ":active" por ".__a", e
+        reinjeta. Nada é reescrito à mão aqui — se o Button.js mudar, esta
+        página acompanha sozinha.
+
+    (B) Auditoria de cor do Button.js inteiro, também lida em runtime: cada
+        declaração de cor é classificada em token (var(--me-*)) ou literal.
+
+    (C) Comparação com o Figma. Os valores do Figma são constantes abaixo,
+        amostrados pixel a pixel do component set polarButton (node 1:439) em
+        28/07/2026. O ΔE é calculado ao vivo contra o que o componente
+        realmente renderiza.
+  -->
+  <style>
+    body {
+      margin: 0; padding: 32px 40px 80px;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-page, #FAFAFA);
+      letter-spacing: var(--me-letter-spacing, 0.5px);
+    }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    h2 { font-size: 16px; margin: 40px 0 6px; text-transform: uppercase; letter-spacing: 1px; color: var(--me-color-text-muted, #68688D); }
+    p  { max-width: 78ch; line-height: 1.55; color: var(--me-color-text-muted, #68688D); margin: 6px 0 16px; }
+    code { font-size: 13px; font-family: ui-monospace, Consolas, monospace; }
+
+    table { border-collapse: collapse; font-size: 13px; background: var(--me-color-surface, #FFFFFF); }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); vertical-align: middle; }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--me-color-text-muted, #68688D); }
+
+    .grid { display: grid; grid-template-columns: 92px repeat(3, 1fr); gap: 12px; align-items: center; max-width: 760px; }
+    .grid .head { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--me-color-text-muted, #68688D); }
+    .cell { background: var(--me-color-surface, #FFFFFF); border: 1px solid var(--me-color-border, #E2E2E9); border-radius: var(--me-radius-m, 6px); padding: 14px 12px 10px; text-align: center; }
+    .cell .val { margin-top: 8px; font-size: 11px; font-family: ui-monospace, Consolas, monospace; color: var(--me-color-text-muted, #68688D); }
+
+    .chip { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgb(0 0 0 / .12); vertical-align: -2px; margin-right: 6px; }
+    .tok  { color: #198038; font-weight: 700; }
+    .lit  { color: #DA1E28; font-weight: 700; }
+    .big  { color: #DA1E28; font-weight: 700; }
+    .mid  { color: #F18F1B; font-weight: 700; }
+    .ok   { color: #198038; font-weight: 700; }
+    tr.is-literal { background: #FFF7F7; }
+  </style>
+
+  <script type="module" src="../components/index.js"></script>
+</head>
+<body>
+  <h1>Botão destrutivo — auditoria de cor</h1>
+  <p>
+    <code>&lt;me-button variant="danger"&gt;</code> nos três appearances e três estados. Os estados
+    <code>hover</code> e <code>active</code> estão <strong>forçados</strong> — reaproveitando as
+    regras do próprio componente, não reescritas aqui.
+  </p>
+
+  <h2>A — os 9 estados</h2>
+  <div class="grid" id="grid"></div>
+
+  <h2>B — cores declaradas no Button.js</h2>
+  <p>Lido do <code>&lt;style&gt;</code> do shadow root em runtime. Literal = valor que não passa por token.</p>
+  <div id="audit"></div>
+
+  <h2>C — me-bricks vs. Figma</h2>
+  <p>
+    Referência: component set <code>polarButton</code>, node <code>1:439</code>, amostrado por pixel.
+    O Figma deriva todos os estados de <code>negative-50</code> — é por isso que a paleta tem só
+    dois passos de negative.
+  </p>
+  <div id="figma"></div>
+
+  <!-- Palco -->
+  <div id="palco" style="position:absolute; left:-9999px;" aria-hidden="true"></div>
+
+  <script type="module">
+    const APPEARANCES = [
+      ['filled',   ''],
+      ['outlined', 'outlined'],
+      ['plain',    'plain'],
+    ];
+    const ESTADOS = [['enable', ''], ['hover', '__h'], ['pressed', '__a']];
+
+    // Amostrado do Figma (node 1:439) em 28/07/2026. Fundo do botão em cada estado.
+    // outline/ghost enable são brancos/transparentes: o que muda ali é a borda.
+    const FIGMA = {
+      'filled/enable':    { cor: '#DA1E28', nota: 'negative-50' },
+      'filled/hover':     { cor: '#E86F76', nota: 'tint 64% de negative-50' },
+      'filled/pressed':   { cor: '#9D161D', nota: 'shade 72% de negative-50' },
+      'outlined/enable':  { cor: '#FFFFFF', nota: 'branco, borda negative-50' },
+      'outlined/hover':   { cor: '#F7DAE2', nota: 'tint 16% de negative-50' },
+      'outlined/pressed': { cor: '#DA1E28', nota: 'INVERTE — sólido, texto branco' },
+      'plain/enable':     { cor: '#FFFFFF', nota: 'transparente sobre branco' },
+      'plain/hover':      { cor: '#F7DAE2', nota: 'tint 16% de negative-50' },
+      'plain/pressed':    { cor: '#DA1E28', nota: 'INVERTE — sólido, texto branco' },
+    };
+
+    // ---------- cor ----------
+    const parseRGB = (s) => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const toHex = (rgb) => '#' + rgb.map((v) => Math.round(v).toString(16).padStart(2, '0').toUpperCase()).join('');
+    const hex2rgb = (h) => { h = h.replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16)); };
+    function lab(rgb) {
+      const f = (v) => { v /= 255; return v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92; };
+      const [r, g, b] = rgb.map(f);
+      let x = (r * .4124 + g * .3576 + b * .1805) / .95047, y = r * .2126 + g * .7152 + b * .0722, z = (r * .0193 + g * .1192 + b * .9505) / 1.08883;
+      const k = (t) => t > .008856 ? Math.cbrt(t) : (7.787 * t + 16 / 116);
+      [x, y, z] = [k(x), k(y), k(z)];
+      return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+    }
+    const dE = (a, b) => { const A = lab(hex2rgb(a)), B = lab(hex2rgb(b)); return Math.sqrt(A.reduce((s, v, i) => s + (v - B[i]) ** 2, 0)); };
+    const chip = (c) => `<span class="chip" style="background:${c}"></span>`;
+
+    // ---------- monta o palco com estados forçados ----------
+    const palco = document.getElementById('palco');
+    const refs = {};
+    for (const [ap, apAttr] of APPEARANCES) {
+      for (const [st, cls] of ESTADOS) {
+        const b = document.createElement('me-button');
+        b.setAttribute('variant', 'danger');
+        if (apAttr) b.setAttribute('appearance', apAttr);
+        b.textContent = 'Excluir';
+        palco.appendChild(b);
+        refs[`${ap}/${st}`] = { el: b, cls };
+      }
+    }
+
+    customElements.whenDefined('me-button').then(() => setTimeout(montar, 0));
+
+    function montar() {
+      // 1. deriva as regras de estado forçado a partir do CSS do próprio componente
+      const amostra = Object.values(refs)[0].el;
+      const cssOriginal = amostra.shadowRoot.querySelector('style').textContent;
+      const cssForcado = cssOriginal.replace(/:hover/g, '.__h').replace(/:active/g, '.__a');
+
+      for (const [chave, { el, cls }] of Object.entries(refs)) {
+        const s = document.createElement('style');
+        s.textContent = cssForcado;
+        el.shadowRoot.appendChild(s);
+        if (cls) el.shadowRoot.querySelector('.btn').classList.add(cls);
+      }
+
+      montarGrid();
+      renderAudit(cssOriginal);
+      // Só mede depois que os botões estão no layout final e o estilo forçado
+      // recalculou. Medir antes devolve o valor do estado "enable" nos três.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        preencherValores();
+        renderFigma();
+      }));
+    }
+
+    /** Fundo computado de um botão do palco, já com o estado forçado. */
+    function fundo(chave) {
+      const bg = getComputedStyle(refs[chave].el.shadowRoot.querySelector('.btn')).backgroundColor;
+      const n = bg.match(/[\d.]+/g) || [];
+      return { transparente: n[3] === '0', hex: toHex(parseRGB(bg)) };
+    }
+
+    // ---------- A ----------
+    function montarGrid() {
+      const g = document.getElementById('grid');
+      let html = '<div></div>' + ESTADOS.map(([st]) => `<div class="head">${st}</div>`).join('');
+      for (const [ap] of APPEARANCES) {
+        html += `<div class="head">${ap}</div>`;
+        for (const [st] of ESTADOS) {
+          html += `<div class="cell"><div class="stage"></div><div class="val" data-k="${ap}/${st}">…</div></div>`;
+        }
+      }
+      g.innerHTML = html;
+      let i = 0;
+      const stages = g.querySelectorAll('.stage');
+      for (const [ap] of APPEARANCES) for (const [st] of ESTADOS) stages[i++].appendChild(refs[`${ap}/${st}`].el);
+    }
+
+    function preencherValores() {
+      for (const el of document.querySelectorAll('.val[data-k]')) {
+        const f = fundo(el.dataset.k);
+        el.innerHTML = f.transparente ? 'transparente' : `${chip(f.hex)}${f.hex}`;
+      }
+    }
+
+    // ---------- B ----------
+    function renderAudit(css) {
+      const linhas = [];
+      css.split('\n').forEach((raw, i) => {
+        if (/^\s*\*|^\s*\/\*/.test(raw)) return;
+        const l = raw.replace(/\/\*.*?\*\//g, '');
+        if (!/(background|color|border-color|box-shadow)\s*:/.test(l)) return;
+        const tokens = [...l.matchAll(/var\((--me-[a-z0-9-]+)/g)].map((m) => m[1]);
+        const semFallback = l.replace(/var\(--me-[a-z0-9-]+\s*,\s*[^)]*\)/g, 'VAR');
+        const literais = [...semFallback.matchAll(/#[0-9A-Fa-f]{3,6}\b/g)].map((m) => m[0]);
+        if (!tokens.length && !literais.length) return;
+        linhas.push({ n: i + 1, txt: l.trim(), tokens, literais });
+      });
+
+      const nLit = linhas.filter((x) => x.literais.length).length;
+      document.getElementById('audit').innerHTML = `
+        <p style="margin-top:0"><strong>${linhas.length}</strong> declarações de cor ·
+          <span class="tok">${linhas.length - nLit} só com token</span> ·
+          <span class="lit">${nLit} com literal</span></p>
+        <table>
+          <tr><th>Linha</th><th>Declaração</th><th>Tokens</th><th>Literais</th></tr>
+          ${linhas.map((x) => `
+            <tr class="${x.literais.length ? 'is-literal' : ''}">
+              <td>${x.n}</td>
+              <td><code>${x.txt.replace(/</g, '&lt;').slice(0, 96)}</code></td>
+              <td>${x.tokens.length ? x.tokens.map((t) => `<code class="tok">${t}</code>`).join('<br>') : '—'}</td>
+              <td>${x.literais.length ? x.literais.map((c) => `${chip(c)}<code class="lit">${c}</code>`).join('<br>') : '—'}</td>
+            </tr>`).join('')}
+        </table>`;
+    }
+
+    // ---------- C ----------
+    function renderFigma() {
+      const rows = Object.entries(FIGMA).map(([chave, ref]) => {
+        const f = fundo(chave);
+        // transparente sobre a página branca = branco, que é como o Figma desenha
+        const atual = f.transparente ? '#FFFFFF' : f.hex;
+        const d = dE(atual, ref.cor);
+        const cls = d > 10 ? 'big' : d > 3 ? 'mid' : 'ok';
+        const veredito = d > 10 ? 'diverge' : d > 3 ? 'visível' : 'igual';
+        return `<tr>
+          <td><code>${chave}</code></td>
+          <td>${chip(atual)}<code>${atual}</code></td>
+          <td>${chip(ref.cor)}<code>${ref.cor}</code></td>
+          <td class="${cls}">${d.toFixed(2)}</td>
+          <td class="${cls}">${veredito}</td>
+          <td>${ref.nota}</td>
+        </tr>`;
+      });
+      document.getElementById('figma').innerHTML = `
+        <table>
+          <tr><th>Estado</th><th>me-bricks hoje</th><th>Figma</th><th>ΔE</th><th></th><th>Regra do Figma</th></tr>
+          ${rows.join('')}
+        </table>`;
+    }
+  </script>
+</body>
+</html>

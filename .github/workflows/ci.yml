@@ -46,10 +46,15 @@ jobs:
       # que deixava o botão primário teal enquanto o resto virava rosa.
       #
       # ESCOPO: só a família primary (a da marca), já normalizada. As escalas
-      # secondary/tertiary têm 7 usos crus que ainda esperam aliases novos
+      # secondary/tertiary têm 8 usos crus que ainda esperam aliases novos
       # (--me-color-text-strong p/ secondary-40, --me-color-accent p/ o rosa
       # tertiary-30 do toggle da sidebar). Ao criá-los, inclua-as no regex:
-      #   Button.js:107  Filters.js:57,132  Sidebar.js:64,256,260  Tabs.js:66
+      #   Button.js:107  Filters.js:57,132  RadioGroup.js:91
+      #   Sidebar.js:64,257,261  Tabs.js:66
+      #
+      # As famílias neutral/gray também são lidas cruas (bordas e fundos de
+      # controle) e não têm alias suficiente: --me-color-border tem um único
+      # consumidor enquanto o kit usa sete cores de borda distintas.
       - name: Componentes não leem a escala de cor da marca crua
         run: |
           encontrados=$(grep -nE 'var\(--me-color-primary-[0-9]+' components/*.js || true)

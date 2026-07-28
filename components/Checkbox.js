@@ -70,7 +70,8 @@ checkboxTemplate.innerHTML = `
       transition: border-color 0.2s ease-in-out; /* só a borda anima, como no app */
     }
     input:checked { border-color: var(--me-color-brand, #2F7F91); }
-    input:disabled { background-color: #E5E7EB; } /* disabled:bg-gray-200 */
+    /* disabled:bg-gray-200 no app; aqui o passo equivalente da paleta do kit */
+    input:disabled { background-color: var(--me-color-neutral-20, #E2E2E9); }
 
     /* Miolo: preenchimento teal + check branco (aparece sem animação) */
     input::after {

@@ -37,14 +37,14 @@ Fora dele (editor de HTML online, CodePen, outro projeto), pelo CDN — caminho 
 e nenhuma tag `<me-*>` se registraria:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/components/index.js"></script>
 ```
 
-A URL usa a tag de versão (`@v0.4.1`) — imutável e livre do cache de branch do CDN. Ao publicar
+A URL usa a tag de versão (`@v0.4.5`) — imutável e livre do cache de branch do CDN. Ao publicar
 uma tag nova, atualize este número aqui, no `AGENTS.md` e no snippet do `index.html`.
 
-> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.1`, ou o `index.js`
+> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.5`, ou o `index.js`
 > mais um componente avulso) são dois grafos de módulo: ambos tentam registrar as mesmas tags.
 > A primeira cópia avaliada vence — o registro de custom elements não permite substituir uma
 > tag já definida — e a segunda apenas avisa no console. Se um protótipo se comportar como uma
@@ -73,7 +73,7 @@ body { font-family: var(--me-font-family, 'Inter', system-ui, sans-serif); }
 | `<me-switch>` | Toggle espelhado do app (anel branco + track teal); estados `disabled` e `loading`; semântica de checkbox no submit |
 | `<me-checkbox>` + `<me-checkbox-select>` | Checkbox 18px do app (check FontAwesome sobre teal) e grupo em card com título/descrição; múltiplas entradas no `FormData` com o mesmo `name` |
 | `<me-radio-group>` + `<me-radio>` | Seleção única com navegação por setas; `appearance="card"` para cards selecionáveis |
-| `<me-badge>` | labelBadge de status: Extra=`success`, Cobertura=`danger`, Fixo=`brand`, Aberta=`warning`; `size="small|medium"` |
+| `<me-badge>` | labelBadge de status: Extra=`success`, Cobertura=`danger`, Fixo=`brand`, Aberta=`warning`; `size="small|medium"`. `brand` e `blue` são sinônimos e são o default |
 | `<me-card>` | Cartão com slots `header`/`footer` colapsáveis e `closable` (evento `me-close`) |
 | `<me-page-header>` | Header de página: título + subtítulo + slot `end` (sino, avatar) |
 | `<me-sidebar>` + `<me-sidebar-item>` (+ `<me-sidebar-preset>`) | Menu lateral espelhado do app: 64px/288px, toggle rosa 24px (evento `me-toggle`), item ativo teal semibold; sem "Sair" (como no app — slot `footer` disponível para casos especiais). Presets de menu via `<me-sidebar-preset>` + atributo `preset`, com persistência opcional em `localStorage` (`persist-key`, evento `me-preset-change`) |
@@ -126,7 +126,10 @@ vez de derivações calculadas. O quinto, `--me-color-brand-hover` (tint de 8% p
 > depois da página montar não re-estiliza de forma confiável os componentes já renderizados.
 
 Para conferir uma re-tematização, sirva o repo e abra `test/retheme.html` — ele afirma que nenhuma
-superfície de marca continua teal (19 verificações).
+superfície de marca continua teal (18 verificações).
+
+O `test/badge-variants.html` cobre o outro eixo do `<me-badge>`: que as sete variantes usam só
+cores do `tokens.css`, e que `brand`/`blue`/sem-atributo são a mesma coisa.
 
 **Partes internas** são estilizáveis via `::part()`:
 
