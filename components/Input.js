@@ -15,6 +15,13 @@
  * Eventos: input, change (re-emitidos com detail.value, composed).
  *
  * Participa de <form> nativo via ElementInternals (FormData inclui name/value).
+ *
+ * ACESSIBILIDADE: o atributo `label` é o nome acessível do campo — a label do
+ * shadow root está amarrada ao input por for/id, não só posicionada por cima.
+ * Sem `label`, o nome cai no `placeholder` (mesma semântica do input nativo),
+ * o que é aceitável para campos óbvios mas pior: prefira sempre `label`.
+ * O `error-message` é ligado por aria-describedby enquanto está visível, então
+ * o leitor de tela anuncia o motivo do erro, não apenas o estado inválido.
  */
 import { define } from './define.js';
 
@@ -140,12 +147,18 @@ template.innerHTML = `
     .error-text[hidden] { display: none; }
   </style>
   <div class="field" part="base">
-    <label part="label" hidden><span class="text"></span><span class="asterisk" hidden> *</span></label>
+    <!-- for/id amarram label e input: sem isso a label é só pintura e o campo
+         é anunciado como "edição sem rótulo". Os IDs podem ser fixos porque
+         são escopados a ESTE shadow root — duas instâncias na página não
+         colidem (por isso não há contador de uid como em Tabs.js).
+         O asterisco é aria-hidden: quem informa a obrigatoriedade é o
+         required no input interno, e o "*" lido em voz alta é só ruído. -->
+    <label part="label" for="control" hidden><span class="text"></span><span class="asterisk" aria-hidden="true" hidden> *</span></label>
     <slot name="start"></slot>
-    <input part="input" type="text" />
+    <input id="control" part="input" type="text" />
     <slot name="end"></slot>
   </div>
-  <div class="error-text" part="error" hidden></div>
+  <div class="error-text" id="error" part="error" hidden></div>
 `;
 
 class MeInput extends HTMLElement {
@@ -318,7 +331,17 @@ class MeInput extends HTMLElement {
     this.inputElement.setAttribute('aria-invalid', String(on));
     const message = this.getAttribute('error-message') ?? '';
     this.errorTextElement.textContent = message;
-    this.errorTextElement.hidden = !(on && message);
+    const showing = on && message !== '';
+    this.errorTextElement.hidden = !showing;
+    // aria-describedby só enquanto a mensagem está de fato visível: referência
+    // para elemento display:none não é exposta pelo leitor de tela, e deixá-la
+    // pendurada anuncia uma descrição que não existe. Por isso liga/desliga
+    // junto com o hidden, em vez de ficar fixa no template.
+    if (showing) {
+      this.inputElement.setAttribute('aria-describedby', 'error');
+    } else {
+      this.inputElement.removeAttribute('aria-describedby');
+    }
   }
 }
 
