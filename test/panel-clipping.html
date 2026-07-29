@@ -134,10 +134,13 @@
                          isPanel: !!elIn && (elIn === f || f.contains(elIn)) } };
     }
 
-    /* Depois da migração do Filters.js para internal/popover.js (v0.7.0), este
-       arquivo deixou de ser diagnóstico e passou a ser REGRESSÃO: o esperado
-       agora é que o painel NÃO seja recortado. Antes da migração o caso media
-       "RECORTADO" com 158px de transbordo invisível. */
+    /* Depois da migração do Filters.js para internal/popover.js, este arquivo
+       deixou de ser diagnóstico e passou a ser REGRESSÃO: o esperado agora é que
+       o painel NÃO seja recortado. Antes da migração o caso media "RECORTADO"
+       com 158px de transbordo invisível.
+       Sem número de versão na prosa de propósito: a guarda do release.mjs exige
+       que todo arquivo citando versão esteja classificado, e um número em
+       comentário de "o que mudou" envelhece e vira mentira. */
     function render(r) {
       const cortado = r.bandaExiste && r.band.every((b) => !b.isPanel);
       const pintado = r.bandaExiste && r.band.some((b) => b.isPanel);
