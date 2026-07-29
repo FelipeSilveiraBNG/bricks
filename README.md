@@ -42,7 +42,9 @@ e nenhuma tag `<me-*>` se registraria:
 ```
 
 A URL usa a tag de versão (`@v0.4.5`) — imutável e livre do cache de branch do CDN. Ao publicar
-uma tag nova, atualize este número aqui, no `AGENTS.md` e no snippet do `index.html`.
+uma tag nova **não edite este número à mão**: rode `node tools/release.mjs <versão>`, que reescreve
+de uma vez as 12 ocorrências espalhadas por este arquivo, pelo `AGENTS.md` e pelo `index.html`.
+O CI recusa docs que discordem entre si ou da tag publicada.
 
 > **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.5`, ou o `index.js`
 > mais um componente avulso) são dois grafos de módulo: ambos tentam registrar as mesmas tags.

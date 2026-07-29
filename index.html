@@ -229,7 +229,9 @@
         <p class="desc">
           Funciona em editores de HTML online (as URLs são absolutas) — nunca use caminhos
           relativos como <code>./components/index.js</code> fora deste repositório.
-          A versão fica travada na tag <code>@v0.4.5</code>: atualize-a ao subir um release novo.
+          A versão fica travada na tag <code>@v0.4.5</code>. Ao subir um release novo, rode
+          <code>node tools/release.mjs &lt;versão&gt;</code> em vez de editar à mão — a versão aparece em
+          12 lugares e o CI recusa docs em desacordo com a tag publicada.
         </p>
         <p class="desc">
           Se as tags <code>&lt;me-*&gt;</code> aparecerem como texto cru sem estilo, o

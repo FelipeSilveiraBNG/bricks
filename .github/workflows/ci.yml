@@ -79,6 +79,37 @@ jobs:
           if [ "$falhas" -ne 0 ]; then exit 1; fi
           echo "OK — todos os componentes estão em components/index.js"
 
+  versao:
+    name: Guarda de versão publicada
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # A versão do kit aparece em 12 lugares de 3 arquivos (URLs do jsDelivr
+      # nos snippets, a prosa que explica a tag, e o fallback do badge). Nada
+      # garantia que andassem juntos, e o modo de falha é silencioso: um
+      # protótipo copiado do README aponta para uma tag que não existe. Já
+      # aconteceu duas vezes — 2dea1c7 e 95bd272 são hotfixes dessas strings.
+      #
+      # As DUAS asserções abaixo rodam em momentos diferentes de propósito. Um
+      # push para main pode legitimamente ter os docs já bumpados para uma tag
+      # que ainda não foi criada; se a guarda comparasse com a última tag em
+      # todo push, quebraria nesse caso normal e seria treinada a ser ignorada.
+      - name: Docs concordam entre si sobre a versão
+        run: node tools/release.mjs --check
+
+      # Só no release: os docs têm de bater com a tag sendo publicada. Pega o
+      # caso de tagear sem rodar o script de bump.
+      - name: Versão dos docs == tag publicada
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          # Via env, não interpolado no shell: nome de tag é entrada externa.
+          TAG: ${{ github.ref_name }}
+        run: node tools/release.mjs --check --expect "$TAG"
+
 # NOTA: test/collision.html verifica o comportamento em runtime (23 tags
 # registradas, nenhuma exceção, 1 aviso agregado) e precisa de navegador —
 # roda à mão com `npx serve .`. Automatizar exige Playwright; quando houver
