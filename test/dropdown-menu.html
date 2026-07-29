@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste do me-dropdown — me-bricks</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    body {
+      margin: 0; padding: 24px 32px; height: 100vh; box-sizing: border-box; overflow: hidden;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D); background: var(--me-color-page, #FAFAFA);
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p  { max-width: 80ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); font-size: 14px; }
+    .cases { display: flex; gap: 40px; align-items: flex-start; margin: 20px 0; }
+    #scroller { width: 320px; height: 140px; overflow-y: auto; padding: 12px;
+                border: 2px dashed var(--me-color-tertiary-30, #CB2957); background: #fff; }
+    #bottom { position: fixed; left: 32px; bottom: 16px; }
+    table { border-collapse: collapse; font-size: 13px; margin-top: 8px; background: #fff; }
+    th, td { padding: 5px 10px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); }
+    .pass { color: #198038; font-weight: 700; }
+    .fail { color: #DA1E28; font-weight: 700; }
+    #summary { margin-top: 12px; font-size: 16px; font-weight: 700; }
+    #results { position: fixed; right: 16px; top: 16px; width: 620px; max-height: 92vh; overflow: auto;
+               background: #fff; padding: 12px 14px; border-radius: 8px; box-shadow: var(--me-shadow-card); }
+  </style>
+</head>
+<body>
+  <h1>me-dropdown</h1>
+  <p>Menu de ações: roles, teclado, evento cancelável, fuga do recorte e flip.</p>
+
+  <div class="cases">
+    <me-dropdown id="menu">
+      <me-button slot="trigger" appearance="outlined">Ações</me-button>
+      <me-dropdown-item value="editar">
+        <me-icon slot="icon" name="pencil"></me-icon>
+        Editar
+        <span slot="details">Ctrl+E</span>
+      </me-dropdown-item>
+      <me-dropdown-item value="duplicar">
+        Duplicar
+        <span slot="description">Cria uma cópia nesta mesma escala</span>
+      </me-dropdown-item>
+      <me-dropdown-item value="arquivada" type="checkbox">Mostrar arquivadas</me-dropdown-item>
+      <me-dropdown-item value="bloqueado" disabled>Indisponível</me-dropdown-item>
+      <me-dropdown-item value="excluir" variant="danger">
+        <me-icon slot="icon" name="delete-outline"></me-icon>
+        Excluir
+      </me-dropdown-item>
+    </me-dropdown>
+
+    <me-dropdown id="plain">
+      <me-button slot="trigger" appearance="plain">Sem marcáveis</me-button>
+      <me-dropdown-item value="a">Alfa</me-dropdown-item>
+      <me-dropdown-item value="b">Beta</me-dropdown-item>
+    </me-dropdown>
+
+    <div id="scroller">
+      <!-- 80px de espaçador com o scroller de 140px: o trigger fica perto da
+           BORDA INFERIOR da área visível, e o painel aberto para baixo tem que
+           passar dela. É esse transbordo que o teste mede. Não role o scroller
+           até o fim: isso empurra o trigger para fora da vista e não sobra
+           transbordo para medir. -->
+      <div style="height:80px"></div>
+      <me-dropdown id="clipped">
+        <me-button slot="trigger" appearance="outlined" size="small">No scroller</me-button>
+        <me-dropdown-item value="x">Opção X</me-dropdown-item>
+        <me-dropdown-item value="y">Opção Y</me-dropdown-item>
+        <me-dropdown-item value="z">Opção Z</me-dropdown-item>
+      </me-dropdown>
+      <div style="height:200px"></div>
+    </div>
+  </div>
+
+  <me-dropdown id="bottom">
+    <me-button slot="trigger" appearance="outlined" size="small">Na base (flip)</me-button>
+    <me-dropdown-item value="1">Primeira</me-dropdown-item>
+    <me-dropdown-item value="2">Segunda</me-dropdown-item>
+    <me-dropdown-item value="3">Terceira</me-dropdown-item>
+  </me-dropdown>
+
+  <div id="results"><em>rodando…</em></div>
+
+  <script type="module">
+    import { SUPPORTS_ANCHOR } from '../components/internal/popover.js';
+
+    const wait = (ms = 50) => new Promise((r) => setTimeout(r, ms));
+    const results = [];
+    const check = (name, ok, detail = '') => results.push({ name, ok: !!ok, detail: String(detail) });
+    // Exposto já aqui: se o roteiro estourar no meio, o parcial diz até onde foi.
+    window.__results = results;
+    let erroFatal = null;
+    try {
+
+    const key = (target, k) => target.dispatchEvent(
+      new KeyboardEvent('keydown', { key: k, bubbles: true, composed: true, cancelable: true }));
+
+    await customElements.whenDefined('me-dropdown');
+    await customElements.whenDefined('me-button');
+    await wait(120);
+
+    const menu = document.getElementById('menu');
+    const panel = menu.shadowRoot.querySelector('.panel');
+    const items = [...menu.querySelectorAll('me-dropdown-item')];
+    const trigger = menu.querySelector('[slot="trigger"]');
+
+    /* ---------- semântica ---------- */
+    check('caminho de ancoragem ativo', SUPPORTS_ANCHOR, `SUPPORTS_ANCHOR=${SUPPORTS_ANCHOR}`);
+    check('painel é role=menu', panel.getAttribute('role') === 'menu');
+    check('item normal é menuitem', items[0].getAttribute('role') === 'menuitem');
+    check('item marcável é menuitemcheckbox',
+      items[2].getAttribute('role') === 'menuitemcheckbox');
+    check('item marcável expõe aria-checked', items[2].getAttribute('aria-checked') === 'false');
+    check('item desabilitado expõe aria-disabled', items[3].getAttribute('aria-disabled') === 'true');
+    check('aria-haspopup no trigger projetado', trigger.getAttribute('aria-haspopup') === 'menu');
+    check('aria-expanded começa false', trigger.getAttribute('aria-expanded') === 'false');
+    check('itens têm tabindex=-1', items.every((i) => i.getAttribute('tabindex') === '-1'));
+
+    /* slots vazios não devem reservar espaço */
+    check('item com icon marcado data-has-icon', items[0].hasAttribute('data-has-icon'));
+    check('item sem icon não marcado', !items[1].hasAttribute('data-has-icon'));
+    check('item com description marcado', items[1].hasAttribute('data-has-description'));
+    check('item com details marcado', items[0].hasAttribute('data-has-details'));
+
+    /* espaço da marca de seleção só quando há item marcável */
+    check('reserva espaço de check quando há marcável',
+      menu.style.getPropertyValue('--me-dropdown-check-space') === '26px');
+    check('não reserva quando não há marcável',
+      document.getElementById('plain').style.getPropertyValue('--me-dropdown-check-space') === '0px',
+      document.getElementById('plain').style.getPropertyValue('--me-dropdown-check-space'));
+
+    /* ---------- me-toggle: uma vez por mudança ---------- */
+    let toggles = [];
+    menu.addEventListener('me-toggle', (e) => toggles.push(e.detail.open));
+
+    /* ---------- abrir por teclado + navegação ---------- */
+    key(trigger, 'ArrowDown');
+    await wait(80);
+    check('ArrowDown no trigger abre', menu.open);
+    check('aria-expanded vira true', trigger.getAttribute('aria-expanded') === 'true');
+    check('me-toggle disparou 1x ao abrir', toggles.length === 1 && toggles[0] === true,
+      JSON.stringify(toggles));
+    check('foco vai para o 1º item', document.activeElement === items[0],
+      document.activeElement?.tagName + ' ' + document.activeElement?.getAttribute?.('value'));
+
+    key(items[0], 'ArrowDown');
+    await wait();
+    check('ArrowDown anda para o 2º', document.activeElement === items[1]);
+
+    /* pula o desabilitado: do 3º (marcável) o próximo é o danger, não o disabled */
+    key(items[1], 'ArrowDown');
+    await wait();
+    key(items[2], 'ArrowDown');
+    await wait();
+    check('ArrowDown pula item desabilitado', document.activeElement === items[4],
+      document.activeElement?.getAttribute?.('value'));
+
+    key(items[4], 'ArrowDown');
+    await wait();
+    check('envolve na ponta (volta ao 1º)', document.activeElement === items[0]);
+
+    /* typeahead */
+    key(items[0], 'd');
+    await wait();
+    check('typeahead "d" acha Duplicar', document.activeElement === items[1],
+      document.activeElement?.getAttribute?.('value'));
+
+    /* Home / End */
+    key(document.activeElement, 'End');
+    await wait();
+    check('End vai para o último utilizável', document.activeElement === items[4]);
+    key(document.activeElement, 'Home');
+    await wait();
+    check('Home volta ao primeiro', document.activeElement === items[0]);
+
+    /* ---------- Esc fecha e devolve o foco ---------- */
+    toggles = [];
+    key(items[0], 'Escape');
+    await wait(80);
+    check('Esc fecha', !menu.open);
+    check('me-toggle disparou 1x ao fechar', toggles.length === 1 && toggles[0] === false,
+      JSON.stringify(toggles));
+    check('foco volta ao trigger', document.activeElement === trigger,
+      document.activeElement?.tagName);
+
+    /* ---------- me-select: valor, fechar por padrão ---------- */
+    let selected = null;
+    const onSelect = (e) => { selected = e.detail; };
+    menu.addEventListener('me-select', onSelect);
+
+    menu.show();
+    await wait(80);
+    items[0].shadowRoot.querySelector('.base').click();
+    await wait(80);
+    check('me-select traz o value', selected?.value === 'editar', JSON.stringify(selected?.value));
+    check('me-select traz o item', selected?.item === items[0]);
+    check('fecha após selecionar', !menu.open);
+    menu.removeEventListener('me-select', onSelect);
+
+    /* ---------- me-select cancelável mantém aberto ---------- */
+    const keepOpen = (e) => e.preventDefault();
+    menu.addEventListener('me-select', keepOpen);
+    menu.show();
+    await wait(80);
+    items[1].shadowRoot.querySelector('.base').click();
+    await wait(80);
+    check('preventDefault mantém aberto', menu.open);
+    menu.removeEventListener('me-select', keepOpen);
+
+    /* ---------- item marcável alterna ---------- */
+    const before = items[2].checked;
+    items[2].shadowRoot.querySelector('.base').click();
+    await wait(80);
+    check('checkbox alterna checked', items[2].checked !== before,
+      `antes=${before} depois=${items[2].checked}`);
+    check('aria-checked acompanha', items[2].getAttribute('aria-checked') === String(items[2].checked));
+    /* A marca VISUAL é verificação separada do aria de propósito: <svg> é
+       SVGSVGElement e não tem a propriedade `hidden`, então já aconteceu de o
+       aria-checked atualizar e o check não aparecer. */
+    {
+      const svg = items[2].shadowRoot.querySelector('.check svg');
+      check('marca visual acompanha o checked',
+        !svg.hasAttribute('hidden') === items[2].checked,
+        `checked=${items[2].checked} svg[hidden]=${svg.hasAttribute('hidden')}`);
+      items[2].checked = false;
+      check('marca visual some ao desmarcar', svg.hasAttribute('hidden'));
+      items[2].checked = true;
+      check('marca visual volta ao remarcar', !svg.hasAttribute('hidden'));
+    }
+    menu.hide();
+    await wait(60);
+
+    /* ---------- item desabilitado não seleciona ---------- */
+    let clickedDisabled = false;
+    const onAny = () => { clickedDisabled = true; };
+    menu.addEventListener('me-select', onAny);
+    menu.show();
+    await wait(60);
+    items[3].shadowRoot.querySelector('.base').click();
+    await wait(60);
+    check('item desabilitado não emite me-select', !clickedDisabled);
+    menu.removeEventListener('me-select', onAny);
+    menu.hide();
+    await wait(60);
+
+    /* ---------- fuga do recorte ---------- */
+    const clipped = document.getElementById('clipped');
+    const scroller = document.getElementById('scroller');
+    clipped.show();
+    await wait(120);
+    {
+      const cp = clipped.shadowRoot.querySelector('.panel').getBoundingClientRect();
+      const sr = scroller.getBoundingClientRect();
+      const além = Math.round(cp.bottom - sr.bottom);
+      const x = Math.round(cp.left + 20);
+      const y = Math.round(Math.min(cp.bottom - 5, innerHeight - 5));
+      const hit = document.elementFromPoint(x, y);
+      check('painel passa do scroller (há o que testar)', além > 0, `${além}px`);
+      // elementFromPoint faz retarget para o host: o predicado certo é === o host.
+      check('painel visível além do scroller (escapou do recorte)', hit === clipped,
+        `hit=${hit?.tagName?.toLowerCase()} em (${x},${y})`);
+    }
+    clipped.hide();
+    await wait(60);
+
+    /* ---------- flip perto da base ---------- */
+    const bottom = document.getElementById('bottom');
+    bottom.show();
+    await wait(140);
+    {
+      const bt = bottom.querySelector('[slot="trigger"]').getBoundingClientRect();
+      const bp = bottom.shadowRoot.querySelector('.panel').getBoundingClientRect();
+      check('painel cabe na viewport', Math.round(bp.bottom) <= innerHeight,
+        `painel.bottom=${Math.round(bp.bottom)} innerHeight=${innerHeight}`);
+      check('virou para cima do trigger', Math.round(bp.bottom) <= Math.round(bt.top) + 2,
+        `painel.bottom=${Math.round(bp.bottom)} trigger.top=${Math.round(bt.top)}`);
+    }
+    bottom.hide();
+
+    } catch (e) {
+      erroFatal = `${e.name}: ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`;
+    }
+
+    /* ---------- relatório ---------- */
+    const failed = results.filter((r) => !r.ok);
+    document.getElementById('results').innerHTML =
+      `<div id="summary" class="${failed.length || erroFatal ? 'fail' : 'pass'}">` +
+      `${results.length - failed.length}/${results.length} passaram` +
+      `${failed.length ? ` — ${failed.length} falha(s)` : erroFatal ? '' : ' — tudo ok'}</div>` +
+      (erroFatal ? `<pre class="fail" style="white-space:pre-wrap">ESTOUROU: ${erroFatal}</pre>` : '') +
+      '<table><tr><th>#</th><th>verificação</th><th>resultado</th><th>detalhe</th></tr>' +
+      results.map((r, i) =>
+        `<tr><td>${i + 1}</td><td>${r.name}</td>` +
+        `<td class="${r.ok ? 'pass' : 'fail'}">${r.ok ? 'PASS' : 'FAIL'}</td>` +
+        `<td>${r.detail.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</td></tr>`
+      ).join('') + '</table>';
+  </script>
+</body>
+</html>

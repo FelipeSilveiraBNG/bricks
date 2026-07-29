@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste do me-modal — me-bricks</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    body {
+      margin: 0; padding: 24px 32px; min-height: 200vh;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D); background: var(--me-color-page, #FAFAFA);
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p  { max-width: 80ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); font-size: 14px; }
+    .botoes { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+    table { border-collapse: collapse; font-size: 13px; background: #fff; }
+    th, td { padding: 5px 10px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); }
+    .pass { color: #198038; font-weight: 700; }
+    .fail { color: #DA1E28; font-weight: 700; }
+    #summary { margin-top: 12px; font-size: 16px; font-weight: 700; }
+    #results { position: fixed; right: 16px; top: 16px; width: 640px; max-height: 92vh; overflow: auto;
+               background: #fff; padding: 12px 14px; border-radius: 8px; box-shadow: var(--me-shadow-card); z-index: 5; }
+  </style>
+</head>
+<body>
+  <h1>me-modal</h1>
+  <p>Body com 200vh de propósito: a trava de rolagem é uma das verificações.</p>
+
+  <div class="botoes">
+    <me-button onclick="document.getElementById('m1').show()">Abrir padrão</me-button>
+    <me-button appearance="outlined" onclick="document.getElementById('m2').show()">Compacto + bordas</me-button>
+    <me-button appearance="outlined" onclick="document.getElementById('m3').show()">Com me-select dentro</me-button>
+  </div>
+
+  <me-modal id="m1" label="Editar plantão">
+    <span slot="header">Editar plantão</span>
+    <p style="margin:0">Conteúdo de exemplo do corpo do modal.</p>
+    <div slot="footer" style="display:flex; gap:16px; justify-content:flex-end;">
+      <me-button appearance="outlined" id="m1-cancel">Cancelar</me-button>
+      <me-button>Confirmar</me-button>
+    </div>
+  </me-modal>
+
+  <me-modal id="m2" label="Excluir cartão" size="small" header-border footer-border>
+    <span slot="header">Excluir cartão?</span>
+    Tem certeza que deseja excluir esse card?
+    <div slot="footer" style="display:flex; gap:16px;">
+      <me-button style="flex:1" appearance="outlined">Cancelar</me-button>
+      <me-button style="flex:1" variant="danger" appearance="outlined">Confirmar</me-button>
+    </div>
+  </me-modal>
+
+  <!-- O caso que motivou medir antes de construir: campo com painel flutuante
+       dentro de um modal em top layer. -->
+  <me-modal id="m3" label="Compartilhar escala" header-border footer-border>
+    <span slot="header">Compartilhar escala</span>
+    <me-select id="sel" label="Adicionar Participantes ou Grupos" multiple searchable
+               clearable style="width:100%">
+      <me-select-option value="1">
+        <me-icon slot="icon" name="account"></me-icon>
+        Dra. Ana Souza
+        <span slot="description">Médica · CRM 12345</span>
+      </me-select-option>
+      <me-select-option value="2">
+        <me-icon slot="icon" name="account-group"></me-icon>
+        Equipe Cardiologia
+        <span slot="description">Grupo · 8 membros</span>
+      </me-select-option>
+    </me-select>
+    <div slot="footer" style="display:flex; gap:16px; justify-content:flex-end;">
+      <me-button appearance="outlined">Cancelar</me-button>
+      <me-button>Compartilhar</me-button>
+    </div>
+  </me-modal>
+
+  <me-modal id="m4" label="Sem header" without-header>
+    Modal sem header nenhum.
+  </me-modal>
+
+  <div id="results"><em>rodando…</em></div>
+
+  <script type="module">
+    const wait = (ms = 60) => new Promise((r) => setTimeout(r, ms));
+    const results = [];
+    const check = (n, ok, d = '') => results.push({ name: n, ok: !!ok, detail: String(d) });
+    window.__results = results;
+    let erroFatal = null;
+
+    try {
+      await customElements.whenDefined('me-modal');
+      await customElements.whenDefined('me-select');
+      await wait(150);
+
+      const m1 = document.getElementById('m1');
+      const m2 = document.getElementById('m2');
+      const m3 = document.getElementById('m3');
+      const m4 = document.getElementById('m4');
+      const dlg = (m) => m.shadowRoot.querySelector('dialog');
+
+      /* ---------- semântica e estado inicial ---------- */
+      check('fechado no início', !m1.open && !dlg(m1).open);
+      check('label vira aria-label', dlg(m1).getAttribute('aria-label') === 'Editar plantão',
+        dlg(m1).getAttribute('aria-label'));
+      check('detecta slot header', m1.hasAttribute('data-has-header'));
+      check('detecta slot footer', m1.hasAttribute('data-has-footer'));
+      check('sem header não marca data-has-header', !m4.hasAttribute('data-has-header'));
+
+      /* ---------- abrir: modal de verdade + trava de rolagem ---------- */
+      const overflowAntes = document.body.style.overflow;
+      m1.show();
+      await wait(120);
+      check('open refletido', m1.open);
+      check('é diálogo MODAL (:modal)', dlg(m1).matches(':modal'));
+      check('top layer: backdrop presente', getComputedStyle(dlg(m1), '::backdrop').backgroundColor !== '',
+        getComputedStyle(dlg(m1), '::backdrop').backgroundColor);
+      check('trava a rolagem do body', document.body.style.overflow === 'hidden',
+        document.body.style.overflow);
+
+      /* foco inicial — sem ele o Esc nativo fica MORTO (medido) */
+      check('foco foi para dentro do modal',
+        m1.contains(document.activeElement) || document.activeElement === m1,
+        document.activeElement?.tagName + '/' + (document.activeElement?.id || ''));
+
+      /* ---------- aparência medida ---------- */
+      {
+        const cs = getComputedStyle(dlg(m1));
+        check('radius 8px', cs.borderRadius === '8px', cs.borderRadius);
+        check('sem borda', cs.borderTopWidth === '0px', cs.borderTopWidth);
+        check('max-width 896px (default)', cs.maxWidth === '896px', cs.maxWidth);
+        check('overflow hidden', cs.overflow === 'hidden', cs.overflow);
+        const bd = getComputedStyle(dlg(m1), '::backdrop').backgroundColor;
+        check('backdrop #111827 a 50%', bd === 'rgba(17, 24, 39, 0.5)', bd);
+        const h = getComputedStyle(m1.shadowRoot.querySelector('.header'));
+        check('header padding 24/72/16/24',
+          `${h.paddingTop} ${h.paddingRight} ${h.paddingBottom} ${h.paddingLeft}` === '24px 72px 16px 24px',
+          `${h.paddingTop} ${h.paddingRight} ${h.paddingBottom} ${h.paddingLeft}`);
+        check('título 20px/28px', h.fontSize === '20px' && h.lineHeight === '28px',
+          `${h.fontSize}/${h.lineHeight}`);
+        const b = getComputedStyle(m1.shadowRoot.querySelector('.body'));
+        check('body padding 16/24', b.paddingTop === '16px' && b.paddingLeft === '24px',
+          `${b.paddingTop}/${b.paddingLeft}`);
+        check('body é quem rola', b.overflowY === 'auto', b.overflowY);
+        const f = getComputedStyle(m1.shadowRoot.querySelector('.footer'));
+        check('footer padding 16/24', f.paddingTop === '16px' && f.paddingLeft === '24px',
+          `${f.paddingTop}/${f.paddingLeft}`);
+        const c = getComputedStyle(m1.shadowRoot.querySelector('.close'));
+        check('fechar 40x40 em 16/16',
+          c.width === '40px' && c.height === '40px' && c.top === '16px' && c.right === '16px',
+          `${c.width}x${c.height} @ ${c.top}/${c.right}`);
+      }
+
+      /* ---------- me-close cancelável, com a origem ---------- */
+      let capturado = null;
+      const espia = (e) => { capturado = e.detail.source; };
+      m1.addEventListener('me-close', espia);
+
+      m1.shadowRoot.querySelector('.close').click();
+      await wait(120);
+      check('botão fechar informa source=close-button', capturado === 'close-button', String(capturado));
+      check('fechou de fato', !m1.open && !dlg(m1).open);
+      check('devolveu a rolagem', document.body.style.overflow === overflowAntes,
+        `"${document.body.style.overflow}"`);
+      m1.removeEventListener('me-close', espia);
+
+      /* hide() também passa pelo me-close (source=api) */
+      capturado = null;
+      m1.addEventListener('me-close', espia);
+      m1.show();
+      await wait(100);
+      m1.hide();
+      await wait(120);
+      check('hide() informa source=api', capturado === 'api', String(capturado));
+      check('fechou pelo hide()', !m1.open);
+      m1.removeEventListener('me-close', espia);
+
+      /* preventDefault segura o modal aberto */
+      const barrar = (e) => e.preventDefault();
+      m1.addEventListener('me-close', barrar);
+      m1.show();
+      await wait(100);
+      m1.shadowRoot.querySelector('.close').click();
+      await wait(120);
+      check('preventDefault impede o fechamento', m1.open && dlg(m1).open);
+      m1.removeEventListener('me-close', barrar);
+      m1.hide();
+      await wait(120);
+      check('fecha depois de remover o bloqueio', !m1.open);
+
+      /* me-after-close dispara ao fechar */
+      let depois = 0;
+      m1.addEventListener('me-after-close', () => depois++);
+      m1.show();
+      await wait(100);
+      m1.hide();
+      await wait(150);
+      check('me-after-close disparou 1x', depois === 1, String(depois));
+
+      /* ---------- clique no overlay fecha (default, como no app) ---------- */
+      capturado = null;
+      m1.addEventListener('me-close', espia);
+      m1.show();
+      await wait(120);
+      {
+        const r = dlg(m1).getBoundingClientRect();
+        // Ponto claramente fora da caixa, mas dentro da viewport: é o backdrop.
+        const x = Math.round(Math.max(4, r.left / 2));
+        const y = Math.round(Math.max(4, r.top / 2));
+        dlg(m1).dispatchEvent(new MouseEvent('click', {
+          bubbles: true, clientX: x, clientY: y,
+        }));
+        await wait(120);
+        check('clique no overlay informa source=overlay', capturado === 'overlay',
+          `${capturado} (sonda ${x},${y}; caixa ${Math.round(r.left)},${Math.round(r.top)})`);
+        check('overlay fechou o modal', !m1.open);
+      }
+      m1.removeEventListener('me-close', espia);
+
+      /* clique DENTRO da caixa não fecha */
+      capturado = null;
+      m1.addEventListener('me-close', espia);
+      m1.show();
+      await wait(120);
+      {
+        const r = dlg(m1).getBoundingClientRect();
+        dlg(m1).dispatchEvent(new MouseEvent('click', {
+          bubbles: true,
+          clientX: Math.round(r.left + r.width / 2),
+          clientY: Math.round(r.top + r.height / 2),
+        }));
+        await wait(120);
+        check('clique dentro da caixa NÃO fecha', m1.open && capturado === null, String(capturado));
+      }
+      m1.removeEventListener('me-close', espia);
+      m1.hide();
+      await wait(120);
+
+      /* ---------- tamanhos ---------- */
+      m2.show();
+      await wait(120);
+      check('size=small → 448px', getComputedStyle(dlg(m2)).maxWidth === '448px',
+        getComputedStyle(dlg(m2)).maxWidth);
+      check('header-border aplica borda de 2px',
+        getComputedStyle(m2.shadowRoot.querySelector('.header')).borderBottomWidth === '2px');
+      check('footer-border aplica borda de 2px',
+        getComputedStyle(m2.shadowRoot.querySelector('.footer')).borderTopWidth === '2px');
+      m2.hide();
+      await wait(120);
+
+      /* ---------- without-header ---------- */
+      m4.show();
+      await wait(120);
+      check('without-header esconde o header',
+        getComputedStyle(m4.shadowRoot.querySelector('.header')).display === 'none');
+      check('without-header esconde o botão fechar',
+        getComputedStyle(m4.shadowRoot.querySelector('.close')).display === 'none');
+      check('sem header o corpo recupera o respiro do topo',
+        getComputedStyle(m4.shadowRoot.querySelector('.body')).paddingTop === '24px',
+        getComputedStyle(m4.shadowRoot.querySelector('.body')).paddingTop);
+      m4.hide();
+      await wait(120);
+
+      /* ---------- O CASO CRÍTICO: me-select dentro do modal ---------- */
+      m3.show();
+      await wait(150);
+      const sel = document.getElementById('sel');
+      sel.show();
+      await wait(200);
+      {
+        const painel = sel.shadowRoot.querySelector('.panel');
+        const pr = painel.getBoundingClientRect();
+        const dr = dlg(m3).getBoundingClientRect();
+        check('painel do select abriu dentro do modal', sel.open);
+        check('painel está no top layer', painel.matches(':popover-open'));
+
+        // Empilhamento: o painel tem que ser atingível por hit-test.
+        const x = Math.round(pr.left + pr.width / 2);
+        const y = Math.round(pr.top + 10);
+        const hit = document.elementFromPoint(x, y);
+        check('painel pinta ACIMA do modal', hit === sel || sel.contains(hit),
+          `hit=${hit?.tagName?.toLowerCase()} em (${x},${y})`);
+
+        // Ancorou no campo, que está dentro do modal?
+        const campo = sel.shadowRoot.querySelector('.field').getBoundingClientRect();
+        check('painel ancorado no campo de dentro do modal',
+          Math.abs(Math.round(pr.left) - Math.round(campo.left)) <= 1,
+          `campo.left=${Math.round(campo.left)} painel.left=${Math.round(pr.left)}`);
+        check('painel pode passar da borda do modal sem ser recortado',
+          Math.round(pr.bottom) > Math.round(dr.top),
+          `painel ${Math.round(pr.top)}..${Math.round(pr.bottom)} modal ${Math.round(dr.top)}..${Math.round(dr.bottom)}`);
+      }
+
+      // Escolher uma opção dentro do modal funciona (chips no campo).
+      sel.querySelectorAll('me-select-option')[0].shadowRoot.querySelector('.base').click();
+      await wait(120);
+      check('seleção dentro do modal funciona',
+        JSON.stringify(sel.value) === JSON.stringify(['1']), JSON.stringify(sel.value));
+      check('modal continua aberto após escolher', m3.open);
+      m3.hide();
+      await wait(150);
+      check('fechar o modal com o select dentro não deixa resíduo',
+        !m3.open && document.body.style.overflow === overflowAntes,
+        `overflow="${document.body.style.overflow}"`);
+    } catch (e) {
+      erroFatal = `${e.name}: ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`;
+    }
+
+    const failed = results.filter((r) => !r.ok);
+    document.getElementById('results').innerHTML =
+      `<div id="summary" class="${failed.length || erroFatal ? 'fail' : 'pass'}">` +
+      `${results.length - failed.length}/${results.length} passaram` +
+      `${failed.length ? ` — ${failed.length} falha(s)` : erroFatal ? '' : ' — tudo ok'}</div>` +
+      (erroFatal ? `<pre class="fail" style="white-space:pre-wrap">ESTOUROU: ${erroFatal}</pre>` : '') +
+      '<table><tr><th>#</th><th>verificação</th><th>resultado</th><th>detalhe</th></tr>' +
+      results.map((r, i) =>
+        `<tr><td>${i + 1}</td><td>${r.name}</td>` +
+        `<td class="${r.ok ? 'pass' : 'fail'}">${r.ok ? 'PASS' : 'FAIL'}</td>` +
+        `<td>${r.detail.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</td></tr>`
+      ).join('') + '</table>';
+  </script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste do me-select — me-bricks</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    body {
+      margin: 0; padding: 24px 32px;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D); background: var(--me-color-page, #FAFAFA);
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p  { max-width: 80ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); font-size: 14px; }
+    .cases { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; margin: 20px 0; }
+    table { border-collapse: collapse; font-size: 13px; background: #fff; }
+    th, td { padding: 5px 10px; text-align: left; border-bottom: 1px solid var(--me-color-border, #E2E2E9); }
+    .pass { color: #198038; font-weight: 700; }
+    .fail { color: #DA1E28; font-weight: 700; }
+    #summary { margin-top: 12px; font-size: 16px; font-weight: 700; }
+    #results { position: fixed; right: 16px; top: 16px; width: 640px; max-height: 92vh; overflow: auto;
+               background: #fff; padding: 12px 14px; border-radius: 8px; box-shadow: var(--me-shadow-card); }
+  </style>
+</head>
+<body>
+  <h1>me-select</h1>
+  <p>Campo de seleção: chips, busca, FormData, validação, teclado.</p>
+
+  <form id="f" class="cases">
+    <me-select id="multi" name="participantes" label="Adicionar Participantes ou Grupos"
+               multiple searchable clearable clear-on-select
+               empty-text="Nenhum usuário encontrado" style="width:380px">
+      <me-select-option value="1">
+        <me-icon slot="icon" name="account"></me-icon>
+        Dra. Ana Souza
+        <span slot="description">Médica · CRM 12345</span>
+      </me-select-option>
+      <me-select-option value="2">
+        <me-icon slot="icon" name="account-group"></me-icon>
+        Equipe Cardiologia
+        <span slot="description">Grupo · 8 membros</span>
+      </me-select-option>
+      <me-select-option value="3">
+        <me-icon slot="icon" name="account"></me-icon>
+        Dr. Bruno Lima
+        <span slot="description">Médico · CRM 67890</span>
+      </me-select-option>
+      <me-select-option value="4" disabled>Indisponível</me-select-option>
+    </me-select>
+
+    <me-select id="single" name="permissao" label="Permissão" style="width:260px">
+      <me-select-option value="reader" selected>Leitor básico</me-select-option>
+      <me-select-option value="editor">Editor básico</me-select-option>
+      <me-select-option value="admin">Administrador geral</me-select-option>
+    </me-select>
+
+    <me-select id="req" name="obrigatorio" label="Obrigatório" required style="width:220px">
+      <me-select-option value="a">Alfa</me-select-option>
+      <me-select-option value="b">Beta</me-select-option>
+    </me-select>
+  </form>
+
+  <div class="cases">
+    <me-select label="Carregando" loading searchable style="width:240px">
+      <me-select-option value="x">Um</me-select-option>
+    </me-select>
+    <me-select label="Desabilitado" disabled style="width:240px">
+      <me-select-option value="x">Um</me-select-option>
+    </me-select>
+    <me-select label="Com erro" error error-message="Selecione ao menos um participante" style="width:280px">
+      <me-select-option value="x">Um</me-select-option>
+    </me-select>
+    <me-select id="maxt" label="Máx. 2 chips" multiple max-tags="2" style="width:280px">
+      <me-select-option value="1" selected>Alfa</me-select-option>
+      <me-select-option value="2" selected>Beta</me-select-option>
+      <me-select-option value="3" selected>Gama</me-select-option>
+      <me-select-option value="4" selected>Delta</me-select-option>
+    </me-select>
+  </div>
+
+  <div id="results"><em>rodando…</em></div>
+
+  <script type="module">
+    const wait = (ms = 50) => new Promise((r) => setTimeout(r, ms));
+    const results = [];
+    const check = (n, ok, d = '') => results.push({ name: n, ok: !!ok, detail: String(d) });
+    window.__results = results;
+    let erroFatal = null;
+
+    const key = (t, k) => t.dispatchEvent(
+      new KeyboardEvent('keydown', { key: k, bubbles: true, composed: true, cancelable: true }));
+
+    try {
+      await customElements.whenDefined('me-select');
+      await customElements.whenDefined('me-select-option');
+      await wait(150);
+
+      const multi = document.getElementById('multi');
+      const single = document.getElementById('single');
+      const req = document.getElementById('req');
+      const form = document.getElementById('f');
+      const opts = [...multi.querySelectorAll('me-select-option')];
+      const input = multi.shadowRoot.querySelector('input');
+
+      /* ---------- semântica ---------- */
+      check('input é role=combobox', input.getAttribute('role') === 'combobox');
+      check('aria-expanded começa false', input.getAttribute('aria-expanded') === 'false');
+      check('painel é role=listbox',
+        multi.shadowRoot.querySelector('.panel').getAttribute('role') === 'listbox');
+      check('opção é role=option', opts[0].getAttribute('role') === 'option');
+      check('aria-selected reflete', opts[0].getAttribute('aria-selected') === 'false');
+      check('opção desabilitada expõe aria-disabled',
+        opts[3].getAttribute('aria-disabled') === 'true');
+      check('label é o nome acessível', input.getAttribute('aria-label') === multi.label,
+        input.getAttribute('aria-label'));
+      check('coluna de ícone reservada quando há ícone',
+        multi.style.getPropertyValue('--me-select-icon-space') === '36px');
+      check('sem ícone não reserva coluna',
+        single.style.getPropertyValue('--me-select-icon-space') === '0px',
+        single.style.getPropertyValue('--me-select-icon-space'));
+
+      /* ---------- valor inicial declarado por `selected` ---------- */
+      check('single lê o selected declarado', single.value === 'reader', JSON.stringify(single.value));
+      check('single mostra o rótulo no campo',
+        single.shadowRoot.querySelector('input').value === 'Leitor básico',
+        single.shadowRoot.querySelector('input').value);
+      check('multiple começa vazio (array)',
+        Array.isArray(multi.value) && multi.value.length === 0, JSON.stringify(multi.value));
+
+      /* ---------- seleção múltipla + chips ---------- */
+      let changes = 0;
+      multi.addEventListener('change', () => changes++);
+
+      multi.show();
+      await wait(80);
+      check('aria-expanded vira true ao abrir', input.getAttribute('aria-expanded') === 'true');
+
+      opts[0].shadowRoot.querySelector('.base').click();
+      await wait(80);
+      check('value é array com o escolhido',
+        JSON.stringify(multi.value) === JSON.stringify(['1']), JSON.stringify(multi.value));
+      check('change disparou', changes === 1, String(changes));
+      check('multiple NÃO fecha ao escolher', multi.open);
+      check('um chip renderizado',
+        multi.shadowRoot.querySelectorAll('.tag').length === 1);
+      check('chip mostra o rótulo, sem o subtítulo',
+        multi.shadowRoot.querySelector('.tag span').textContent === 'Dra. Ana Souza',
+        multi.shadowRoot.querySelector('.tag span').textContent);
+      check('label flutua com chip', multi.shadowRoot.querySelector('.field').classList.contains('filled'));
+
+      opts[1].shadowRoot.querySelector('.base').click();
+      await wait(80);
+      check('dois chips', multi.shadowRoot.querySelectorAll('.tag').length === 2);
+
+      /* ---------- FormData: entradas repetidas no mesmo name ---------- */
+      {
+        const data = new FormData(form);
+        const todos = data.getAll('participantes');
+        check('FormData traz as duas entradas do mesmo name',
+          JSON.stringify(todos) === JSON.stringify(['1', '2']), JSON.stringify(todos));
+        check('FormData traz o valor único do single',
+          data.get('permissao') === 'reader', String(data.get('permissao')));
+      }
+
+      /* ---------- remover chip pelo × ---------- */
+      multi.shadowRoot.querySelector('.tag button').click();
+      await wait(80);
+      check('× remove o chip', multi.shadowRoot.querySelectorAll('.tag').length === 1);
+      check('valor acompanha a remoção',
+        JSON.stringify(multi.value) === JSON.stringify(['2']), JSON.stringify(multi.value));
+
+      /* ---------- Backspace com busca vazia remove o último ---------- */
+      input.value = '';
+      key(input, 'Backspace');
+      await wait(80);
+      check('Backspace com busca vazia remove o último chip',
+        multi.value.length === 0, JSON.stringify(multi.value));
+
+      /* ---------- busca local ---------- */
+      multi.show();
+      await wait(60);
+      input.value = 'bruno';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await wait(80);
+      check('busca esconde os que não casam',
+        opts[0].hidden && opts[1].hidden && !opts[2].hidden,
+        `[${opts.map((o) => o.hidden).join(',')}]`);
+      check('não marca vazio quando há resultado', !multi.hasAttribute('data-empty'));
+
+      input.value = 'zzzz';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await wait(80);
+      check('sem resultado marca data-empty', multi.hasAttribute('data-empty'));
+      check('empty-text é o texto customizado',
+        multi.shadowRoot.querySelector('.empty').textContent === 'Nenhum usuário encontrado',
+        multi.shadowRoot.querySelector('.empty').textContent);
+
+      input.value = '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      await wait(80);
+      check('limpar a busca revela tudo', opts.every((o) => !o.hidden));
+
+      /* ---------- teclado ---------- */
+      multi.hide();
+      await wait(60);
+      key(input, 'ArrowDown');
+      await wait(80);
+      check('ArrowDown abre o painel', multi.open);
+      check('primeira opção fica ativa', opts[0].hasAttribute('data-active'),
+        opts.map((o) => o.hasAttribute('data-active')).join(','));
+
+      key(input, 'ArrowDown');
+      await wait(60);
+      check('ArrowDown anda para a 2ª', opts[1].hasAttribute('data-active'));
+
+      key(input, 'ArrowDown');
+      await wait(60);
+      key(input, 'ArrowDown');
+      await wait(60);
+      check('teclado pula a opção desabilitada', opts[0].hasAttribute('data-active'),
+        opts.map((o, i) => i + ':' + o.hasAttribute('data-active')).join(' '));
+
+      key(input, 'Enter');
+      await wait(80);
+      check('Enter escolhe a ativa',
+        JSON.stringify(multi.value) === JSON.stringify(['1']), JSON.stringify(multi.value));
+
+      key(input, 'Escape');
+      await wait(80);
+      check('Esc fecha', !multi.open);
+
+      /* ---------- clear ---------- */
+      const clear = multi.shadowRoot.querySelector('.clear');
+      check('botão limpar visível com seleção', !clear.hidden);
+      let cleared = false;
+      multi.addEventListener('me-clear', () => { cleared = true; });
+      clear.click();
+      await wait(80);
+      check('limpar zera a seleção', multi.value.length === 0, JSON.stringify(multi.value));
+      check('me-clear disparou', cleared);
+      check('botão limpar esconde sem seleção', clear.hidden);
+
+      /* ---------- single: fecha ao escolher, sem chips ---------- */
+      single.show();
+      await wait(60);
+      const sOpts = [...single.querySelectorAll('me-select-option')];
+      sOpts[2].shadowRoot.querySelector('.base').click();
+      await wait(80);
+      check('single fecha ao escolher', !single.open);
+      check('single não cria chip', single.shadowRoot.querySelectorAll('.tag').length === 0);
+      check('single guarda string, não array', single.value === 'admin', JSON.stringify(single.value));
+      check('single mostra o novo rótulo',
+        single.shadowRoot.querySelector('input').value === 'Administrador geral',
+        single.shadowRoot.querySelector('input').value);
+
+      /* ---------- validação ---------- */
+      check('required sem seleção é inválido', !req.checkValidity());
+      check('validity.valueMissing', req.validity.valueMissing);
+      req.value = 'a';
+      await wait(60);
+      check('required com seleção é válido', req.checkValidity());
+
+      /* ---------- reset do form volta ao declarado ---------- */
+      form.reset();
+      await wait(100);
+      check('reset devolve o single ao selected inicial',
+        single.value === 'reader', JSON.stringify(single.value));
+      check('reset limpa o multiple', multi.value.length === 0, JSON.stringify(multi.value));
+      check('reset limpa o required', req.value === '', JSON.stringify(req.value));
+
+      /* ---------- max-tags ---------- */
+      {
+        const maxt = document.getElementById('maxt');
+        const tags = maxt.shadowRoot.querySelectorAll('.tag');
+        check('max-tags mostra 2 chips + 1 de excedente', tags.length === 3, String(tags.length));
+        check('chip de excedente diz +2',
+          tags[2].textContent === '+2' && tags[2].classList.contains('overflow'),
+          tags[2].textContent);
+        check('valor mantém os 4 selecionados', maxt.value.length === 4, JSON.stringify(maxt.value));
+      }
+
+      /* ---------- aparência medida ---------- */
+      {
+        multi.value = ['1'];
+        await wait(80);
+        const tag = multi.shadowRoot.querySelector('.tag');
+        const cs = getComputedStyle(tag);
+        check('chip tem 26px de altura', Math.round(tag.getBoundingClientRect().height) === 26,
+          Math.round(tag.getBoundingClientRect().height) + 'px');
+        check('chip é pílula', cs.borderRadius === '999px', cs.borderRadius);
+        check('chip sem borda', cs.borderTopWidth === '0px', cs.borderTopWidth);
+        check('chip fonte 12px', cs.fontSize === '12px', cs.fontSize);
+        check('chip texto na cor da marca', cs.color === 'rgb(47, 127, 145)', cs.color);
+
+        const field = multi.shadowRoot.querySelector('.field');
+        check('campo radius 4px', getComputedStyle(field).borderRadius === '4px');
+        const panel = multi.shadowRoot.querySelector('.panel');
+        check('painel max-height 300px', getComputedStyle(panel).maxHeight === '300px',
+          getComputedStyle(panel).maxHeight);
+
+        const opt = opts[0].shadowRoot.querySelector('.base');
+        check('opção 48px de altura mínima', getComputedStyle(opt).minHeight === '48px');
+        const titulo = getComputedStyle(opts[0].shadowRoot.querySelector('.title'));
+        check('título 16px/24px', titulo.fontSize === '16px' && titulo.lineHeight === '24px',
+          `${titulo.fontSize}/${titulo.lineHeight}`);
+        const sub = getComputedStyle(opts[0].shadowRoot.querySelector('.description'));
+        check('subtítulo 14px/16px', sub.fontSize === '14px' && sub.lineHeight === '16px',
+          `${sub.fontSize}/${sub.lineHeight}`);
+      }
+
+      /* ---------- painel acompanha a largura do campo ---------- */
+      {
+        multi.show();
+        await wait(120);
+        const fr = multi.shadowRoot.querySelector('.field').getBoundingClientRect();
+        const pr = multi.shadowRoot.querySelector('.panel').getBoundingClientRect();
+        check('painel tem a largura do campo',
+          Math.abs(Math.round(pr.width) - Math.round(fr.width)) <= 1,
+          `campo=${Math.round(fr.width)} painel=${Math.round(pr.width)}`);
+        check('painel encostado no campo (gap 0)',
+          Math.abs(Math.round(pr.top) - Math.round(fr.bottom)) <= 1,
+          `campo.bottom=${Math.round(fr.bottom)} painel.top=${Math.round(pr.top)}`);
+        multi.hide();
+      }
+    } catch (e) {
+      erroFatal = `${e.name}: ${e.message}\n${(e.stack || '').split('\n').slice(1, 4).join('\n')}`;
+    }
+
+    const failed = results.filter((r) => !r.ok);
+    document.getElementById('results').innerHTML =
+      `<div id="summary" class="${failed.length || erroFatal ? 'fail' : 'pass'}">` +
+      `${results.length - failed.length}/${results.length} passaram` +
+      `${failed.length ? ` — ${failed.length} falha(s)` : erroFatal ? '' : ' — tudo ok'}</div>` +
+      (erroFatal ? `<pre class="fail" style="white-space:pre-wrap">ESTOUROU: ${erroFatal}</pre>` : '') +
+      '<table><tr><th>#</th><th>verificação</th><th>resultado</th><th>detalhe</th></tr>' +
+      results.map((r, i) =>
+        `<tr><td>${i + 1}</td><td>${r.name}</td>` +
+        `<td class="${r.ok ? 'pass' : 'fail'}">${r.ok ? 'PASS' : 'FAIL'}</td>` +
+        `<td>${r.detail.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}</td></tr>`
+      ).join('') + '</table>';
+  </script>
+</body>
+</html>

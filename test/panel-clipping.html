@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clipping do painel do me-select-filter — me-bricks</title>
+  <link rel="stylesheet" href="../tokens.css" />
+  <script type="module" src="../components/index.js"></script>
+  <style>
+    /* Shell EXATAMENTE como o AGENTS.md recomenda: o body não rola
+       (height:100vh; overflow:hidden) e a rolagem fica na área de conteúdo. */
+    body {
+      display: flex;
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-page, #FAFAFA);
+    }
+    main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    #scroller {
+      flex: 1;
+      overflow-y: auto;      /* <<< o ancestral suspeito de recortar */
+      padding: 24px 32px;
+      background: var(--me-color-surface, #FFF);
+    }
+
+    /* Rodapé fora do scroller. Existe por motivo metodológico: puxa o fim do
+       scroller para DENTRO da viewport, criando uma banda onde o painel existe
+       geometricamente, está na tela, mas está fora da caixa de rolagem. Sem
+       essa banda, "recortado pelo overflow" e "abaixo da viewport" são
+       indistinguíveis — elementFromPoint devolve null nos dois casos. */
+    #footer {
+      flex: none; height: 240px;
+      display: grid; place-items: center;
+      background: var(--me-color-neutral-20, #E2E2E9);
+      color: var(--me-color-secondary-20, #52526F); font-size: 13px;
+      border-top: 2px dashed var(--me-color-tertiary-30, #CB2957);
+    }
+
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p { max-width: 80ch; line-height: 1.5; color: var(--me-color-text-muted, #68688D); font-size: 14px; }
+    .filler { height: 700px; display: grid; place-items: center; color: var(--me-color-neutral-40, #BCBCCD); }
+    .row { display: flex; gap: 12px; align-items: center; padding: 8px 0; }
+    .marker { font-size: 12px; font-weight: 700; color: var(--me-color-tertiary-30, #CB2957); }
+
+    #report {
+      position: fixed; right: 16px; top: 16px; width: 400px; z-index: 999;
+      padding: 12px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5;
+      font-family: ui-monospace, monospace; white-space: pre-wrap;
+      background: #16161D; color: #F0F0F4; box-shadow: 0 8px 24px rgb(0 0 0 / .3);
+    }
+  </style>
+</head>
+<body>
+  <me-sidebar expanded preset="gestor" active-item="dashboard" style="flex:none; height:100vh;"></me-sidebar>
+
+  <main>
+    <me-page-header heading="Teste de clipping" subheading="me-select-filter no shell do app" style="flex:none;"></me-page-header>
+
+    <div id="scroller">
+      <h1>Painel do dropdown vs. <code>overflow-y: auto</code></h1>
+      <p>
+        O painel do <code>me-select-filter</code> é <code>position: absolute</code> num
+        <code>:host { position: relative }</code>. Se o bloco contêiner está dentro da caixa de
+        rolagem, o painel é recortado por ela.
+      </p>
+
+      <div class="row">
+        <span class="marker">CONTROLE (topo) →</span>
+        <me-select-filter id="topo" label="Status" multiple>
+          <me-option value="a" selected>Aguardando Auditoria</me-option>
+          <me-option value="b">Aprovado</me-option>
+          <me-option value="c">Reprovado</me-option>
+          <me-option value="d">Em análise</me-option>
+          <me-option value="e">Cancelado</me-option>
+        </me-select-filter>
+      </div>
+
+      <div class="filler">↕ enchimento (700px)</div>
+
+      <div class="row">
+        <span class="marker">CASO (base do scroller) →</span>
+        <me-select-filter id="base" label="Unidades" multiple>
+          <me-option value="1">Hospital São Lucas</me-option>
+          <me-option value="2">Hospital Santa Casa</me-option>
+          <me-option value="3">Hospital Municipal</me-option>
+          <me-option value="4">UPA Zona Norte</me-option>
+          <me-option value="5">Clínica Central</me-option>
+        </me-select-filter>
+      </div>
+    </div>
+
+    <div id="footer">rodapé de 240px — fora do scroller</div>
+  </main>
+
+  <div id="report">medindo…</div>
+
+  <script type="module">
+    /* setTimeout, não requestAnimationFrame: rAF não dispara em aba oculta,
+       e a medição precisa rodar mesmo sem a aba em foco. */
+    const wait = (ms = 60) => new Promise((r) => setTimeout(r, ms));
+    const scroller = document.getElementById('scroller');
+    const out = [];
+
+    function probe(f, label) {
+      const panel = f.shadowRoot.querySelector('.panel');
+      const p = panel.getBoundingClientRect();
+      const s = scroller.getBoundingClientRect();
+      const x = Math.round(p.left + p.width / 2);
+
+      const bandTop = Math.round(s.bottom + 3);
+      const bandBottom = Math.round(Math.min(innerHeight - 3, p.bottom - 3));
+      const band = [];
+      if (bandBottom > bandTop) {
+        const step = Math.max(1, Math.floor((bandBottom - bandTop) / 3));
+        for (let y = bandTop; y <= bandBottom; y += step) {
+          const el = document.elementFromPoint(x, y);
+          band.push({ y, hit: el ? el.tagName.toLowerCase() : 'null',
+                      isPanel: !!el && (el === f || f.contains(el)) });
+        }
+      }
+      // Controle: ponto no painel DENTRO do scroller (deve acertar o painel).
+      const yIn = Math.round(Math.max(p.top + 5, s.top + 5));
+      const elIn = document.elementFromPoint(x, yIn);
+
+      return { label, panel: { top: Math.round(p.top), bottom: Math.round(p.bottom), height: Math.round(p.height) },
+               scrollerBottom: Math.round(s.bottom), innerHeight,
+               alemDoScroller: Math.round(p.bottom - s.bottom),
+               bandaExiste: band.length > 0, band,
+               dentro: { y: yIn, hit: elIn ? elIn.tagName.toLowerCase() : 'null',
+                         isPanel: !!elIn && (elIn === f || f.contains(elIn)) } };
+    }
+
+    /* Depois da migração do Filters.js para internal/popover.js (v0.7.0), este
+       arquivo deixou de ser diagnóstico e passou a ser REGRESSÃO: o esperado
+       agora é que o painel NÃO seja recortado. Antes da migração o caso media
+       "RECORTADO" com 158px de transbordo invisível. */
+    function render(r) {
+      const cortado = r.bandaExiste && r.band.every((b) => !b.isPanel);
+      const pintado = r.bandaExiste && r.band.some((b) => b.isPanel);
+      // O caso pode passar de dois jeitos: transbordar e seguir visível (top
+      // layer), ou nem transbordar porque virou para cima (flip). Os dois são
+      // aprovação; recorte é a única reprovação.
+      const veredito = !r.bandaExiste
+        ? (r.alemDoScroller <= 0 ? 'OK — cabe dentro do scroller, nada a recortar' : 'INCONCLUSIVO (sem banda)')
+        : cortado ? 'FALHA — RECORTADO pelo overflow'
+        : pintado ? 'OK — transborda o scroller e continua visível' : '?';
+      return [
+        `## ${r.label}`,
+        `  painel            top ${r.panel.top}  bottom ${r.panel.bottom}  (h ${r.panel.height})`,
+        `  scroller.bottom   ${r.scrollerBottom}      innerHeight ${r.innerHeight}`,
+        `  além do scroller  ${r.alemDoScroller > 0 ? '+' + r.alemDoScroller : r.alemDoScroller}px`,
+        `  controle dentro   y=${r.dentro.y} -> ${r.dentro.hit} ${r.dentro.isPanel ? '= painel OK' : '= NAO painel'}`,
+        `  sondas na banda   ${r.bandaExiste ? r.band.map((b) => `y${b.y}:${b.hit}${b.isPanel ? '(painel)' : ''}`).join('  ') : '-'}`,
+        `  => ${veredito}`,
+      ].join('\n');
+    }
+
+    await customElements.whenDefined('me-select-filter');
+    await wait(150);
+
+    const topo = document.getElementById('topo');
+    topo.open = true; await wait();
+    out.push(probe(topo, 'CONTROLE — pílula no topo'));
+    topo.open = false; await wait();
+
+    scroller.scrollTop = scroller.scrollHeight;   // pílula do caso junto à borda inferior
+    await wait(120);
+    const base = document.getElementById('base');
+    base.open = true; await wait();
+    out.push(probe(base, 'CASO — pílula na base do scroller'));
+
+    // textContent (não innerHTML): os nomes de tag do relatório viravam markup.
+    document.getElementById('report').textContent = out.map(render).join('\n\n');
+    window.__clipping = out;
+  </script>
+</body>
+</html>

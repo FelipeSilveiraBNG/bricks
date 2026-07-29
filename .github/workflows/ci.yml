@@ -12,6 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Os componentes montam o shadow DOM com template literal, e os
+      # comentários dentro do <style> citam nomes de propriedade CSS. Um backtick
+      # em volta de um desses nomes encerra a string e o arquivo vira
+      # SyntaxError. Já aconteceu duas vezes (`gap` no Dropdown.js, `pt-4` no
+      # Modal.js), e o sintoma na página é "as tags <me-*> viraram texto cru" —
+      # que o AGENTS.md ensina a diagnosticar como 404, cópia duplicada ou tag
+      # self-closing. O sintoma aponta três causas erradas antes da certa.
+      - name: Componentes sem erro de sintaxe
+        run: node tools/check-syntax.mjs
 
       # customElements.define cru lança NotSupportedError quando a tag já
       # existe, e por estar no topo do módulo a exceção aborta a avaliação e

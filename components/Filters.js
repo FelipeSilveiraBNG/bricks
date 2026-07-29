@@ -29,6 +29,22 @@
  *     me-toggle (detail { open }) ao abrir/fechar.
  *   Parts: base, trigger, icon, label, count, panel, search, list, empty.
  *
+ * MIGRADO PARA internal/popover.js. A API pública acima não mudou;
+ * o interior sim. Antes o painel era `position: absolute` num
+ * `:host { position: relative }`, o que era RECORTADO por qualquer ancestral
+ * com overflow — medido em test/panel-clipping.html: no shell que o AGENTS.md
+ * recomenda, com a pílula perto da base, o painel passava 158px além da caixa
+ * de rolagem e aqueles pixels não eram pintados nem clicáveis. Como não havia
+ * flip e o body não rola, as opções ficavam inalcançáveis.
+ *
+ * O QUE MUDOU DE COMPORTAMENTO (é melhoria, mas é visível):
+ *   - o painel abre no top layer: empilha acima de me-card e de modais;
+ *   - vira para cima quando falta espaço embaixo;
+ *   - "abrir um fecha os outros" passou a ser automático (popover=auto é
+ *     mutuamente exclusivo), então a receita manual que o AGENTS.md pedia
+ *     — ouvir me-toggle e fechar os irmãos — ficou obsoleta;
+ *   - ganhou navegação por teclado nas opções, que não existia.
+ *
  * me-option
  *   Atributos: value, selected (gerido pelo pai, refletido), disabled.
  *   Slot: default (rótulo). Part: base.
@@ -38,6 +54,10 @@
  *   Slot: default (rótulo). Evento: me-remove (detail { value }). Parts: base, remove.
  */
 import { define } from './define.js';
+import {
+  PANEL_CSS, SUPPORTS_ANCHOR, preparePanel, setPlacement,
+  openPanel, closePanel, syncOpenState, rovingItems,
+} from './internal/popover.js';
 
 /* --------------------------------------------------------------- me-option */
 const optionTemplate = document.createElement('template');
@@ -60,6 +80,14 @@ optionTemplate.innerHTML = `
       transition: background var(--me-transition, 0.2s ease);
     }
     .base:hover { background: var(--me-color-neutral-10, #F0F0F4); }
+
+    /* data-active = opção sob o cursor do teclado, escrito pelo pai. O foco
+       real fica no campo de busca (ou na pílula), então a marcação é a única
+       pista visual de onde o teclado está. */
+    :host([data-active]) .base {
+      background: var(--me-color-brand-hover, rgb(47 127 145 / 0.08));
+      box-shadow: inset 2px 0 0 0 var(--me-color-brand, #2F7F91);
+    }
 
     /* Selecionado = bg-gray-100 font-semibold text-primary30 */
     :host([selected]) .base {
@@ -172,22 +200,27 @@ filterTemplate.innerHTML = `
     }
     :host([data-has-count]) .count { display: inline-flex; }
 
-    /* Dropdown: absolute mt-2 rounded-md shadow-lg bg-white ring-1 border do SelectFilter.vue */
+    ${PANEL_CSS}
+
+    /* Sobrescritas do núcleo para PRESERVAR a aparência que este componente já
+       tinha — migração não deve mexer no visual de um componente publicado.
+       Por isso radius 6px e a sombra original (shadow-lg do SelectFilter.vue),
+       em vez do radius 4px e do --me-shadow-panel que o núcleo traz por default.
+       O 240px é o mínimo antigo: a pílula é estreita, e acompanhar a largura do
+       trigger (default do núcleo) daria um painel apertado. */
     .panel {
-      display: none;
-      position: absolute;
-      z-index: 20;
-      top: calc(100% + 8px);
-      left: 0;
-      min-width: 240px;
-      background: var(--me-color-surface, #FFFFFF);
-      border: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      min-width: max(anchor-size(width), 240px);
       border-radius: var(--me-radius-m, 6px);
-      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-      overflow: hidden;
+      border-color: var(--me-color-neutral-20, #E2E2E9);
+      /* Mesmo valor de antes, agora vindo do token que o me-modal compartilha. */
+      box-shadow: var(--me-shadow-overlay,
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1));
+      /* Quem rola é a .list, para o campo de busca ficar parado no topo. Se o
+         painel também tivesse teto, apareceriam duas barras de rolagem. */
+      --me-panel-max-height: none;
     }
-    :host([open]) .panel { display: block; }
-    :host([align="right"]) .panel { left: auto; right: 0; }
+    .panel:not([popover]) { min-width: 240px; }
 
     .search {
       display: none;
@@ -237,9 +270,15 @@ filterTemplate.innerHTML = `
 `;
 
 class MeSelectFilter extends HTMLElement {
-  #onDocPointer;
   #trigger;
   #searchInput;
+  #panel;
+  #roving;
+  #disposeSync;
+  /* Estado do painel no pointerdown da pílula. O light-dismiss nativo fecha o
+     popover ANTES do click chegar; sem essa memória, clicar na pílula aberta
+     fecharia (dismiss) e reabriria (nosso handler) no mesmo gesto. */
+  #wasOpenOnPointerDown = false;
 
   constructor() {
     super();
@@ -248,11 +287,26 @@ class MeSelectFilter extends HTMLElement {
 
     this.#trigger = this.shadowRoot.querySelector('.trigger');
     this.#searchInput = this.shadowRoot.querySelector('.search input');
+    this.#panel = this.shadowRoot.querySelector('.panel');
+
+    preparePanel(this.#panel);
+    this.#disposeSync = syncOpenState(this, this.#panel, (open) => this.#onToggled(open));
+
+    this.#roving = rovingItems({
+      getItems: () => this.#options().filter((o) => !o.hidden),
+      setActive: (option) => this.#setActiveOption(option),
+      onActivate: (option) => this.#toggleOption(option),
+      onClose: () => this.#close(),
+      getLabel: (option) => option.label,
+    });
 
     // Abre/fecha ao clicar na pílula.
+    this.#trigger.addEventListener('pointerdown', () => {
+      this.#wasOpenOnPointerDown = this.open;
+    });
     this.#trigger.addEventListener('click', () => {
       if (this.disabled) return;
-      this.open ? this.#close() : this.#open();
+      this.#wasOpenOnPointerDown ? this.#close() : this.#open();
     });
 
     // Seleção: clique numa me-option.
@@ -269,36 +323,38 @@ class MeSelectFilter extends HTMLElement {
     this.shadowRoot.querySelector('.list slot')
       .addEventListener('slotchange', () => { this.#updateCount(); this.#applySearch(); });
 
-    // Fecha ao clicar fora / Esc.
-    this.#onDocPointer = (event) => {
-      if (this.open && !event.composedPath().includes(this)) this.#close();
-    };
-    this.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && this.open) {
-        event.stopPropagation();
-        this.#close();
-        this.#trigger.focus();
-      }
-    });
+    /* Teclado. Fica no host para cobrir tanto a pílula (painel fechado) quanto
+       o campo de busca dentro do painel — eventos do shadow root sobem até
+       aqui. O clique-fora e o Esc do caminho ancorado são nativos; o Esc é
+       tratado aqui de todo modo para devolver o foco à pílula. */
+    this.addEventListener('keydown', (event) => this.#onKeydown(event));
   }
 
   static get observedAttributes() {
-    return ['label', 'open', 'disabled'];
+    return ['label', 'open', 'disabled', 'align'];
   }
 
   connectedCallback() {
-    document.addEventListener('pointerdown', this.#onDocPointer);
     this.#updateCount();
+    this.#syncPlacement();
   }
 
   disconnectedCallback() {
-    document.removeEventListener('pointerdown', this.#onDocPointer);
+    this.#disposeSync?.();
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (name === 'label') this.shadowRoot.querySelector('.label').textContent = newValue ?? '';
-    if (name === 'open') this.#trigger.setAttribute('aria-expanded', String(newValue !== null));
     if (name === 'disabled') this.#trigger.disabled = newValue !== null;
+    if (name === 'align') this.#syncPlacement();
+    if (name === 'open') {
+      const open = newValue !== null;
+      open ? openPanel(this.#panel) : closePanel(this.#panel);
+      this.#trigger.setAttribute('aria-expanded', String(open));
+      // No caminho ancorado o me-toggle sai da ponte do popover, a única que
+      // enxerga o dismiss nativo. No legado não existe evento `toggle`.
+      if (!SUPPORTS_ANCHOR) this.#afterToggle(open);
+    }
   }
 
   /* ---- atributos / propriedades ---- */
@@ -329,14 +385,81 @@ class MeSelectFilter extends HTMLElement {
     if (this.disabled || this.open) return;
     if (this.searchable) { this.#searchInput.value = ''; this.#applySearch(); }
     this.setAttribute('open', '');
-    if (this.searchable) requestAnimationFrame(() => this.#searchInput.focus());
-    this.dispatchEvent(new CustomEvent('me-toggle', { bubbles: true, composed: true, detail: { open: true } }));
+    /* Foco síncrono, sem requestAnimationFrame: showPopover() é sincrono, então
+       ao voltar do setAttribute o campo já está visível e focável. O rAF antigo
+       era espera desnecessária — e não dispara em aba oculta, o que travava
+       teste automatizado. */
+    if (this.searchable) this.#searchInput.focus();
   }
 
   #close() {
     if (!this.open) return;
     this.removeAttribute('open');
-    this.dispatchEvent(new CustomEvent('me-toggle', { bubbles: true, composed: true, detail: { open: false } }));
+  }
+
+  /* Chamado pela ponte do núcleo: o estado real mudou, inclusive por dismiss
+     nativo. Alinha o atributo sem reentrar no #open/#close. */
+  #onToggled(open) {
+    if (open !== this.open) {
+      open ? this.setAttribute('open', '') : this.removeAttribute('open');
+      // No legado o setAttribute acima já passou pelo attributeChangedCallback,
+      // que emitiu o me-toggle; emitir de novo aqui duplicaria.
+      if (!SUPPORTS_ANCHOR) return;
+    }
+    this.#afterToggle(open);
+  }
+
+  #afterToggle(open) {
+    if (!open) this.#roving.reset();
+    this.dispatchEvent(new CustomEvent('me-toggle', {
+      bubbles: true, composed: true, detail: { open },
+    }));
+  }
+
+  /* align="right" alinha o painel pela borda direita da pílula — no núcleo isso
+     é o placement bottom-end. */
+  #syncPlacement() {
+    setPlacement(this.#panel, this.getAttribute('align') === 'right' ? 'bottom-end' : 'bottom-start');
+  }
+
+  #setActiveOption(option) {
+    for (const o of this.#options()) o.removeAttribute('data-active');
+    if (!option) return;
+    option.setAttribute('data-active', '');
+    option.scrollIntoView({ block: 'nearest' });
+  }
+
+  #onKeydown(event) {
+    if (this.disabled) return;
+
+    if (event.key === 'Escape') {
+      if (!this.open) return;
+      event.stopPropagation();
+      this.#close();
+      this.#trigger.focus();
+      return;
+    }
+
+    const nav = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+
+    if (!this.open) {
+      // Enter e Espaço NÃO entram aqui: a pílula é um <button>, e o navegador
+      // já os converte em click — tratá-los também abriria e fecharia junto.
+      if (nav.includes(event.key)) {
+        event.preventDefault();
+        this.#open();
+        event.key === 'ArrowUp' ? this.#roving.last() : this.#roving.first();
+      }
+      return;
+    }
+
+    if (!nav.includes(event.key) && event.key !== 'Enter') return;
+
+    // Com texto digitado, Home/End pertencem ao cursor do campo de busca.
+    if ((event.key === 'Home' || event.key === 'End')
+        && this.searchable && this.#searchInput.value !== '') return;
+
+    if (this.#roving.handleKeydown(event)) event.preventDefault();
   }
 
   #toggleOption(option) {
@@ -366,12 +489,20 @@ class MeSelectFilter extends HTMLElement {
   #applySearch() {
     const term = (this.#searchInput.value || '').trim().toLowerCase();
     let visible = 0;
+    let mudou = false;
     for (const option of this.#options()) {
       const match = !term || option.label.toLowerCase().includes(term);
+      if (option.hidden === match) mudou = true;   // o estado vai virar
       option.hidden = !match;
       if (match) visible++;
     }
     this.toggleAttribute('data-empty', visible === 0);
+
+    /* O índice do roving é uma posição dentro da lista VISÍVEL, então filtrar o
+       invalida. Reset só quando o conjunto mudou de fato: resetar sem mudança
+       apagaria a opção ativa marcada logo antes (foi exatamente esse o bug do
+       me-select, onde o #afterToggle assíncrono limpava o roving.first()). */
+    if (mudou) this.#roving.reset();
   }
 }
 

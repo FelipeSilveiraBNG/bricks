@@ -43,16 +43,16 @@ Fora dele (editor de HTML online, CodePen, outro projeto), pelo CDN — caminho 
 e nenhuma tag `<me-*>` se registraria:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.0/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.0/components/index.js"></script>
 ```
 
-A URL usa a tag de versão (`@v0.4.6`) — imutável e livre do cache de branch do CDN. Ao publicar
+A URL usa a tag de versão (`@v0.5.0`) — imutável e livre do cache de branch do CDN. Ao publicar
 uma tag nova **não edite este número à mão**: rode `node tools/release.mjs <versão>`, que reescreve
 de uma vez as 12 ocorrências espalhadas por este arquivo, pelo `AGENTS.md` e pelo `index.html`.
 O CI recusa docs que discordem entre si ou da tag publicada.
 
-> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.6`, ou o `index.js`
+> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.5.0`, ou o `index.js`
 > mais um componente avulso) são dois grafos de módulo: ambos tentam registrar as mesmas tags.
 > A primeira cópia avaliada vence — o registro de custom elements não permite substituir uma
 > tag já definida — e a segunda apenas avisa no console. Se um protótipo se comportar como uma
@@ -83,6 +83,9 @@ body { font-family: var(--me-font-family, 'Inter', system-ui, sans-serif); }
 | `<me-radio-group>` + `<me-radio>` | Seleção única com navegação por setas; `appearance="card"` para cards selecionáveis |
 | `<me-badge>` | labelBadge de status: Extra=`success`, Cobertura=`danger`, Fixo=`brand`, Aberta=`warning`; `size="small|medium"`. `brand` e `blue` são sinônimos e são o default |
 | `<me-card>` | Cartão com slots `header`/`footer` colapsáveis e `closable` (evento `me-close`) |
+| `<me-dropdown>` + `<me-dropdown-item>` | Menu de ações (três pontinhos, menu de linha de tabela). Trigger por slot; itens com `value`, `type="checkbox"`, `variant="danger"`, slots `icon`/`description`/`details`; teclado completo (setas, Home/End, typeahead). O painel abre no top layer e vira para cima quando falta espaço. **Não é campo** — não tem valor nem entra em `<form>` |
+| `<me-select>` + `<me-select-option>` | Campo de seleção espelhado do `SubjectsAutocomplete` do app: campo outlined com label flutuante, `multiple` com chips removíveis, `searchable` (filtro local ou `filter="manual"` para busca no servidor via `me-search`), `clearable`, `loading`, `max-tags`, `empty-text`; opções com slots `icon`/`description`. Form-associated — com `multiple` entra no `FormData` com entradas repetidas do mesmo `name` |
+| `<me-modal>` | Modal espelhado do `Modal.vue` do app, sobre o `<dialog>` nativo: top layer (dropdowns de dentro flutuam por cima sem `z-index`), focus trap, `inert` e Esc nativos, trava a rolagem da página. Slots `header`/`footer`/`header-actions`; `size="small\|medium\|large"`; `without-header`, `header-border`, `footer-border`, `no-body-padding`. Fechar é sempre cancelável via `me-close`, com a origem em `detail.source` |
 | `<me-page-header>` | Header de página: título + subtítulo + slot `end` (sino, avatar) |
 | `<me-sidebar>` + `<me-sidebar-item>` (+ `<me-sidebar-preset>`) | Menu lateral espelhado do app: 64px/288px, toggle rosa 24px (evento `me-toggle`), item ativo teal semibold; sem "Sair" (como no app — slot `footer` disponível para casos especiais). Presets de menu via `<me-sidebar-preset>` + atributo `preset`, com persistência opcional em `localStorage` (`persist-key`, evento `me-preset-change`) |
 | `<me-logo>` | Logotipo em SVG embutido: `variant="horizontal|stacked|variant|symbol|monotone"` (`variant` = lockup da sidebar do app) |
@@ -102,7 +105,7 @@ body { font-family: var(--me-font-family, 'Inter', system-ui, sans-serif); }
 - **Eixos compartilhados**: `variant` (cor semântica), `appearance` (filled/outlined/plain), `size` (small/medium/large).
 - **Ícones sempre via slot**: `<me-icon slot="start" name="plus">` — o `me-icon` renderiza em
   light DOM para a webfont MDI se aplicar.
-- **Formulários**: `me-input`, `me-switch` e `me-radio-group` são form-associated
+- **Formulários**: `me-input`, `me-switch`, `me-radio-group` e `me-select` são form-associated
   (ElementInternals) — entram no `FormData` de um `<form>` comum, respondem a `reset` e
   `type="submit"` do `me-button` dispara o submit.
 

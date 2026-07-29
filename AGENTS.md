@@ -25,18 +25,18 @@ rodar em qualquer outro lugar (editor de HTML online, CodePen, um HTML solto, ou
 precisam das URLs absolutas do CDN:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.0/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.0/components/index.js"></script>
 ```
 
-Use sempre a tag de versão (`@v0.4.6`), nunca `@main` — a tag é imutável e não fica presa ao
+Use sempre a tag de versão (`@v0.5.0`), nunca `@main` — a tag é imutável e não fica presa ao
 cache de branch do CDN.
 
 **Nunca edite a versão à mão.** Ela vive em 12 lugares (`README.md`, este arquivo e
 `index.html`); `node tools/release.mjs <versão>` reescreve os 12 e o CI recusa docs em desacordo
 entre si ou com a tag publicada. Ver o cabeçalho de `tools/release.mjs`.
 
-**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.4.6`, ou o
+**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.5.0`, ou o
 `index.js` mais um componente avulso como `Sidebar.js`) são dois grafos de módulo distintos e
 ambos tentam registrar as mesmas tags. A primeira cópia avaliada vence e a segunda emite um
 aviso `[me-bricks]` no console — as tags seguem funcionando, mas com a definição da primeira,
@@ -169,8 +169,82 @@ contagem; `searchable` adiciona campo de busca; `disabled` desativa a pílula.
 <me-filter-tag value="PENDING_AUDIT">Aguardando Auditoria</me-filter-tag>
 ```
 `me-select-filter.value` (leitura) devolve o array de values selecionados.
-Abre/fecha sozinho (clique fora, Esc). Para "abrir um fecha os outros", ouça
-`me-toggle` no contêiner e feche os irmãos (`f.open = false`).
+Abre/fecha sozinho (clique fora, Esc) e **só um filtro fica aberto por vez** —
+abrir um fecha os outros, sem código nenhum. O painel abre no top layer, então
+não é recortado por contêiner com `overflow` (card, modal, área que rola) e vira
+para cima se faltar espaço embaixo. Setas, Home/End e Enter navegam as opções.
+
+### Campo de seleção (autocomplete com chips)
+Espelha o `SubjectsAutocomplete.vue`. É **campo de formulário**: tem valor, entra
+no `FormData`, valida. A seleção inicial se declara com `selected` na opção (não
+existe atributo `value`). Com `multiple`, os escolhidos viram chips removíveis e
+o `FormData` recebe uma entrada por chip, todas com o mesmo `name`.
+```html
+<me-select label="Adicionar Participantes ou Grupos" name="participantes"
+           multiple searchable clearable clear-on-select
+           empty-text="Nenhum usuário encontrado">
+  <me-select-option value="1">
+    <me-icon slot="icon" name="account"></me-icon>
+    Dra. Ana Souza
+    <span slot="description">Médica · CRM 12345</span>
+  </me-select-option>
+  <me-select-option value="2">
+    <me-icon slot="icon" name="account-group"></me-icon>
+    Equipe Cardiologia
+    <span slot="description">Grupo · 8 membros</span>
+  </me-select-option>
+</me-select>
+
+<!-- Seleção única: sem chips, o rótulo escolhido vira o texto do campo -->
+<me-select label="Permissão" name="permissao">
+  <me-select-option value="reader" selected>Leitor básico</me-select-option>
+  <me-select-option value="editor">Editor básico</me-select-option>
+</me-select>
+
+<!-- Estados -->
+<me-select label="Buscando" loading searchable></me-select>
+<me-select label="Unidades" multiple max-tags="2"></me-select>  <!-- excedente vira "+n" -->
+<me-select label="Participantes" required error error-message="Selecione ao menos um"></me-select>
+```
+`.value` devolve string (seleção única) ou array (`multiple`). Busca no servidor:
+use `filter="manual"`, ouça `me-search` (`detail.term`) e troque as opções —
+nesse modo o componente não filtra sozinho.
+
+### Menu de ações (três pontinhos, menu de linha)
+Para **disparar comandos**, não para capturar valor — se o usuário escolhe algo
+que precisa ir num `<form>`, o componente é outro (filtro: `me-select-filter`).
+O que abre o menu vai no slot `trigger`. O painel abre no top layer, então não é
+recortado por contêiner com `overflow` e vira para cima se faltar espaço.
+```html
+<me-dropdown>
+  <me-button slot="trigger" appearance="plain">
+    <me-icon name="dots-vertical"></me-icon>
+  </me-button>
+  <me-dropdown-item value="editar">
+    <me-icon slot="icon" name="pencil"></me-icon>
+    Editar
+    <span slot="details">Ctrl+E</span>
+  </me-dropdown-item>
+  <me-dropdown-item value="duplicar">
+    Duplicar
+    <span slot="description">Cria uma cópia nesta mesma escala</span>
+  </me-dropdown-item>
+  <me-dropdown-item value="arquivadas" type="checkbox">Mostrar arquivadas</me-dropdown-item>
+  <me-dropdown-item value="excluir" variant="danger">
+    <me-icon slot="icon" name="delete-outline"></me-icon>
+    Excluir
+  </me-dropdown-item>
+</me-dropdown>
+<script>
+  document.querySelector('me-dropdown').addEventListener('me-select', (e) => {
+    console.log(e.detail.value);
+    // e.preventDefault() mantém o menu aberto (útil em item type="checkbox")
+  });
+</script>
+```
+`placement` aceita `bottom-start` (default), `bottom-end`, `top-start`, `top-end`;
+`distance` é o respiro em px. Só um menu fica aberto por vez na página — abrir um
+fecha os outros, sem código nenhum.
 
 ### Paginação
 Funcionamento inspirado na TOAST UI Pagination (JS puro), janela com reticências
@@ -196,7 +270,8 @@ Métodos: `movePageTo(n)`, `reset(totalItems?)`, `setItemsPerPage(n)`,
   </div>
 </me-card>
 
-<!-- Dialog de confirmação = card centrado com dois botões full-width -->
+<!-- ATENÇÃO: para dialog/modal use o <me-modal> (receita abaixo), não um card
+     centrado. Este bloco só serve para um card estático de destaque. -->
 <me-card style="max-width:520px; text-align:center;">
   <strong>Excluir Cartão?</strong><br />
   Tem certeza que deseja excluir esse card?
@@ -206,6 +281,53 @@ Métodos: `movePageTo(n)`, `reset(totalItems?)`, `setItemsPerPage(n)`,
   </div>
 </me-card>
 ```
+
+### Modal / dialog
+Espelha o `Modal.vue` do app, sobre o `<dialog>` nativo. Abre no **top layer**,
+então dropdowns e campos de dentro dele flutuam por cima sem escada de
+`z-index` — e ganha focus trap, `inert` no resto da página e Esc de graça.
+Começa fechado; abre por `show()` ou pelo atributo `open`.
+```html
+<me-button onclick="document.getElementById('m').show()">Editar</me-button>
+
+<me-modal id="m" label="Editar plantão" header-border footer-border>
+  <span slot="header">Editar plantão</span>
+  <me-input label="Nome do médico" name="nome"></me-input>
+  <div slot="footer" style="display:flex; gap:16px; justify-content:flex-end;">
+    <me-button appearance="outlined" onclick="document.getElementById('m').hide()">Cancelar</me-button>
+    <me-button>Confirmar</me-button>
+  </div>
+</me-modal>
+
+<!-- Confirmação destrutiva: compacto, botões full-width -->
+<me-modal id="del" label="Excluir cartão" size="small" header-border footer-border>
+  <span slot="header">Excluir cartão?</span>
+  Tem certeza que deseja excluir esse card?
+  <div slot="footer" style="display:flex; gap:16px;">
+    <me-button style="flex:1" appearance="outlined"
+               onclick="document.getElementById('del').hide()">Cancelar</me-button>
+    <me-button style="flex:1" variant="danger" appearance="outlined">Confirmar</me-button>
+  </div>
+</me-modal>
+```
+`size`: `small` (448px), default (896px), `large` (80vw) — ou
+`--me-modal-width` para um valor próprio. Outros atributos: `without-header`,
+`without-close-button`, `no-body-padding`, `header-border`, `footer-border`,
+`max-height` (default 90vh), `min-height`.
+
+Fecha pelo × , pelo clique no overlay e por Esc — **todos** passam pelo evento
+`me-close`, que é cancelável e diz a origem em `detail.source`
+(`close-button` | `overlay` | `escape` | `api`). Para proteger um formulário:
+```html
+<script>
+  document.getElementById('m').addEventListener('me-close', (e) => {
+    if (e.detail.source !== 'close-button' && temAlteracao) e.preventDefault();
+  });
+</script>
+```
+O corpo é quem rola (o header e o footer ficam parados), e a rolagem da página
+fica travada enquanto há modal aberto. Para escolher o foco inicial, ponha
+`autofocus` no elemento desejado.
 
 ### Shell de aplicação (sidebar + header)
 Sidebar e header ficam **fixos**; só o conteúdo rola. Para isso o `body` não
@@ -325,6 +447,15 @@ Os controles são form-associated: basta um `<form>` nativo.
 | `change` | `me-select-filter` (lista completa após alternar) | `{ value: [values] }` |
 | `me-toggle` | `me-select-filter` (dropdown abre/fecha) | `{ open }` |
 | `me-remove` | `me-filter-tag` (clique no ×) | `{ value }` |
+| `me-select` | `me-dropdown` (item acionado; cancelável — `preventDefault()` mantém aberto) | `{ value, item }` |
+| `input` / `change` | `me-select` (a cada mudança de seleção) | `{ value }` (string ou array) |
+| `me-select` | `me-select` (opção alternada) | `{ value, selected }` |
+| `me-search` | `me-select` com `filter="manual"` (texto digitado) | `{ term }` |
+| `me-clear` | `me-select` (botão de limpar) | — |
+| `me-toggle` | `me-select` (painel abre/fecha) | `{ open }` |
+| `me-close` | `me-modal` (× / overlay / Esc / `hide()`; **cancelável**) | `{ source }` |
+| `me-after-close` | `me-modal` (depois de fechar) | — |
+| `me-toggle` | `me-dropdown` (menu abre/fecha, inclusive por clique fora) | `{ open }` |
 | `me-before-move` | `me-pagination` (antes de trocar de página; cancelável) | `{ page }` |
 | `change` | `me-pagination` (após trocar de página) | `{ page }` |
 

@@ -155,7 +155,7 @@
   <aside>
     <a class="brand" href="#/inicio">
       <me-logo variant="variant"></me-logo>
-      <small id="version-badge">Design System · v0.4.6</small>
+      <small id="version-badge">Design System · v0.5.0</small>
     </a>
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
@@ -170,6 +170,9 @@
       <a href="#/checkbox" data-page="checkbox">Checkbox</a>
       <a href="#/radio" data-page="radio">Radio</a>
       <a href="#/filtros" data-page="filtros">Filtros</a>
+      <a href="#/modal" data-page="modal">Modal</a>
+      <a href="#/select" data-page="select">Select</a>
+      <a href="#/dropdown" data-page="dropdown">Dropdown</a>
       <a href="#/paginacao" data-page="paginacao">Paginação</a>
       <a href="#/tabs" data-page="tabs">Tabs</a>
       <a href="#/icones" data-page="icones">Ícones</a>
@@ -211,10 +214,10 @@
         <div class="code-card">
           <button class="copy" type="button" data-copy="install-snippet">Copiar</button>
           <pre id="install-snippet"><code>&lt;!-- 1. Design tokens (cores, tipografia, fonte Inter e ícones MDI) --&gt;
-&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/tokens.css" /&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.0/tokens.css" /&gt;
 
 &lt;!-- 2. Componentes (registra todas as tags &lt;me-*&gt;) --&gt;
-&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/components/index.js"&gt;&lt;/script&gt;
+&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.0/components/index.js"&gt;&lt;/script&gt;
 
 &lt;!-- 3. Base do body (a fonte tem fallback: se o tokens.css falhar, não cai em Times New Roman) --&gt;
 &lt;style&gt;
@@ -230,7 +233,7 @@
         <p class="desc">
           Funciona em editores de HTML online (as URLs são absolutas) — nunca use caminhos
           relativos como <code>./components/index.js</code> fora deste repositório.
-          A versão fica travada na tag <code>@v0.4.6</code>. Ao subir um release novo, rode
+          A versão fica travada na tag <code>@v0.5.0</code>. Ao subir um release novo, rode
           <code>node tools/release.mjs &lt;versão&gt;</code> em vez de editar à mão — a versão aparece em
           12 lugares e o CI recusa docs em desacordo com a tag publicada.
         </p>
@@ -663,6 +666,334 @@
 &lt;/script&gt;</pre>
       </me-page>
 
+      <me-page name="modal">
+        <h2>&lt;me-modal&gt; — Modal</h2>
+        <p class="desc">
+          Espelha o <code>Modal.vue</code> do app — o componente mais usado do design system deles
+          (98 arquivos o consomem) — sobre o
+          <a href="https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/dialog" target="_blank" rel="noopener"><code>&lt;dialog&gt;</code> nativo</a>.
+          Spec medida no Storybook e na demo do PRD32: backdrop <code>#111827</code> a 50%, caixa
+          radius 8px com <code>max-height: 90vh</code>, header 24/24/16 com título 20px/28px, corpo
+          16/24 rolável, footer 16/24, bordas opcionais de 2px, botão fechar 40×40 em 16/16.
+        </p>
+        <p class="desc">
+          <strong>Por que o <code>&lt;dialog&gt;</code> nativo e não um overlay à mão como no app:</strong>
+          ele abre no <strong>top layer</strong>, então um <a href="#/select">me-select</a> ou
+          <a href="#/dropdown">me-dropdown</a> de dentro do modal flutua por cima dele sem escada de
+          <code>z-index</code> — a demo do PRD32 precisou manter uma à mão (overlay 80 / modal 90 /
+          popovers 100) exatamente por isso. E vêm de graça o focus trap, o <code>inert</code> no
+          resto da página e o Esc, que o <code>Modal.vue</code> do app não tem.
+        </p>
+
+        <h3 class="section">Padrão e confirmação destrutiva</h3>
+        <div class="demo">
+          <me-button onclick="document.getElementById('doc-m1').show()">Abrir modal</me-button>
+          <me-button appearance="outlined" onclick="document.getElementById('doc-m2').show()">Excluir cartão…</me-button>
+          <me-button appearance="outlined" onclick="document.getElementById('doc-m3').show()">Com campo dentro</me-button>
+        </div>
+
+        <me-modal id="doc-m1" label="Editar plantão" header-border footer-border>
+          <span slot="header">Editar plantão</span>
+          <me-input label="Nome do médico" name="nome" style="width:100%"></me-input>
+          <div slot="footer" style="display:flex; gap:16px; justify-content:flex-end;">
+            <me-button appearance="outlined" onclick="document.getElementById('doc-m1').hide()">Cancelar</me-button>
+            <me-button onclick="document.getElementById('doc-m1').hide()">Confirmar</me-button>
+          </div>
+        </me-modal>
+
+        <me-modal id="doc-m2" label="Excluir cartão" size="small" header-border footer-border>
+          <span slot="header">Excluir cartão?</span>
+          Tem certeza que deseja excluir esse card?
+          <div slot="footer" style="display:flex; gap:16px;">
+            <me-button style="flex:1" appearance="outlined" onclick="document.getElementById('doc-m2').hide()">Cancelar</me-button>
+            <me-button style="flex:1" variant="danger" appearance="outlined" onclick="document.getElementById('doc-m2').hide()">Confirmar</me-button>
+          </div>
+        </me-modal>
+
+        <me-modal id="doc-m3" label="Compartilhar escala" header-border footer-border>
+          <span slot="header">Compartilhar escala</span>
+          <me-select label="Adicionar Participantes ou Grupos" multiple searchable clearable
+                     clear-on-select style="width:100%">
+            <me-select-option value="1">
+              <me-icon slot="icon" name="account"></me-icon>
+              Dra. Ana Souza
+              <span slot="description">Médica · CRM 12345</span>
+            </me-select-option>
+            <me-select-option value="2">
+              <me-icon slot="icon" name="account-group"></me-icon>
+              Equipe Cardiologia
+              <span slot="description">Grupo · 8 membros</span>
+            </me-select-option>
+          </me-select>
+          <div slot="footer" style="display:flex; gap:16px; justify-content:flex-end;">
+            <me-button appearance="outlined" onclick="document.getElementById('doc-m3').hide()">Cancelar</me-button>
+            <me-button onclick="document.getElementById('doc-m3').hide()">Compartilhar</me-button>
+          </div>
+        </me-modal>
+
+<pre class="code">&lt;me-button onclick="document.getElementById('m').show()"&gt;Editar&lt;/me-button&gt;
+
+&lt;me-modal id="m" label="Editar plantão" header-border footer-border&gt;
+  &lt;span slot="header"&gt;Editar plantão&lt;/span&gt;
+  &lt;me-input label="Nome do médico" name="nome"&gt;&lt;/me-input&gt;
+  &lt;div slot="footer" style="display:flex; gap:16px; justify-content:flex-end;"&gt;
+    &lt;me-button appearance="outlined" onclick="m.hide()"&gt;Cancelar&lt;/me-button&gt;
+    &lt;me-button&gt;Confirmar&lt;/me-button&gt;
+  &lt;/div&gt;
+&lt;/me-modal&gt;</pre>
+
+        <h3 class="section">Tamanhos e variações</h3>
+        <p class="desc">
+          <code>size="small"</code> = 448px (o "modal de filtro" do app), default = 896px
+          (<code>max-w-4xl</code>), <code>size="large"</code> = 80vw. Para um valor próprio, use
+          <code>--me-modal-width</code>. Também há <code>without-header</code>,
+          <code>without-close-button</code>, <code>no-body-padding</code>,
+          <code>max-height</code> (default 90vh) e <code>min-height</code>.
+        </p>
+
+        <h3 class="section">Fechar é sempre cancelável</h3>
+        <p class="desc">
+          O ×, o clique no overlay, o Esc e o <code>hide()</code> passam **todos** pelo mesmo
+          evento <code>me-close</code>, que é cancelável e informa a origem em
+          <code>detail.source</code> (<code>close-button</code> | <code>overlay</code> |
+          <code>escape</code> | <code>api</code>). Fechar pelo overlay é o default, como no app —
+          quem precisa proteger um formulário barra pela origem.
+        </p>
+<pre class="code">&lt;script&gt;
+  modal.addEventListener('me-close', (e) =&gt; {
+    if (e.detail.source !== 'close-button' &amp;&amp; temAlteracao) e.preventDefault();
+  });
+&lt;/script&gt;</pre>
+        <p class="desc">
+          O corpo é quem rola (header e footer ficam parados) e a rolagem da página fica travada
+          enquanto houver modal aberto — com contador, para modais empilhados. O foco vai para
+          dentro do modal na abertura; ponha <code>autofocus</code> num elemento para escolher qual.
+          Isso não é refinamento: medimos que <strong>sem foco dentro do diálogo o Esc nativo não
+          dispara</strong>.
+        </p>
+      </me-page>
+
+      <me-page name="select">
+        <h2>&lt;me-select&gt; + &lt;me-select-option&gt; — Campo de seleção</h2>
+        <p class="desc">
+          Espelha o <code>SubjectsAutocomplete.vue</code> do app
+          (<code>v-autocomplete</code> outlined, density compact). A aparência foi
+          <strong>medida</strong> nos estilos computados do Storybook: chip pílula de 26px com fonte
+          12px e fundo = marca a 12% sem borda; opção de 48px com ícone 24px, título 16px/24px e
+          subtítulo 14px/16px; painel radius 4px, <code>max-height</code> 300px, encostado no campo.
+        </p>
+        <p class="desc">
+          <strong>É um campo de formulário</strong>: tem valor, entra no <code>FormData</code> e
+          valida. Com <code>multiple</code>, cada chip vira uma entrada com o mesmo
+          <code>name</code>. Para menu de ações use o <a href="#/dropdown">me-dropdown</a>; para
+          pílula de filtro fora de formulário, o <a href="#/filtros">me-select-filter</a>.
+        </p>
+        <p class="desc">
+          A seleção inicial se declara com <code>selected</code> na opção — não existe atributo
+          <code>value</code> no <code>me-select</code>, porque com <code>multiple</code> ele exigiria
+          uma convenção de separador e duas fontes de verdade disputando na inicialização.
+        </p>
+
+        <h3 class="section">Múltipla escolha com busca e chips</h3>
+        <div class="demo">
+          <me-select id="sel-multi" label="Adicionar Participantes ou Grupos" name="participantes"
+                     multiple searchable clearable clear-on-select
+                     empty-text="Nenhum usuário encontrado" style="width:400px">
+            <me-select-option value="1">
+              <me-icon slot="icon" name="account"></me-icon>
+              Dra. Ana Souza
+              <span slot="description">Médica · CRM 12345</span>
+            </me-select-option>
+            <me-select-option value="2">
+              <me-icon slot="icon" name="account-group"></me-icon>
+              Equipe Cardiologia
+              <span slot="description">Grupo · 8 membros</span>
+            </me-select-option>
+            <me-select-option value="3">
+              <me-icon slot="icon" name="account"></me-icon>
+              Dr. Bruno Lima
+              <span slot="description">Médico · CRM 67890</span>
+            </me-select-option>
+          </me-select>
+        </div>
+<pre class="code">&lt;me-select label="Adicionar Participantes ou Grupos" name="participantes"
+           multiple searchable clearable clear-on-select
+           empty-text="Nenhum usuário encontrado"&gt;
+  &lt;me-select-option value="1"&gt;
+    &lt;me-icon slot="icon" name="account"&gt;&lt;/me-icon&gt;
+    Dra. Ana Souza
+    &lt;span slot="description"&gt;Médica · CRM 12345&lt;/span&gt;
+  &lt;/me-select-option&gt;
+&lt;/me-select&gt;</pre>
+
+        <h3 class="section">Seleção única</h3>
+        <p class="desc">
+          Sem <code>multiple</code> não há chip: o rótulo escolhido vira o texto do campo e o painel
+          fecha ao escolher, como num <code>&lt;select&gt;</code> comum. A propriedade
+          <code>.value</code> devolve string em vez de array.
+        </p>
+        <div class="demo">
+          <me-select label="Permissão" name="permissao" style="width:260px">
+            <me-select-option value="reader" selected>Leitor básico</me-select-option>
+            <me-select-option value="editor">Editor básico</me-select-option>
+            <me-select-option value="admin">Administrador geral</me-select-option>
+          </me-select>
+        </div>
+
+        <h3 class="section">Estados</h3>
+        <p class="desc">
+          <code>loading</code> mostra a barra fina de progresso na borda inferior do campo (como o
+          <code>:loading</code> do app). <code>max-tags</code> colapsa o excedente em
+          <code>+n</code>. <code>error</code> + <code>error-message</code> pintam borda, label e
+          mensagem em negative, e a mensagem é ligada por <code>aria-describedby</code> enquanto
+          está visível.
+        </p>
+        <div class="demo">
+          <me-select label="Buscando" loading searchable style="width:220px">
+            <me-select-option value="x">Um</me-select-option>
+          </me-select>
+          <me-select label="Máx. 2 chips" multiple max-tags="2" style="width:260px">
+            <me-select-option value="1" selected>Alfa</me-select-option>
+            <me-select-option value="2" selected>Beta</me-select-option>
+            <me-select-option value="3" selected>Gama</me-select-option>
+            <me-select-option value="4" selected>Delta</me-select-option>
+          </me-select>
+          <me-select label="Desabilitado" disabled style="width:200px">
+            <me-select-option value="x">Um</me-select-option>
+          </me-select>
+          <me-select label="Participantes" required error
+                     error-message="Selecione ao menos um participante" style="width:280px">
+            <me-select-option value="x">Um</me-select-option>
+          </me-select>
+        </div>
+
+        <h3 class="section">Busca no servidor</h3>
+        <p class="desc">
+          Com <code>filter="manual"</code> o componente para de filtrar sozinho e apenas emite
+          <code>me-search</code> (<code>detail.term</code>) — é o equivalente do
+          <code>:custom-filter="() =&gt; true"</code> + <code>update:search</code> que o app usa.
+          Cabe ao consumidor buscar e trocar as <code>me-select-option</code>.
+        </p>
+<pre class="code">&lt;me-select label="Médico" searchable filter="manual" loading id="remoto"&gt;&lt;/me-select&gt;
+&lt;script&gt;
+  remoto.addEventListener('me-search', async (e) =&gt; {
+    remoto.loading = true;
+    const itens = await buscar(e.detail.term);
+    remoto.replaceChildren(...itens.map(criarOption));
+    remoto.loading = false;
+  });
+&lt;/script&gt;</pre>
+
+        <h3 class="section">Teclado</h3>
+        <p class="desc">
+          <kbd>↓</kbd>/<kbd>↑</kbd>/<kbd>Enter</kbd> abrem o painel e movem a opção ativa (pulando
+          escondidas pelo filtro e desabilitadas), <kbd>Enter</kbd> escolhe, <kbd>Esc</kbd> fecha —
+          ou limpa a busca, se o painel já estiver fechado. Com <code>multiple</code>,
+          <kbd>Backspace</kbd> com a busca vazia remove o último chip.
+          <kbd>Home</kbd>/<kbd>End</kbd> só navegam a lista quando não há texto digitado: com texto,
+          elas pertencem ao cursor do campo.
+        </p>
+      </me-page>
+
+      <me-page name="dropdown">
+        <h2>&lt;me-dropdown&gt; + &lt;me-dropdown-item&gt; — Menu de ações</h2>
+        <p class="desc">
+          Menu para <strong>disparar comandos</strong> — três pontinhos, menu de linha de tabela,
+          menu do avatar. Funcionalidade espelhada no
+          <a href="https://webawesome.com/docs/components/dropdown/" target="_blank" rel="noopener">wa-dropdown</a>;
+          aparência dos itens medida no <code>v-list-item</code> do app (linha de 48px, ícone 24px,
+          título 16px/24px, subtítulo 14px/16px).
+        </p>
+        <p class="desc">
+          <strong>Não é um campo.</strong> Não tem valor, não participa de <code>&lt;form&gt;</code>,
+          não guarda seleção: clica, dispara, fecha. Para pílula de filtro use o
+          <a href="#/filtros">me-select-filter</a>.
+        </p>
+        <p class="desc">
+          O painel abre no <strong>top layer</strong> (atributo <code>popover</code> nativo +
+          CSS anchor positioning), então não é recortado por ancestral com <code>overflow</code> —
+          problema medido no painel do <code>me-select-filter</code>, ver
+          <code>test/panel-clipping.html</code>. Vira para cima quando falta espaço embaixo, fecha
+          por clique fora e <kbd>Esc</kbd>, e só um menu fica aberto por vez na página.
+        </p>
+
+        <h3 class="section">Menu completo</h3>
+        <p class="desc">
+          Ícone no slot <code>icon</code>, segunda linha no slot <code>description</code>, atalho no
+          slot <code>details</code>. <code>type="checkbox"</code> faz item de marcar e
+          <code>variant="danger"</code> faz a ação destrutiva. As colunas de marca e de ícone são
+          reservadas no menu inteiro, então os rótulos alinham mesmo num menu misto.
+        </p>
+        <div class="demo">
+          <me-dropdown id="dd-demo">
+            <me-button slot="trigger" appearance="outlined">Ações</me-button>
+            <me-dropdown-item value="editar">
+              <me-icon slot="icon" name="pencil"></me-icon>
+              Editar
+              <span slot="details">Ctrl+E</span>
+            </me-dropdown-item>
+            <me-dropdown-item value="duplicar">
+              Duplicar
+              <span slot="description">Cria uma cópia nesta mesma escala</span>
+            </me-dropdown-item>
+            <me-dropdown-item value="arquivadas" type="checkbox">Mostrar arquivadas</me-dropdown-item>
+            <me-dropdown-item value="bloqueado" disabled>Indisponível</me-dropdown-item>
+            <me-dropdown-item value="excluir" variant="danger">
+              <me-icon slot="icon" name="delete-outline"></me-icon>
+              Excluir
+            </me-dropdown-item>
+          </me-dropdown>
+
+          <me-dropdown placement="bottom-end">
+            <me-button slot="trigger" appearance="plain">
+              <me-icon name="dots-vertical"></me-icon>
+            </me-button>
+            <me-dropdown-item value="ver">Ver detalhes</me-dropdown-item>
+            <me-dropdown-item value="baixar">Baixar PDF</me-dropdown-item>
+          </me-dropdown>
+        </div>
+<pre class="code">&lt;me-dropdown&gt;
+  &lt;me-button slot="trigger" appearance="plain"&gt;
+    &lt;me-icon name="dots-vertical"&gt;&lt;/me-icon&gt;
+  &lt;/me-button&gt;
+  &lt;me-dropdown-item value="editar"&gt;
+    &lt;me-icon slot="icon" name="pencil"&gt;&lt;/me-icon&gt;
+    Editar
+    &lt;span slot="details"&gt;Ctrl+E&lt;/span&gt;
+  &lt;/me-dropdown-item&gt;
+  &lt;me-dropdown-item value="duplicar"&gt;
+    Duplicar
+    &lt;span slot="description"&gt;Cria uma cópia nesta mesma escala&lt;/span&gt;
+  &lt;/me-dropdown-item&gt;
+  &lt;me-dropdown-item value="arquivadas" type="checkbox"&gt;Mostrar arquivadas&lt;/me-dropdown-item&gt;
+  &lt;me-dropdown-item value="excluir" variant="danger"&gt;Excluir&lt;/me-dropdown-item&gt;
+&lt;/me-dropdown&gt;</pre>
+
+        <h3 class="section">Teclado</h3>
+        <p class="desc">
+          No trigger: <kbd>↓</kbd>/<kbd>Enter</kbd>/<kbd>Espaço</kbd> abre e foca o primeiro item,
+          <kbd>↑</kbd> abre e foca o último. No painel: <kbd>↑</kbd><kbd>↓</kbd> andam (envolvendo
+          nas pontas e pulando desabilitados), <kbd>Home</kbd>/<kbd>End</kbd> vão às pontas, digitar
+          faz busca por prefixo, <kbd>Enter</kbd>/<kbd>Espaço</kbd> acionam, <kbd>Esc</kbd> fecha e
+          devolve o foco ao trigger.
+        </p>
+
+        <h3 class="section">Eventos</h3>
+        <p class="desc">
+          <code>me-select</code> (<code>detail: { value, item }</code>) a cada item acionado — é
+          <strong>cancelável</strong>: <code>preventDefault()</code> mantém o menu aberto, útil em
+          item <code>type="checkbox"</code>. <code>me-toggle</code>
+          (<code>detail: { open }</code>) ao abrir/fechar, inclusive quando o fechamento vem do
+          clique fora.
+        </p>
+<pre class="code">&lt;script&gt;
+  menu.addEventListener('me-select', (e) =&gt; {
+    console.log(e.detail.value);
+    if (e.detail.item.type === 'checkbox') e.preventDefault(); // não fecha
+  });
+&lt;/script&gt;</pre>
+      </me-page>
+
       <me-page name="paginacao">
         <h2>&lt;me-pagination&gt; — Paginação</h2>
         <p class="desc">
@@ -1088,6 +1419,8 @@ pag.movePageTo(3);</pre>
       ['radius-m', `<span class="pv-box" style="border-radius: var(--me-radius-m);"></span>`],
       ['radius-l', `<span class="pv-box" style="border-radius: var(--me-radius-l);"></span>`],
       ['shadow-card', `<span class="pv-box" style="box-shadow: var(--me-shadow-card);"></span>`],
+      ['shadow-panel', `<span class="pv-box" style="box-shadow: var(--me-shadow-panel);"></span>`],
+      ['shadow-overlay', `<span class="pv-box" style="box-shadow: var(--me-shadow-overlay);"></span>`],
     ];
 
     const controls = [

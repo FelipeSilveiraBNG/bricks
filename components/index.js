@@ -25,3 +25,6 @@ import './Pages.js';
 import './Tabs.js';
 import './Filters.js';
 import './Pagination.js';
+import './Dropdown.js';
+import './Select.js';
+import './Modal.js';

@@ -380,14 +380,10 @@
     hdr.addEventListener('me-menu', (e) => { nav.expanded = hdr.menuOpen = e.detail.open; });
     nav.addEventListener('me-toggle', (e) => { hdr.menuOpen = e.detail.expanded; });
 
-    // Abrir um filtro fecha os demais (como no app, que usa openFilterName único).
-    const filtersRow = document.getElementById('filters');
-    filtersRow.addEventListener('me-toggle', (e) => {
-      if (!e.detail.open) return;
-      for (const f of filtersRow.querySelectorAll('me-select-filter')) {
-        if (f !== e.target) f.open = false;
-      }
-    });
+    // "Abrir um filtro fecha os demais" NÃO precisa mais de código: o painel do
+    // me-select-filter passou a ser um popover nativo, e popover=auto é
+    // mutuamente exclusivo — o navegador fecha o anterior. O laço que existia
+    // aqui virou no-op (fechava um painel já fechado).
 
     // Tags de filtro ativo sincronizadas com o filtro de Status.
     const statusFilter = document.getElementById('status-filter');

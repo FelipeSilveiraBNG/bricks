@@ -136,6 +136,20 @@
   --me-radius-m: 6px;
   --me-radius-l: 8px;
   --me-shadow-card: 0 8px 24px rgb(188 188 205 / 0.32); /* neutral-40 a 32%, como o Card real */
+  /* Elevação de superfície sobreposta: modal e o painel do filtro. Medida no
+     Modal.vue do app (shadow-lg do Tailwind) e idêntica à que o SelectFilter.vue
+     usa — eram dois valores iguais escritos à mão em lugares diferentes, agora
+     é um token só. */
+  --me-shadow-overlay:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  /* Elevação de painel suspenso (dropdown, menu, listbox). Medida no
+     v-autocomplete do app — é mais densa e mais curta que a do card, porque
+     painel flutua perto da superfície e card se apoia nela. */
+  --me-shadow-panel:
+    0 2px 4px -1px rgb(0 0 0 / 0.2),
+    0 4px 5px 0 rgb(0 0 0 / 0.14),
+    0 1px 10px 0 rgb(0 0 0 / 0.12);
 
   /* ===== Controles ===== */
   --me-control-height-s: 32px;
