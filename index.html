@@ -155,7 +155,7 @@
   <aside>
     <a class="brand" href="#/inicio">
       <me-logo variant="variant"></me-logo>
-      <small id="version-badge">Design System · v0.4.5</small>
+      <small id="version-badge">Design System · v0.4.6</small>
     </a>
     <nav aria-label="Documentação">
       <div class="group">Guia</div>
@@ -179,6 +179,7 @@
       <div class="group">Utilitários</div>
       <a href="#/pages" data-page="pages">Pages</a>
       <a href="#/form" data-page="form">Formulário</a>
+      <a href="#/demos" data-page="demos">Demos</a>
     </nav>
   </aside>
 
@@ -210,10 +211,10 @@
         <div class="code-card">
           <button class="copy" type="button" data-copy="install-snippet">Copiar</button>
           <pre id="install-snippet"><code>&lt;!-- 1. Design tokens (cores, tipografia, fonte Inter e ícones MDI) --&gt;
-&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/tokens.css" /&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/tokens.css" /&gt;
 
 &lt;!-- 2. Componentes (registra todas as tags &lt;me-*&gt;) --&gt;
-&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/components/index.js"&gt;&lt;/script&gt;
+&lt;script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/components/index.js"&gt;&lt;/script&gt;
 
 &lt;!-- 3. Base do body (a fonte tem fallback: se o tokens.css falhar, não cai em Times New Roman) --&gt;
 &lt;style&gt;
@@ -229,7 +230,7 @@
         <p class="desc">
           Funciona em editores de HTML online (as URLs são absolutas) — nunca use caminhos
           relativos como <code>./components/index.js</code> fora deste repositório.
-          A versão fica travada na tag <code>@v0.4.5</code>. Ao subir um release novo, rode
+          A versão fica travada na tag <code>@v0.4.6</code>. Ao subir um release novo, rode
           <code>node tools/release.mjs &lt;versão&gt;</code> em vez de editar à mão — a versão aparece em
           12 lugares e o CI recusa docs em desacordo com a tag publicada.
         </p>
@@ -249,11 +250,10 @@
           <span style="font-size: 13px; color: var(--me-color-text-muted);">← renderizados ao vivo por este próprio tutorial</span>
         </div>
 
-        <h3>Demo</h3>
+        <h3>Demos</h3>
         <p>
-          Veja o kit montado num protótipo completo (sidebar + header + cards):
-          <a href="demo/app-shell.html">demo de protótipo</a>.
-          Há também um exemplo de <a href="demo/pages.html">navegação por rotas (hash)</a>.
+          Veja o kit montado em protótipos completos (sidebar + header + cards, telas de
+          aprovação, navegação por rotas): <a href="#/demos">todas as demos</a>.
         </p>
 
         <h3>Componentes</h3>
@@ -273,6 +273,7 @@
           <a href="#/page-header"><strong>PageHeader</strong><small>título, subtítulo e ações</small></a>
           <a href="#/sidebar"><strong>Sidebar</strong><small>menu lateral 64/288px do app</small></a>
           <a href="#/pages"><strong>Pages</strong><small>rotas por hash sem build</small></a>
+          <a href="#/demos"><strong>Demos</strong><small>protótipos completos em demo/*.html</small></a>
         </div>
       </me-page>
 
@@ -863,6 +864,36 @@ pag.movePageTo(3);</pre>
             </div>
           </form>
           <output id="form-output">Aguardando envio…</output>
+        </div>
+      </me-page>
+
+      <!-- Vitrine das demos da pasta demo/. Cada arquivo novo em demo/ precisa de
+           um card aqui — não há listagem de diretório num site estático. -->
+      <me-page name="demos">
+        <h2>Demos</h2>
+        <p class="desc">
+          Protótipos completos montados só com o kit, em páginas independentes
+          (<code>demo/*.html</code>). Servem de ponto de partida: abra, veja o código-fonte e
+          copie o trecho que precisar. Como são páginas fora do roteador desta documentação,
+          use o voltar do navegador para retornar.
+        </p>
+        <div class="cards">
+          <a href="demo/app-shell.html">
+            <strong>App shell</strong>
+            <small>protótipo completo: sidebar + page header + cards</small>
+          </a>
+          <a href="demo/pages.html">
+            <strong>Navegação por rotas</strong>
+            <small>me-pages com deep-link por hash, sem build</small>
+          </a>
+          <a href="demo/registro-plantao.html">
+            <strong>Registro de plantão</strong>
+            <small>tela de aprovações: filtros, tabela e ações em massa</small>
+          </a>
+          <a href="demo/PRD32-auditoria-folha-de-monitoramento.html">
+            <strong>Auditoria de folha (PRD 32)</strong>
+            <small>jornada J1 com cabeçalho fiel ao app</small>
+          </a>
         </div>
       </me-page>
 

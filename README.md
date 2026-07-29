@@ -21,8 +21,14 @@ python -m http.server
 Depois abra:
 
 - `index.html` — **showcase**: todos os componentes, variantes e snippets de código.
+  A rota `#/demos` lista todas as demos abaixo em cards; ao criar uma nova demo,
+  acrescente o card lá (site estático não lista diretório).
 - `demo/app-shell.html` — página completa composta (sidebar + header + cards + form).
 - `demo/pages.html` — mini-app com rotas por hash (`me-pages` + sidebar sincronizada).
+- `demo/registro-plantao.html` — tela de aprovações: filtros, tabela e ações em massa.
+- `demo/PRD32-auditoria-folha-de-monitoramento.html` — jornada J1 da auditoria de folha.
+  Único demo que carrega o kit pelo CDN, para abrir solto fora do repo — fica pinado na
+  tag contra a qual foi construído (ver `ARQUIVOS_HISTORICOS` em `tools/release.mjs`).
 
 ## Usando num protótipo
 
@@ -37,16 +43,16 @@ Fora dele (editor de HTML online, CodePen, outro projeto), pelo CDN — caminho 
 e nenhuma tag `<me-*>` se registraria:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/components/index.js"></script>
 ```
 
-A URL usa a tag de versão (`@v0.4.5`) — imutável e livre do cache de branch do CDN. Ao publicar
+A URL usa a tag de versão (`@v0.4.6`) — imutável e livre do cache de branch do CDN. Ao publicar
 uma tag nova **não edite este número à mão**: rode `node tools/release.mjs <versão>`, que reescreve
 de uma vez as 12 ocorrências espalhadas por este arquivo, pelo `AGENTS.md` e pelo `index.html`.
 O CI recusa docs que discordem entre si ou da tag publicada.
 
-> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.5`, ou o `index.js`
+> **Uma cópia por página.** Duas URLs diferentes do kit (`@main` + `@v0.4.6`, ou o `index.js`
 > mais um componente avulso) são dois grafos de módulo: ambos tentam registrar as mesmas tags.
 > A primeira cópia avaliada vence — o registro de custom elements não permite substituir uma
 > tag já definida — e a segunda apenas avisa no console. Se um protótipo se comportar como uma

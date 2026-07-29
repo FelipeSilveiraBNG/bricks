@@ -25,18 +25,18 @@ rodar em qualquer outro lugar (editor de HTML online, CodePen, um HTML solto, ou
 precisam das URLs absolutas do CDN:
 
 ```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/tokens.css" />
-<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.5/components/index.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/tokens.css" />
+<script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.6/components/index.js"></script>
 ```
 
-Use sempre a tag de versão (`@v0.4.5`), nunca `@main` — a tag é imutável e não fica presa ao
+Use sempre a tag de versão (`@v0.4.6`), nunca `@main` — a tag é imutável e não fica presa ao
 cache de branch do CDN.
 
 **Nunca edite a versão à mão.** Ela vive em 12 lugares (`README.md`, este arquivo e
 `index.html`); `node tools/release.mjs <versão>` reescreve os 12 e o CI recusa docs em desacordo
 entre si ou com a tag publicada. Ver o cabeçalho de `tools/release.mjs`.
 
-**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.4.5`, ou o
+**Carregue o kit UMA vez por página.** Duas URLs diferentes (`@main` + `@v0.4.6`, ou o
 `index.js` mais um componente avulso como `Sidebar.js`) são dois grafos de módulo distintos e
 ambos tentam registrar as mesmas tags. A primeira cópia avaliada vence e a segunda emite um
 aviso `[me-bricks]` no console — as tags seguem funcionando, mas com a definição da primeira,

@@ -1,0 +1,3347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J1 · Auditoria de folha de monitoramento — PRD 32 (protótipo)</title>
+
+  <!-- me-bricks (UI Kit Minha Escala) — URLs absolutas do CDN, versão travada.
+       Doc: https://felipesilveirabng.github.io/bricks/ -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/tokens.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.4.1/components/index.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;                 /* o body não rola: quem rola é o conteúdo */
+      font-family: var(--me-font-family, 'Inter', system-ui, -apple-system, sans-serif);
+      font-size: var(--me-font-size-body, 16px);
+      line-height: var(--me-line-height-body, 24px);
+      letter-spacing: var(--me-letter-spacing, 0.5px);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-page, #FAFAFA);
+    }
+    me-sidebar { flex: none; height: 100vh; }
+    main { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    main > me-page-header { flex: none; }
+
+    /* Breadcrumb dentro do título (Header.vue:13-27). O conteúdo vai no slot
+       "heading", então herda a tipografia do part heading (24px bold) e a cor
+       textPrimary do host — igual ao h1 do app. Só o hover muda a cor
+       (`hover:text-primary` = #2F7F91 = --me-color-brand). */
+    .crumbs a { color: inherit; text-decoration: none; }
+    .crumbs a:hover { color: var(--me-color-brand, #2F7F91); }
+    .crumbs a:focus-visible {
+      outline: none; border-radius: 4px;
+      box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
+    }
+    .crumbs .sep { margin: 0 4px; }        /* mx-1 do span separador */
+    /* Área de conteúdo BRANCA (decisão de design 28/07/2026): o container
+       cinza da tabela (neutral-10) contrasta contra ela, em vez de o app
+       usar o cinza de página --me-color-page. */
+    .content {
+      flex: 1; overflow-y: auto; padding: 24px 32px 48px;
+      background: var(--me-color-white, #FFFFFF);
+    }
+
+    /* ============================================================
+       TELA 01 — lista de Aprovações → Registro de plantão
+       Cópia de Index.vue + DsAttendanceCard.vue (INALTERADA pelo PRD)
+       ============================================================ */
+    .toolbar {
+      display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 12px; margin-bottom: 20px;
+    }
+    .toolbar .sort { display: flex; align-items: center; gap: 12px; }
+    .toolbar .sort-label {
+      color: var(--me-color-primary-30, #2F7F91);
+      font-size: var(--me-font-size-small, 14px);
+      font-weight: var(--me-font-weight-bold, 700); white-space: nowrap;
+    }
+    .toolbar .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    /* sem brick de filtro de data no kit: oculta o painel do dropdown */
+    .date-filter::part(panel) { display: none !important; }
+
+    .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .clear-filters {
+      border: 0; background: none; cursor: pointer; font-family: inherit;
+      color: var(--me-color-primary-30, #2F7F91);
+      font-weight: var(--me-font-weight-bold, 700);
+      font-size: var(--me-font-size-small, 14px); margin-left: 4px;
+    }
+    .clear-filters:hover { text-decoration: underline; }
+
+    .list { display: flex; flex-direction: column; min-height: 300px; }
+    /* DsAttendanceCard: border gray-200, rounded-lg, p-4 py-2, mb-4 */
+    .att-card {
+      border: 1px solid #E5E7EB; border-radius: var(--me-radius-l, 8px);
+      padding: 8px 16px; margin-bottom: 16px;
+      background: var(--me-color-surface, #fff);
+    }
+    .att-card .row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 0; }
+    .att-card .col {
+      min-width: 0; display: flex; flex-direction: column; align-items: flex-start;
+      font-size: var(--me-font-size-small, 14px);
+    }
+    .att-card .col.id { flex: 0 0 140px; }
+    /* só a coluna "Data upload" tem borda à esquerda (sm:border-l no app) */
+    .att-card .col.upload { flex: 0 0 130px; padding-left: 16px; border-left: 1px solid #E5E7EB; }
+    .att-card .col.escala,
+    .att-card .col.turno,
+    .att-card .col.status { flex: 1 1 130px; padding-left: 16px; }
+    .att-card .idtag {
+      color: var(--me-color-secondary-20, #52526F);
+      font-size: 12px; font-weight: 700; line-height: 14px; letter-spacing: 0.06px;
+    }
+    .att-card .label {
+      color: var(--me-color-text, #16161D);
+      font-weight: var(--me-font-weight-bold, 700); margin-bottom: 4px;
+    }
+    .att-card .value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .att-card .sub { color: var(--me-color-text, #16161D); font-size: 13px; }
+    .att-card .col.turno .label { display: inline-flex; align-items: center; gap: 8px; }
+    .turno-icon { position: relative; display: inline-flex; align-items: center; color: var(--me-color-primary-30, #2F7F91); }
+    .turno-icon me-icon { font-size: 18px; }
+    .turno-icon .badge-count {
+      position: absolute; top: -8px; right: -10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 15px; height: 15px; padding: 0 4px; border-radius: 999px;
+      background: var(--me-color-primary-20, #3CA2B9); color: #fff;
+      font-size: 10px; font-weight: 700;
+    }
+    .att-card .col.detalhes { flex: 0 0 auto; margin-left: auto; padding-left: 16px; }
+
+    /* Aviso de desfecho da jornada, ao retornar para a lista */
+    .list-outcome {
+      display: none; align-items: center; gap: 8px; margin-bottom: 16px;
+      padding: 12px 16px; border-radius: var(--me-radius-m, 6px);
+      background: var(--me-color-success-5, #EAFBEF);
+      border: 1px solid var(--me-color-success-50, #198038);
+      font-size: var(--me-font-size-small, 14px);
+    }
+    .list-outcome[data-open="true"] { display: flex; }
+    .list-outcome me-icon { color: var(--me-color-success-50, #198038); font-size: 20px; flex: none; }
+    .list-outcome .spacer { flex: 1; }
+    .list-outcome button.close {
+      border: 0; background: none; cursor: pointer; padding: 0; line-height: 1;
+      color: var(--me-color-text-muted, #68688D);
+    }
+
+    /* ============================================================
+       Estrutura comum das Telas 02 e 03 (duas colunas, 1366 × 768)
+       ============================================================ */
+    .record-head {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .record-head .file {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-weight: var(--me-font-weight-bold, 700);
+    }
+    .record-head .idtag {
+      color: var(--me-color-secondary-20, #52526F);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.06px;
+      border: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      border-radius: 999px; padding: 2px 10px;
+    }
+    .record-head .spacer { flex: 1; }
+
+    .two-col { display: flex; gap: 24px; align-items: flex-start; }
+    .col-evidence { flex: 0 0 58%; min-width: 0; }   /* ~60% da largura (telas.md) */
+    .col-work { flex: 1 1 0; min-width: 0; }
+
+    /* ---- Metadados do registro ---- */
+    .meta-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px 24px; margin-bottom: 16px;
+    }
+    .meta-grid .field { min-width: 0; }
+    .meta-grid .k {
+      display: block; font-size: var(--me-font-size-small, 14px);
+      font-weight: var(--me-font-weight-bold, 700); line-height: 18px;
+    }
+    .meta-grid .v {
+      display: block; font-size: var(--me-font-size-small, 14px);
+      line-height: 20px; color: var(--me-color-secondary-20, #52526F);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .status-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      border-bottom: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      margin-bottom: 16px;
+    }
+    .status-row .k { font-size: var(--me-font-size-small, 14px); font-weight: 700; }
+
+    .section-title {
+      font-size: var(--me-font-size-body, 16px);
+      font-weight: var(--me-font-weight-bold, 700);
+      margin: 0 0 12px;
+    }
+    .screen-footer {
+      display: flex; justify-content: flex-end; gap: 12px;
+      margin-top: 20px; padding-top: 16px;
+      border-top: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      flex-wrap: wrap;
+    }
+
+    /* ============================================================
+       Evidência (StepPreview) — mock da folha de monitoramento
+       Inalterada por este PRD; existe aqui para a jornada ser
+       operável (o auditor transcreve A PARTIR dela).
+       ============================================================ */
+    .evidence {
+      background: var(--me-color-surface, #fff);
+      border: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      border-radius: var(--me-radius-l, 8px);
+      overflow: hidden;
+    }
+    .evidence-bar {
+      display: flex; align-items: center; gap: 4px;
+      padding: 8px 12px; border-bottom: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      font-size: 13px; color: var(--me-color-text-muted, #68688D);
+    }
+    .evidence-bar .spacer { flex: 1; }
+    .evidence-bar me-button::part(base) { min-width: 0; }
+    .evidence-viewport {
+      height: 560px; overflow: auto;
+      background: var(--me-color-neutral-10, #F0F0F4);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 16px;
+    }
+    .evidence-paper {
+      /* Aparência de folha digitalizada */
+      background: #FCFBF7;
+      box-shadow: 0 2px 10px rgb(22 22 29 / 0.18);
+      padding: 18px 20px 24px;
+      width: 620px; flex: none;
+      transform-origin: top center;
+      transition: transform 0.15s ease;
+      filter: grayscale(0.25) contrast(1.05);
+    }
+    .evidence-paper h4 {
+      margin: 0 0 2px; font-size: 13px; letter-spacing: 1px; text-align: center;
+      text-transform: uppercase;
+    }
+    .evidence-paper .sub {
+      margin: 0 0 12px; font-size: 11px; text-align: center;
+      color: #4a4a4a; letter-spacing: 0.4px;
+    }
+    .evidence-paper .form-line {
+      display: flex; gap: 16px; font-size: 11px; margin-bottom: 10px;
+      color: #333;
+    }
+    .evidence-paper .form-line b { font-weight: 700; }
+    table.paper-sheet { width: 100%; border-collapse: collapse; }
+    table.paper-sheet th, table.paper-sheet td {
+      border: 1px solid #8a8a8a; padding: 3px 4px; font-size: 10px;
+      text-align: center; vertical-align: middle;
+    }
+    table.paper-sheet th {
+      background: #ECEAE2; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.2px; line-height: 12px;
+    }
+    table.paper-sheet td { height: 26px; }
+    table.paper-sheet td.hw {
+      font-family: 'Segoe Script', 'Bradley Hand', 'Comic Sans MS', cursive;
+      font-size: 12px; color: #1b2a5e; white-space: nowrap;
+    }
+    table.paper-sheet td.hw.name { text-align: left; padding-left: 6px; font-size: 11px; }
+    table.paper-sheet td.sig {
+      font-family: 'Segoe Script', 'Bradley Hand', cursive;
+      font-size: 15px; color: #1b2a5e;
+    }
+
+    /* ============================================================
+       C7 — Select "Modelo de Folha"  (ACIMA da tabela — D-01)
+       Nota: o kit me-bricks ainda não tem um brick de select de
+       formulário (me-select). Como o demo oficial faz com o
+       "me-date-filter" inexistente, aqui o controle é montado à mão
+       usando apenas tokens --me-*, sem hex avulso.
+       ============================================================ */
+    .field-model { margin-bottom: 14px; max-width: 420px; }
+    .field-model > label {
+      display: block; font-size: 12px; font-weight: 700;
+      color: var(--me-color-text-muted, #68688D); margin-bottom: 4px;
+      letter-spacing: 0.4px;
+    }
+    .select-shell { position: relative; }
+    .select-shell > button {
+      width: 100%; height: var(--me-control-height-m, 40px);
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 12px; cursor: pointer;
+      font: inherit; font-size: var(--me-font-size-small, 14px);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-surface, #fff);
+      border: 1px solid var(--me-color-neutral-40, #BCBCCD);
+      border-radius: var(--me-radius-m, 6px);
+      text-align: left;
+    }
+    .select-shell > button:hover { border-color: var(--me-color-brand, #2F7F91); }
+    .select-shell > button:focus-visible {
+      outline: none; box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
+    }
+    .select-shell > button .val { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ============================================================
+       C1 — Tabela-planilha
+       Fidelidade visual (RF-11): reproduz AttendanceSheetCard.vue —
+       container #F0F0F4 rounded-xl p-16, células brancas rounded-md
+       com borda cinza, corpo 14px UPPERCASE, foco em ring teal.
+       Tokens usados: neutral-10 (#F0F0F4 exato), neutral-50 (borda),
+       primary-30 (foco/checkbox), secondary-20 (texto do corpo).
+       ============================================================ */
+    .sheet-shell {
+      position: relative;                  /* âncora dos marcadores de linha parcial */
+      background: var(--me-color-neutral-10, #F0F0F4);
+      border-radius: 12px;                 /* rounded-xl */
+      padding: 16px;
+    }
+    /* Marcador de linha parcial (D-05) — faixa de 3px na borda esquerda da linha,
+       DENTRO do padding do container. Vive fora da área de scroll da grade para
+       (a) não ser recortada pelo overflow-x e (b) permanecer visível quando a
+       tabela rola horizontalmente. Não cria coluna nem desloca células. */
+    .partial-marks { position: absolute; left: 7px; top: 0; bottom: 0; width: 3px; pointer-events: none; }
+    .partial-marks > i {
+      position: absolute; left: 0; width: 3px; display: block;
+      border-radius: 2px; background: var(--me-color-warning-50, #F1C21B);
+    }
+    .sheet-scroll { overflow-x: auto; overflow-y: visible; padding-bottom: 4px; }
+    .sheet-scroll::-webkit-scrollbar { height: 10px; }
+    .sheet-scroll::-webkit-scrollbar-track {
+      background: var(--me-color-neutral-20, #E2E2E9); border-radius: 999px;
+    }
+    .sheet-scroll::-webkit-scrollbar-thumb {
+      background: var(--me-color-neutral-50, #9E9EB7); border-radius: 999px;
+    }
+
+    table.sheet {
+      border-collapse: separate; border-spacing: 4px;
+      table-layout: fixed;
+      /* a largura é definida em JS pela soma das colunas do modelo, para a
+         tabela transbordar e ganhar o próprio scroll horizontal */
+    }
+    /* A grade é focável (tabindex=0) para capturar os atalhos, mas o outline
+       padrão do navegador desenha um retângulo sem raio sobre o container.
+       O indicador de foco da grade é o ring teal da CÉLULA ativa (padrão de
+       planilha), então o outline de nível de tabela é suprimido. */
+    table.sheet:focus, table.sheet:focus-visible { outline: none; }
+    /* ---- Cabeçalho (C2) ---- */
+    table.sheet th {
+      position: relative;
+      padding: 4px 6px 6px;
+      font-size: var(--me-font-size-small, 14px); line-height: 16px;
+      font-weight: var(--me-font-weight-bold, 700);
+      color: var(--me-color-text, #16161D);
+      text-align: center; vertical-align: bottom;
+      user-select: none;
+    }
+    table.sheet th .th-inner {
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      min-height: 34px;
+    }
+    table.sheet th .th-label { min-width: 0; white-space: normal; word-break: normal; }
+    /* checkbox mestre */
+    th .master {
+      flex: none; display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border: 0; padding: 0; background: none;
+      cursor: pointer; color: var(--me-color-brand, #2F7F91);
+    }
+    th .master me-icon { font-size: 20px; }
+    th .master[disabled] { cursor: not-allowed; color: var(--me-color-neutral-50, #9E9EB7); }
+    th .master:focus-visible { outline: none; box-shadow: var(--me-focus-ring); border-radius: 4px; }
+    /* botão de menu da coluna */
+    th .colmenu-btn {
+      flex: none; display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border: 0; padding: 0; background: none;
+      cursor: pointer; color: var(--me-color-text-muted, #68688D);
+      opacity: 0; transition: opacity var(--me-transition, 0.2s ease);
+    }
+    th:hover .colmenu-btn, th:focus-within .colmenu-btn, th .colmenu-btn[aria-expanded="true"] { opacity: 1; }
+    th .colmenu-btn me-icon { font-size: 18px; }
+
+    /* ---- Corpo ---- */
+    table.sheet td {
+      position: relative; height: 38px; padding: 0;
+      background: var(--me-color-white, #fff);
+      border: 1px solid var(--me-color-neutral-50, #9E9EB7);
+      border-radius: var(--me-radius-m, 6px);
+      font-size: var(--me-font-size-small, 14px); line-height: 18px;
+      font-weight: var(--me-font-weight-medium, 500);
+      color: var(--me-color-secondary-20, #52526F);
+      text-align: center; text-transform: uppercase;
+      user-select: none; cursor: cell;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    table.sheet td .cellval {
+      display: block; padding: 8px 10px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    table.sheet td.type-checkbox { cursor: pointer; }
+    table.sheet td.type-checkbox me-icon {
+      font-size: 20px; color: var(--me-color-brand, #2F7F91);
+      display: flex; align-items: center; justify-content: center; height: 36px;
+    }
+    table.sheet td.type-checkbox.off me-icon { color: var(--me-color-neutral-50, #9E9EB7); }
+
+    /* estados de seleção */
+    table.sheet td.in-range { background: var(--me-color-primary-5, #D8EEF3); }
+    table.sheet td.active {
+      border-color: transparent;
+      box-shadow: 0 0 0 2px var(--me-color-brand, #2F7F91);
+      background: var(--me-color-white, #fff);
+      z-index: 2;
+    }
+    table.sheet td.fill-preview {
+      box-shadow: inset 0 0 0 1px var(--me-color-brand, #2F7F91);
+      background: var(--me-color-primary-5, #D8EEF3);
+    }
+    /* alça de preenchimento no canto da seleção */
+    table.sheet td.handle::after {
+      content: ''; position: absolute; right: -3px; bottom: -3px;
+      width: 8px; height: 8px; border-radius: 2px;
+      background: var(--me-color-brand, #2F7F91);
+      box-shadow: 0 0 0 1px var(--me-color-white, #fff);
+      cursor: crosshair; z-index: 3;
+    }
+    /* editor de célula */
+    table.sheet td input.cell-editor {
+      width: 100%; height: 100%; border: 0; outline: none; margin: 0;
+      padding: 8px 10px; background: transparent;
+      font: inherit; font-size: var(--me-font-size-small, 14px);
+      letter-spacing: inherit; text-transform: uppercase; text-align: center;
+      color: var(--me-color-text, #16161D);
+    }
+
+    /* ============================================================
+       C8 — Aviso de valores descartados na colagem
+       ============================================================ */
+    .paste-warning {
+      display: none; align-items: center; gap: 8px;
+      margin-top: 10px; padding: 8px 12px;
+      background: var(--me-color-alert-5, #FEF3E7);
+      border: 1px solid var(--me-color-alert-50, #F18F1B);
+      border-radius: var(--me-radius-m, 6px);
+      font-size: var(--me-font-size-small, 14px);
+      color: var(--me-color-text, #16161D);
+    }
+    .paste-warning[data-open="true"] { display: flex; }
+    .paste-warning me-icon { color: var(--me-color-alert-50, #F18F1B); font-size: 20px; flex: none; }
+    .paste-warning .spacer { flex: 1; }
+    .paste-warning button.close {
+      border: 0; background: none; cursor: pointer; padding: 0; line-height: 1;
+      color: var(--me-color-text-muted, #68688D);
+    }
+
+    /* ============================================================
+       C6 — Barra de ações da tabela
+       ============================================================ */
+    .table-actions {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 10px; flex-wrap: wrap;
+    }
+    .table-actions .spacer { flex: 1; }
+    .row-count { font-size: 13px; color: var(--me-color-text-muted, #68688D); }
+
+    /* ============================================================
+       Camada flutuante: C3 (autocomplete), C4 (pós-arrasto),
+       C5 (menu de linha), menu de coluna, ajuda de atalhos
+       ============================================================ */
+    /* z-index acima dos modais (.overlay 80 / .conc-overlay 90): dropdowns e
+       popovers precisam flutuar sobre a superfície que os abriu — dentro do
+       modal de reprovação, um valor menor os deixaria atrás e inclicáveis. */
+    .pop {
+      position: fixed; z-index: 100; display: none;
+      background: var(--me-color-surface, #fff);
+      border: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      border-radius: var(--me-radius-m, 6px);
+      box-shadow: var(--me-shadow-card, 0 8px 24px rgb(188 188 205 / 0.32));
+      font-size: var(--me-font-size-small, 14px);
+      overflow: hidden;
+    }
+    .pop[data-open="true"] { display: block; }
+    .pop .item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; cursor: pointer; white-space: nowrap;
+      color: var(--me-color-text, #16161D);
+    }
+    .pop .item:hover:not([aria-disabled="true"]),
+    .pop .item.hl { background: var(--me-color-primary-5, #D8EEF3); }
+    .pop .item[aria-disabled="true"] { color: var(--me-color-neutral-50, #9E9EB7); cursor: not-allowed; }
+    .pop .item me-icon { font-size: 18px; flex: none; }
+    .pop .sep { height: 1px; background: var(--me-color-neutral-20, #E2E2E9); }
+    .pop .hint {
+      padding: 8px 12px; font-size: 12px; line-height: 16px;
+      color: var(--me-color-text-muted, #68688D);
+      background: var(--me-color-neutral-5, #FAFAFA);
+      border-top: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      white-space: normal; max-width: 300px;
+    }
+
+    /* C3 — lista de sugestões */
+    #ac-list { min-width: 300px; max-width: 380px; }
+    #ac-list .item { justify-content: space-between; gap: 16px; }
+    #ac-list .ac-name { overflow: hidden; text-overflow: ellipsis; }
+    #ac-list .ac-crm { flex: none; color: var(--me-color-text-muted, #68688D); font-variant-numeric: tabular-nums; }
+    #ac-list .item mark { background: transparent; color: var(--me-color-brand, #2F7F91); font-weight: 700; }
+    #ac-list .empty { padding: 8px 12px; color: var(--me-color-text-muted, #68688D); }
+
+    /* C4 — lista pós-arrasto */
+    #fill-menu .item me-icon { color: var(--me-color-brand, #2F7F91); }
+
+    /* Ajuda de atalhos */
+    #help-pop { max-width: 340px; padding: 4px 0; }
+    #help-pop dl { margin: 0; padding: 8px 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+    #help-pop dt { font-weight: 700; white-space: nowrap; }
+    #help-pop dd { margin: 0; color: var(--me-color-secondary-20, #52526F); }
+    #help-pop .pop-title { padding: 10px 14px 0; font-weight: 700; }
+
+    /* ============================================================
+       Overlay de modal (D-07)
+       ============================================================ */
+    .overlay {
+      position: fixed; inset: 0; z-index: 80; display: none;
+      align-items: center; justify-content: center;
+      background: rgb(22 22 29 / 0.45); padding: 24px;
+    }
+    .overlay[data-open="true"] { display: flex; }
+
+    /* ============================================================
+       Tela 04 — Modal "Detalhes da Conciliação"  (INALTERADA pelo PRD)
+       Reproduz DsAttendanceConciliationModal.vue sobre o Modal.vue do
+       app: max-w-[80vw], max-h 90vh, rounded-lg, bordas de header e
+       footer (border-2 gray-100), overlay gray-900 a 50%.
+       Uma VAGA por vez — não é uma tabela de todas as linhas.
+       ============================================================ */
+    .conc-overlay {
+      position: fixed; inset: 0; z-index: 90; display: none;
+      align-items: center; justify-content: center;
+    }
+    .conc-overlay[data-open="true"] { display: flex; }
+    .conc-backdrop { position: absolute; inset: 0; background: #111827; opacity: 0.5; }
+    .conc-modal {
+      position: relative; z-index: 1; display: flex; flex-direction: column;
+      width: 100%; max-width: 80vw; max-height: 90vh; overflow: hidden;
+      background: var(--me-color-white, #fff);
+      border-radius: var(--me-radius-l, 8px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      text-align: left;
+    }
+    .conc-close {
+      position: absolute; top: 16px; right: 16px; z-index: 10;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; padding: 0; border: 0; border-radius: 999px;
+      background: none; cursor: pointer; color: #374151;
+    }
+    .conc-close:hover { background: #F3F4F6; }
+    .conc-close me-icon { font-size: 24px; }
+    .conc-header {
+      flex: none; padding: 24px 24px 16px;
+      border-bottom: 2px solid #F3F4F6;
+    }
+    .conc-header h2 {
+      margin: 0; font-size: 20px; line-height: 28px;
+      font-weight: var(--me-font-weight-bold, 700);
+      color: var(--me-color-text, #16161D);
+    }
+    .conc-body {
+      flex: 1; min-height: 0; overflow-y: auto; padding: 16px 24px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+    .conc-footer {
+      flex: none; padding: 16px 24px; border-top: 2px solid #F3F4F6;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .conc-counter { font-size: var(--me-font-size-small, 14px); color: #323232; }
+    .conc-actions { display: flex; gap: 12px; }
+    .conc-block-title {
+      font-size: var(--me-font-size-body, 16px);
+      font-weight: var(--me-font-weight-bold, 700);
+      color: var(--me-color-text, #16161D);
+      margin: 0 0 12px;
+    }
+
+    /* --- DsAttendanceInfoSheetsCard --- */
+    .info-sheet { background: #F3F4F6; border-radius: 12px; padding: 12px; overflow-x: auto; width: 100%; }
+    .info-sheet table { width: 100%; min-width: max-content; border-collapse: collapse; }
+    .info-sheet th, .info-sheet td {
+      font-size: var(--me-font-size-small, 14px); color: #323232;
+      text-align: center; white-space: nowrap;
+    }
+    .info-sheet th { font-weight: var(--me-font-weight-bold, 700); }
+    .info-sheet td { padding: 4px; }
+    .info-sheet .posto-th {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: help;
+    }
+    .info-sheet me-icon { font-size: 18px; color: var(--me-color-neutral-40, #BCBCCD); }
+
+    /* --- CardBestCandidate --- */
+    .cand-card {
+      display: flex; flex-direction: column; gap: 16px;
+      background: var(--me-color-white, #fff); border-radius: 12px; padding: 24px;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); width: 100%;
+      border: 1px solid #E5E7EB;
+    }
+    .cand-card.active { border: 2px solid var(--me-color-primary-30, #2F7F91); }
+    .cand-head { display: flex; flex-direction: column; gap: 4px; }
+    .cand-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .cand-station {
+      display: flex; align-items: center; padding: 4px 12px 4px 4px;
+      background: #F9FAFB; border: 1px solid #F3F4F6; border-radius: 8px;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+    .cand-station span { padding: 0 8px; font-size: 20px; font-weight: 700; color: #374151; line-height: 1.25; }
+    .cand-title { font-size: 24px; font-weight: 700; color: var(--me-color-text, #16161D); }
+    .cand-breadcrumb { font-size: var(--me-font-size-small, 14px); color: var(--me-color-primary-50, #163D45); overflow-wrap: break-word; }
+    .cand-row { display: flex; gap: 8px; font-size: var(--me-font-size-small, 14px); }
+    .cand-row b { color: #6B7280; }
+    .cand-dates { display: flex; flex-direction: column; font-size: var(--me-font-size-small, 14px); line-height: 1.625; }
+    .cand-dates .tz { font-size: 12px; color: #6B7280; margin-top: 2px; }
+    .cand-doctor {
+      position: relative; display: flex; flex: 1; justify-content: center;
+      gap: 32px; padding: 16px 24px; border: 1px solid #E5E7EB; border-radius: 8px;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      background: var(--me-color-white, #fff);
+      font-size: var(--me-font-size-small, 14px); line-height: 1.625;
+    }
+    .cand-duty {
+      position: absolute; top: 8px; left: 8px;
+      font-size: 12px; color: #4B5563; padding: 2px 4px; border-radius: 4px;
+      border: 1px solid var(--me-color-primary-10, #84C8D7);
+      background: var(--me-color-primary-5, #D8EEF3);
+    }
+    .cand-doctor-id {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 128px; flex: none;
+    }
+    .cand-avatar {
+      width: 40px; height: 40px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--me-color-primary-5, #D8EEF3);
+    }
+    .cand-avatar me-icon { font-size: 26px; color: var(--me-color-primary-30, #2F7F91); }
+    .cand-doctor-id .nm { font-size: 18px; margin: 4px 0 0; text-align: center; }
+    .cand-doctor-id .crm { margin: 0; font-weight: 700; }
+    .cand-divider { width: 1px; background: #E5E7EB; align-self: stretch; flex: none; }
+    .cand-facts { display: flex; flex: 1; flex-direction: column; gap: 4px; justify-content: center; }
+    .cand-facts p { margin: 0; font-size: var(--me-font-size-body, 16px); }
+
+    /* SINGLE_MATCH: card + pergunta ao lado */
+    .single-match { display: flex; gap: 24px; align-items: flex-start; }
+    .single-match .card-col { width: 50%; min-width: 0; }
+    .single-match .ask-col { width: 224px; flex: none; display: flex; flex-direction: column; gap: 12px; }
+    .single-match .ask-col p { margin: 0; font-size: var(--me-font-size-body, 16px); }
+
+    /* MULTIPLE_MATCHES */
+    .multi-hint { font-size: var(--me-font-size-small, 14px); color: var(--me-color-text, #16161D); margin: 0 0 16px; }
+    .multi-none { margin-bottom: 16px; }
+    .multi-list { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+    .multi-list.grid2 { display: grid; grid-template-columns: 1fr 1fr; overflow: visible; }
+    .multi-item { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+    .multi-list:not(.grid2) .multi-item { min-width: 380px; max-width: 420px; }
+    .multi-item > me-icon { font-size: 22px; margin-top: 4px; flex: none; color: var(--me-color-neutral-40, #BCBCCD); }
+    .multi-item.sel > me-icon { color: var(--me-color-primary-30, #2F7F91); }
+
+    /* Radios do modal (v-radio do app) */
+    .conc-radio { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: var(--me-font-size-body, 16px); }
+    .conc-radio me-icon { font-size: 22px; color: var(--me-color-neutral-40, #BCBCCD); }
+    .conc-radio.sel me-icon { color: var(--me-color-primary-30, #2F7F91); }
+
+    /* NO_MATCH */
+    .no-match {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 16px;
+    }
+    .no-match me-icon { font-size: 24px; color: #DC2626; flex: none; margin-top: 2px; }
+    .no-match .t { margin: 0 0 4px; font-size: var(--me-font-size-small, 14px); font-weight: 700; color: #B91C1C; }
+    .no-match .d { margin: 0; font-size: var(--me-font-size-small, 14px); color: #DC2626; }
+
+    /* ============================================================
+       TELA 05 — Validação da folha (pós-conciliação) · INALTERADA
+       AttendanceSheetCard em mode="view": mesmo container cinza, mas
+       SEM as caixas brancas de input — texto puro sobre o cinza.
+       ============================================================ */
+    #col-work[data-state="edit"] .only-done { display: none !important; }
+    #col-work[data-state="done"] .only-edit { display: none !important; }
+
+    .sheet-view { background: var(--me-color-neutral-10, #F0F0F4); border-radius: 12px; padding: 16px; }
+    .sheet-view-scroll { overflow-x: auto; padding-bottom: 12px; }
+    .sheet-view-scroll::-webkit-scrollbar { height: 10px; }
+    .sheet-view-scroll::-webkit-scrollbar-track {
+      background: var(--me-color-neutral-20, #E2E2E9); border-radius: 10px; margin: 0 10px;
+    }
+    .sheet-view-scroll::-webkit-scrollbar-thumb {
+      background: var(--me-color-neutral-50, #9E9EB7); border-radius: 10px;
+    }
+    .sheet-view table { width: 100%; min-width: max-content; border-collapse: collapse; }
+    .sheet-view th {
+      font-size: var(--me-font-size-small, 14px); font-weight: var(--me-font-weight-bold, 700);
+      color: var(--me-color-text, #16161D);          /* #1F2937 no app */
+      text-align: center; white-space: nowrap; padding: 0 12px 12px;
+    }
+    .sheet-view tbody { text-transform: uppercase; }
+    .sheet-view td {
+      font-size: var(--me-font-size-small, 14px);
+      color: var(--me-color-secondary-20, #52526F);  /* #4B5563 no app */
+      text-align: center; white-space: nowrap; padding: 6px 8px; vertical-align: middle;
+    }
+    .sheet-view td me-icon { font-size: 20px; color: var(--me-color-neutral-50, #9E9EB7); }
+    /* coluna "Conciliação": ícone + texto, alinhados à esquerda */
+    .sheet-view td.status-cell > div {
+      display: flex; align-items: center; justify-content: flex-start;
+      gap: 8px; min-width: 100px; text-transform: none;
+    }
+    .sheet-view td.status-cell me-icon { flex: none; }
+    .sheet-view td.status-cell.ok me-icon { color: var(--me-color-success-50, #198038); }
+    .sheet-view td.status-cell.warn me-icon { color: var(--me-color-alert-50, #F18F1B); }
+    .sheet-view td.status-cell span { color: #6B7280; }
+
+    /* Bloco de decisão da auditoria */
+    .validation-radios { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
+    .validation-radios .conc-radio[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
+    .obs-field { display: block; margin-top: 12px; }
+    .obs-field > span {
+      display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.4px;
+      color: var(--me-color-text-muted, #68688D); margin-bottom: 4px;
+    }
+    .obs-field textarea {
+      width: 100%; padding: 8px 12px; resize: vertical;
+      font: inherit; font-size: var(--me-font-size-small, 14px);
+      color: var(--me-color-text, #16161D);
+      background: var(--me-color-surface, #fff);
+      border: 1px solid var(--me-color-neutral-40, #BCBCCD);
+      border-radius: var(--me-radius-m, 6px);
+    }
+    .obs-field textarea:focus-visible {
+      outline: none; border-color: var(--me-color-brand, #2F7F91);
+      box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
+    }
+
+    /* Banner de saída da jornada (desfecho registrado) */
+    .conc-done {
+      display: none; align-items: center; gap: 8px; margin-top: 16px;
+      padding: 12px 16px; border-radius: var(--me-radius-m, 6px);
+      background: var(--me-color-success-5, #EAFBEF);
+      border: 1px solid var(--me-color-success-50, #198038);
+      font-size: var(--me-font-size-small, 14px);
+    }
+    .conc-done[data-open="true"] { display: flex; }
+    .conc-done me-icon { color: var(--me-color-success-50, #198038); font-size: 20px; flex: none; }
+
+    /* ============================================================
+       Andaime de protótipo (não faz parte do produto)
+       ============================================================ */
+    #proto-toggle {
+      position: fixed; right: 20px; bottom: 20px; z-index: 70;
+      border: 0; cursor: pointer; border-radius: 999px;
+      padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 700;
+      background: var(--me-color-secondary-40, #1E1E29); color: #fff;
+      box-shadow: 0 4px 14px rgb(22 22 29 / 0.3);
+    }
+    #proto-panel {
+      position: fixed; right: 20px; bottom: 68px; z-index: 70; display: none;
+      width: 400px; max-height: 70vh; overflow-y: auto;
+      background: var(--me-color-surface, #fff);
+      border: 1px solid var(--me-color-neutral-20, #E2E2E9);
+      border-radius: var(--me-radius-l, 8px);
+      box-shadow: var(--me-shadow-card);
+      padding: 16px 18px; font-size: 13px; line-height: 19px;
+    }
+    #proto-panel[data-open="true"] { display: block; }
+    #proto-panel h3 { margin: 0 0 8px; font-size: 14px; }
+    #proto-panel h4 { margin: 14px 0 4px; font-size: 13px; color: var(--me-color-brand, #2F7F91); }
+    #proto-panel ul { margin: 0; padding-left: 18px; }
+    #proto-panel li { margin-bottom: 4px; }
+    #proto-panel code {
+      background: var(--me-color-neutral-10, #F0F0F4);
+      border-radius: 3px; padding: 0 3px; font-size: 12px;
+    }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body>
+  <me-sidebar expanded id="nav" preset="gestor" active-item="aprovacoes"></me-sidebar>
+
+  <main>
+    <!-- Cabeçalho FIEL ao app. O h1 do Header.vue monta "breadcrumb › título" a
+         partir do useHeaderStore, e quem alimenta esta página é o
+         Approvals/Index.vue (crumb "Aprovações" → /aprovacoes + título da aba
+         ativa). O módulo DsAttendance NUNCA chama setTitle nem clearTitle, então
+         detalhe e auditoria herdam exatamente este cabeçalho: nada muda ao
+         navegar entre as três telas. -->
+    <me-page-header id="hdr" menu menu-open
+      subheading="Visualize e gerencie os registros de plantão dos colaboradores">
+      <!-- O me-page-header (me-bricks v0.4.1) não tem breadcrumb — o atributo
+           "heading" é só texto puro. A composição vai no slot "heading", montada
+           à mão com tokens --me-*, como o C7 faz na ausência de me-select. -->
+      <span slot="heading" class="crumbs"><a href="#/lista" id="crumb-aprovacoes">Aprovações</a><span class="sep">&rsaquo;</span>Registro de plantão</span>
+      <span slot="end" style="display:flex; align-items:center; gap:16px;">
+        <me-icon name="bell-outline" label="Notificações"></me-icon>
+        <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>
+        <me-icon name="chevron-down"></me-icon>
+      </span>
+    </me-page-header>
+
+    <div class="content">
+      <me-pages default="lista" id="router">
+
+        <!-- ================================================================
+             TELA 01 — Aprovações → aba "Registro de plantão" (lista)
+             INALTERADA pelo PRD. Cópia de Index.vue + DsAttendanceCard.vue.
+             Ponto de entrada e de retorno da jornada J1.
+             ================================================================ -->
+        <me-page name="lista">
+          <!-- Desfecho da jornada, ao voltar da validação -->
+          <div class="list-outcome" id="list-outcome" role="status">
+            <me-icon name="check-circle-outline"></me-icon>
+            <span id="list-outcome-text"></span>
+            <span class="spacer"></span>
+            <button class="close" id="list-outcome-close" aria-label="Fechar aviso">
+              <me-icon name="close"></me-icon>
+            </button>
+          </div>
+
+          <me-tab-group active="attendance">
+            <me-tab panel="handover">Trocas pelo aplicativo</me-tab>
+            <me-tab panel="exceptionality">Pedidos de excepcionalidade</me-tab>
+            <me-tab panel="attendance">Registro de plantão</me-tab>
+            <me-tab panel="biometry">Biometria facial</me-tab>
+
+            <me-tab-panel name="handover"></me-tab-panel>
+            <me-tab-panel name="exceptionality"></me-tab-panel>
+            <me-tab-panel name="biometry"></me-tab-panel>
+
+            <me-tab-panel name="attendance">
+              <!-- Toolbar: Ordenar por · Exportar · Novo registro -->
+              <div class="toolbar">
+                <div class="sort">
+                  <span class="sort-label">Ordenar por:</span>
+                  <me-button appearance="outlined" size="small">
+                    <me-icon slot="start" name="chevron-down"></me-icon>Status
+                  </me-button>
+                </div>
+                <div class="actions">
+                  <me-button appearance="outlined" size="small">
+                    <me-icon slot="start" name="tray-arrow-down"></me-icon>Exportar registros
+                  </me-button>
+                  <me-button appearance="outlined" size="small">
+                    <me-icon slot="start" name="plus"></me-icon>Novo registro
+                  </me-button>
+                </div>
+              </div>
+
+              <!-- Filtros (pílulas) -->
+              <div class="filters" id="filters">
+                <me-select-filter id="status-filter" label="Status" multiple>
+                  <me-icon slot="start" name="format-list-checks"></me-icon>
+                  <me-option value="PENDING_SUBMISSION">Aguardando Envio</me-option>
+                  <me-option value="PENDING_AUDIT" selected>Aguardando Auditoria</me-option>
+                  <me-option value="AUDIT_IN_PROGRESS">Auditoria em Progresso</me-option>
+                  <me-option value="APPROVED">Aprovado</me-option>
+                  <me-option value="REJECTED">Reprovado</me-option>
+                  <me-option value="DELETED">Excluído</me-option>
+                </me-select-filter>
+
+                <!-- Data plantão / Data upload seriam um DateFilter.vue; aqui usam
+                     o me-select-filter só pela aparência (não há brick de data). -->
+                <me-select-filter class="date-filter" label="Data plantão">
+                  <me-icon slot="start" name="calendar-outline"></me-icon>
+                </me-select-filter>
+                <me-select-filter class="date-filter" label="Data upload">
+                  <me-icon slot="start" name="calendar-arrow-up"></me-icon>
+                </me-select-filter>
+
+                <me-select-filter label="Unidades" multiple searchable>
+                  <me-icon slot="start" name="office-building-outline"></me-icon>
+                  <me-option value="1">Hospital São Lucas</me-option>
+                  <me-option value="2">Hospital Santa Casa</me-option>
+                  <me-option value="3">Hospital Infantil</me-option>
+                </me-select-filter>
+
+                <!-- Escala depende de Unidade; Turno depende de Escala -->
+                <me-select-filter label="Escala" multiple searchable disabled>
+                  <me-icon slot="start" name="calendar-edit"></me-icon>
+                </me-select-filter>
+                <me-select-filter label="Turno" multiple searchable disabled>
+                  <me-icon slot="start" name="clock-outline"></me-icon>
+                </me-select-filter>
+              </div>
+
+              <div class="active-filters" id="active-tags">
+                <button class="clear-filters">Limpar filtros</button>
+              </div>
+
+              <div class="list" id="attendance-list"></div>
+
+              <me-pagination total-pages="8" page="1" style="margin-top:24px;"></me-pagination>
+            </me-tab-panel>
+          </me-tab-group>
+        </me-page>
+
+
+        <!-- ================================================================
+             TELA 02 — Detalhe do registro em auditoria (modo leitura)
+             Inalterada por este PRD. Trigger de J1: "Iniciar validação".
+             ================================================================ -->
+        <me-page name="detalhe">
+          <div class="record-head">
+            <span class="idtag">#15258</span>
+            <span class="file"><me-icon name="file-pdf-box"></me-icon>Folha-de-monitoramento.pdf</span>
+            <span class="spacer"></span>
+            <me-button appearance="plain" size="small">
+              <me-icon slot="start" name="undo-variant"></me-icon>Reverter validação
+            </me-button>
+          </div>
+
+          <div class="two-col">
+            <div class="col-evidence" id="evidence-slot-02"></div>
+
+            <div class="col-work">
+              <div class="meta-grid">
+                <div class="field"><span class="k">Responsável envio</span><span class="v">Marina Camargo</span></div>
+                <div class="field"><span class="k">Responsável validação</span><span class="v">—</span></div>
+                <div class="field"><span class="k">Data do plantão</span><span class="v">10/07/2026</span></div>
+                <div class="field"><span class="k">Unidade</span><span class="v">Hospital São Lucas</span></div>
+                <div class="field"><span class="k">Escala(s)</span><span class="v">Clínica Médica</span></div>
+                <div class="field"><span class="k">Turno(s)</span><span class="v">Manhã, Tarde</span></div>
+                <div class="field"><span class="k">Estado do Registro</span><span class="v">Diário</span></div>
+                <div class="field"><span class="k">Data upload</span><span class="v">11/07/2026 08:42</span></div>
+              </div>
+
+              <div class="status-row">
+                <span class="k">Status</span>
+                <me-badge variant="yellow">Aguardando Auditoria</me-badge>
+              </div>
+
+              <h3 class="section-title">Histórico</h3>
+              <me-card style="--padding:16px; margin-bottom:16px;">
+                <div style="display:flex; gap:10px; font-size:14px; line-height:20px;">
+                  <me-icon name="tray-arrow-up" style="color:var(--me-color-brand); font-size:20px;"></me-icon>
+                  <div>
+                    <strong>Evidência enviada</strong> — Marina Camargo<br />
+                    <span style="color:var(--me-color-text-muted);">11/07/2026 08:42 · Data do plantão informada: 10/07/2026</span>
+                  </div>
+                </div>
+              </me-card>
+
+              <h3 class="section-title">Comentários</h3>
+              <me-input label="Escreva um comentário" name="comentario"></me-input>
+
+              <div class="screen-footer">
+                <me-button appearance="plain" id="btn-fechar-detalhe">Fechar</me-button>
+                <me-button variant="danger" appearance="outlined">Reprovar</me-button>
+                <me-button id="btn-iniciar">Iniciar validação</me-button>
+              </div>
+            </div>
+          </div>
+        </me-page>
+
+        <!-- ================================================================
+             TELA 03 — Auditoria em modo edição (tabela-planilha)
+             Núcleo do PRD 32. C1–C8.
+             ================================================================ -->
+        <me-page name="auditoria">
+          <div class="record-head">
+            <span class="idtag">#15258</span>
+            <span class="file"><me-icon name="file-pdf-box"></me-icon>Folha-de-monitoramento.pdf</span>
+          </div>
+
+          <div class="two-col">
+            <div class="col-evidence" id="evidence-slot-03"></div>
+
+            <!-- data-state="edit" (isValidating) | "done" (isConciliationDone).
+                 Em produção é a MESMA tela trocando de blocos, não outra rota. -->
+            <div class="col-work" id="col-work" data-state="edit">
+              <div class="meta-grid">
+                <!-- "Responsável envio/validação" só aparecem quando NÃO se está
+                     editando (v-if="!isValidating") — voltam após a conciliação. -->
+                <div class="field only-done"><span class="k">Responsável pelo envio</span><span class="v">Marina Camargo</span></div>
+                <div class="field only-done"><span class="k">Responsável pela validação</span><span class="v">Felipe Silveira</span></div>
+                <div class="field"><span class="k">Data do plantão</span><span class="v">10/07/2026</span></div>
+                <div class="field"><span class="k">Unidade</span><span class="v">Hospital São Lucas</span></div>
+                <div class="field"><span class="k">Escala(s)</span><span class="v">Clínica Médica</span></div>
+                <div class="field"><span class="k">Turno(s)</span><span class="v">Manhã, Tarde</span></div>
+                <div class="field"><span class="k">Estado do Registro</span><span class="v">Diário</span></div>
+              </div>
+
+              <!-- Status é OCULTO após a conciliação (v-if="!isConciliationDone") -->
+              <div class="status-row only-edit">
+                <span class="k">Status</span>
+                <me-badge variant="yellow">Aguardando Auditoria</me-badge>
+              </div>
+
+              <h3 class="section-title only-edit">Preencha as informações da folha de monitoramento</h3>
+
+              <!-- C7 — Modelo de Folha (ACIMA da tabela, D-01) -->
+              <div class="field-model only-edit">
+                <label for="model-btn">Modelo de Folha</label>
+                <div class="select-shell">
+                  <button type="button" id="model-btn" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="val" id="model-val">Folha padrão — 10 linhas</span>
+                    <me-icon name="chevron-down"></me-icon>
+                  </button>
+                </div>
+              </div>
+
+              <!-- C1 — Tabela-planilha -->
+              <div class="sheet-shell only-edit">
+                <div class="partial-marks" id="partial-marks" aria-hidden="true"></div>
+                <div class="sheet-scroll">
+                  <table class="sheet" id="sheet" tabindex="0"
+                         aria-label="Tabela de auditoria da folha de monitoramento">
+                    <thead id="sheet-head"></thead>
+                    <tbody id="sheet-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- C8 — aviso agregado de valores descartados na colagem -->
+              <div class="paste-warning only-edit" id="paste-warning" role="status">
+                <me-icon name="information-outline"></me-icon>
+                <span id="paste-warning-text"></span>
+                <span class="spacer"></span>
+                <button class="close" id="paste-warning-close" aria-label="Fechar aviso">
+                  <me-icon name="close"></me-icon>
+                </button>
+              </div>
+
+              <!-- C6 — barra de ações da tabela -->
+              <div class="table-actions only-edit">
+                <me-button appearance="outlined" size="small" id="btn-add-row">
+                  <me-icon slot="start" name="plus"></me-icon>Adicionar linha
+                </me-button>
+                <me-button appearance="outlined" size="small" id="btn-delete-row">
+                  <me-icon slot="start" name="trash-can-outline"></me-icon>Excluir linha
+                </me-button>
+                <span class="row-count" id="row-count"></span>
+                <span class="spacer"></span>
+                <me-button appearance="plain" size="small" id="btn-undo" disabled>
+                  <me-icon slot="start" name="undo-variant"></me-icon>Desfazer
+                </me-button>
+                <me-button appearance="plain" size="small" id="btn-help" aria-expanded="false">
+                  <me-icon slot="start" name="help-circle-outline"></me-icon>Atalhos
+                </me-button>
+              </div>
+
+              <div class="screen-footer only-edit">
+                <span id="complete-hint" class="row-count" style="margin-right:auto;"></span>
+                <me-button appearance="plain" id="btn-cancelar">Cancelar</me-button>
+                <me-button id="btn-avancar" disabled>Avançar para conciliação</me-button>
+              </div>
+
+              <!-- ==========================================================
+                   TELA 05 — Validação da folha (pós-conciliação)
+                   INALTERADA por este PRD. Mesma tela, isConciliationDone:
+                   AttendanceSheetCard em mode="view" com a coluna
+                   "Conciliação" + bloco de decisão da auditoria.
+                   ========================================================== -->
+              <div class="only-done">
+                <div class="sheet-view" id="sheet-view">
+                  <div class="sheet-view-scroll">
+                    <table id="sheet-view-table"></table>
+                  </div>
+                </div>
+
+                <h3 class="section-title" style="margin-top:16px;">Validação da folha</h3>
+
+                <div class="validation-radios" id="validation-radios"></div>
+
+                <div class="field-model" id="reason-field" style="display:none; max-width:100%;">
+                  <label for="reason-btn">Justificativa</label>
+                  <div class="select-shell">
+                    <button type="button" id="reason-btn" aria-haspopup="listbox" aria-expanded="false">
+                      <span class="val" id="reason-val">Selecione</span>
+                      <me-icon name="chevron-down"></me-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <label class="obs-field">
+                  <span>Observação</span>
+                  <textarea id="validation-obs" rows="3"></textarea>
+                </label>
+
+                <div class="screen-footer">
+                  <me-button appearance="outlined" id="btn-voltar-validacao">Voltar</me-button>
+                  <me-button id="btn-salvar-validacao" disabled>Salvar validação</me-button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </me-page>
+
+      </me-pages>
+    </div>
+  </main>
+
+  <!-- ================================================================
+       Camada flutuante
+       ================================================================ -->
+
+  <!-- C3 — lista de sugestões de profissional -->
+  <div class="pop" id="ac-list" role="listbox" aria-label="Sugestões de profissional"></div>
+
+  <!-- C4 — lista suspensa pós-arrasto -->
+  <div class="pop" id="fill-menu" role="menu" aria-label="Opções de preenchimento"></div>
+
+  <!-- C5 — menu de contexto de linha -->
+  <div class="pop" id="row-menu" role="menu" aria-label="Ações de linha"></div>
+
+  <!-- Menu do cabeçalho de coluna (C2) -->
+  <div class="pop" id="col-menu" role="menu" aria-label="Ações da coluna"></div>
+
+  <!-- Modelo de folha (C7) -->
+  <div class="pop" id="model-menu" role="listbox" aria-label="Modelos de folha"></div>
+
+  <!-- Ajuda de atalhos (C6) -->
+  <div class="pop" id="help-pop" role="dialog" aria-label="Atalhos da tabela">
+    <div class="pop-title">Atalhos da tabela</div>
+    <dl>
+      <dt>← ↑ → ↓</dt><dd>Move entre células</dd>
+      <dt>Digitar</dt><dd>Inicia a edição substituindo o conteúdo</dd>
+      <dt>Enter</dt><dd>Confirma e desce uma célula</dd>
+      <dt>Tab</dt><dd>Confirma e avança para a próxima célula</dd>
+      <dt>Esc</dt><dd>Cancela a edição e restaura o valor anterior</dd>
+      <dt>Shift + setas</dt><dd>Seleciona um intervalo</dd>
+      <dt>Shift + Espaço</dt><dd>Seleciona a linha da célula ativa</dd>
+      <dt>Ctrl + C / V</dt><dd>Copia e cola — inclusive blocos do Excel</dd>
+      <dt>Ctrl + Z</dt><dd>Desfaz o último passo</dd>
+      <dt>Ctrl + Y</dt><dd>Refaz (ou Ctrl + Shift + Z)</dd>
+    </dl>
+    <div class="hint">
+      "Excluir linha" age sobre a linha da célula ativa — use Shift + Espaço ou
+      Shift + ↑/↓ para alcançar várias. O clique direito na tabela também insere
+      linhas acima/abaixo. Arraste a alça no canto da seleção para copiar valores.
+    </div>
+  </div>
+
+  <!-- Modal de confirmação de troca de modelo (D-07) -->
+  <div class="overlay" id="model-overlay">
+    <me-card style="max-width:480px; text-align:center;">
+      <strong style="font-size:18px;">Trocar modelo de folha?</strong>
+      <p style="margin:12px 0 0; color:var(--me-color-secondary-20);">
+        As informações já preenchidas nesta folha serão apagadas.
+      </p>
+      <div slot="footer" style="display:flex; gap:16px; width:100%;">
+        <me-button style="flex:1" appearance="outlined" id="model-cancel">Cancelar</me-button>
+        <me-button style="flex:1" id="model-confirm">Trocar modelo</me-button>
+      </div>
+    </me-card>
+  </div>
+
+  <!-- ================================================================
+       TELA 04 — Modal "Detalhes da Conciliação" (INALTERADA pelo PRD)
+       Espelha DsAttendanceConciliationModal.vue: uma vaga por vez,
+       bloco variável por matchStatus, contador "vaga X/N" no footer.
+       ================================================================ -->
+  <div class="conc-overlay" id="conc-overlay" role="dialog" aria-modal="true"
+       aria-label="Detalhes da Conciliação">
+    <div class="conc-backdrop" id="conc-backdrop"></div>
+    <div class="conc-modal">
+      <button class="conc-close" id="conc-close" aria-label="Fechar">
+        <me-icon name="close"></me-icon>
+      </button>
+      <header class="conc-header"><h2>Detalhes da Conciliação</h2></header>
+      <main class="conc-body" id="conc-body"></main>
+      <footer class="conc-footer">
+        <span class="conc-counter" id="conc-counter"></span>
+        <div class="conc-actions">
+          <me-button appearance="outlined" id="conc-back" style="min-width:96px;">Voltar</me-button>
+          <me-button id="conc-next" style="min-width:140px;">Próxima vaga</me-button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       Modal "Reprovar registro" (DsAttendanceRejectModal.vue)
+       Caminho de "Reprovada" no bloco de validação. INALTERADO pelo PRD.
+       ================================================================ -->
+  <div class="conc-overlay" id="reject-overlay" role="dialog" aria-modal="true"
+       aria-label="Reprovar registro">
+    <div class="conc-backdrop" id="reject-backdrop"></div>
+    <div class="conc-modal" style="max-width:520px;">
+      <button class="conc-close" id="reject-close" aria-label="Fechar">
+        <me-icon name="close"></me-icon>
+      </button>
+      <header class="conc-header"><h2>Reprovar registro</h2></header>
+      <main class="conc-body" style="gap:16px;">
+        <div class="field-model" style="max-width:100%; margin:0;">
+          <label for="reject-reason-btn">Justificativa de reprovação</label>
+          <div class="select-shell">
+            <button type="button" id="reject-reason-btn" aria-haspopup="listbox" aria-expanded="false">
+              <span class="val" id="reject-reason-val">Selecione</span>
+              <me-icon name="chevron-down"></me-icon>
+            </button>
+          </div>
+        </div>
+        <label class="obs-field" style="margin:0;">
+          <span>Observação (opcional)</span>
+          <textarea id="reject-obs" rows="3"></textarea>
+        </label>
+        <div class="conc-radio" id="reject-new-sheet" role="checkbox" aria-checked="false">
+          <me-icon name="checkbox-blank-outline"></me-icon>Solicitar envio de nova folha
+        </div>
+      </main>
+      <footer class="conc-footer" style="justify-content:flex-end;">
+        <div class="conc-actions">
+          <me-button appearance="outlined" id="reject-cancel" style="min-width:96px;">Cancelar</me-button>
+          <me-button variant="danger" id="reject-confirm" style="min-width:200px;" disabled>
+            Confirmar reprovação
+          </me-button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Andaime de protótipo -->
+  <button id="proto-toggle" aria-expanded="false">Notas do protótipo</button>
+  <div id="proto-panel">
+    <h3>J1 — Auditoria de folha de monitoramento</h3>
+    <p style="margin:0; color:var(--me-color-text-muted);">
+      Protótipo navegável da primeira (e única) jornada do PRD 32.
+      Rotas: <code>#/lista</code> (Tela 01) → <code>#/detalhe</code> (Tela 02) →
+      <code>#/auditoria</code> (Tela 03); a conciliação (Tela 04) é um <strong>modal</strong>
+      sobre a Tela 03, como em produção. Concluir a validação <strong>retorna à lista</strong>
+      com o status do registro atualizado.
+    </p>
+
+    <h4>Tela 01 — lista de Aprovações · inalterada pelo PRD</h4>
+    <ul>
+      <li>Cópia de <code>Index.vue</code> + <code>DsAttendanceCard.vue</code>: abas, ordenação, filtros em pílula (Escala e Turno desabilitados por dependência), tags de filtro ativo, cards e paginação.</li>
+      <li>Só o registro <strong>#15258 (Aguardando Auditoria)</strong> abre — os outros têm "Ver detalhes" desabilitado, porque a J1 parte de um registro auditável e o protótipo não cobre os demais estados.</li>
+      <li>Ao concluir a validação, o protótipo <strong>volta para cá</strong> e atualiza o status do #15258 (Aprovado / Auditoria em Progresso / Reprovado), com um aviso do desfecho.</li>
+      <li>"Fechar" (Tela 02) e "Voltar" (Tela 05) também retornam à lista, sem registrar desfecho.</li>
+    </ul>
+
+    <h4>Onde está cada componente</h4>
+    <ul>
+      <li><strong>C1</strong> — tabela-planilha (grade central)</li>
+      <li><strong>C2</strong> — cabeçalho: checkbox mestre + <code>▾</code> (aparece no hover da coluna)</li>
+      <li><strong>C3</strong> — autocomplete: digite 3+ letras em NOME ou 1+ dígito em CRM</li>
+      <li><strong>C4</strong> — arraste a alça de uma célula de DATA → lista "Copiar valores / Preencher série"</li>
+      <li><strong>C5</strong> — clique direito em qualquer célula</li>
+      <li><strong>C6</strong> — barra abaixo da tabela (Adicionar linha · Desfazer · Atalhos)</li>
+      <li><strong>C7</strong> — select "Modelo de Folha", acima da tabela</li>
+      <li><strong>C8</strong> — aviso de colagem: cole texto inválido numa coluna de hora</li>
+      <li><strong>Tela 04</strong> — modal de conciliação, ao clicar "Avançar para conciliação"</li>
+    </ul>
+
+    <h4>Roteiro sugerido de teste</h4>
+    <ul>
+      <li>A tabela nasce com <strong>uma única linha</strong>: o modelo de folha define as colunas, e quem dimensiona a folha é o auditor. Use "Adicionar linha" (ou cole um bloco) até chegar ao tamanho da evidência — 10 linhas, neste caso.</li>
+      <li>Note a coluna de data já preenchida com <code>10/07/2026</code> — e o botão "Avançar" bloqueado por não haver nenhuma linha em uso (RF-01 / RF-02).</li>
+      <li>Transcreva a linha 1 da evidência. Digite <code>SILVA</code> em NOME → 8 sugestões + "+ 4 resultados".</li>
+      <li>Digite <code>1</code> em CRM → <code>1-SP</code> vem primeiro (correspondência exata).</li>
+      <li>Selecione uma sugestão → nome e CRM preenchidos juntos, CRM em <code>12345-SP</code>.</li>
+      <li>Preencha só o nome de uma linha → faixa amarela na borda esquerda (linha parcial, D-05).</li>
+      <li>Digite <code>07:00</code> em ENTRADA e use <code>▾</code> → "Aplicar à coluna".</li>
+      <li>Clique no checkbox mestre de ASS. E CARIMBO → só as linhas em uso são marcadas.</li>
+      <li>Cole um bloco do Excel na tabela; cole texto numa coluna de hora para ver o C8.</li>
+      <li>Arraste a alça de uma célula de data e escolha "Preencher série" → 11/07, 12/07…</li>
+      <li>Ctrl+Z desfaz qualquer operação composta em um passo.</li>
+    </ul>
+
+    <h4>Premissas assumidas (spec silenciosa)</h4>
+    <ul>
+      <li><strong>Tabela nasce com 1 linha</strong> (decisão de design 28/07/2026), não com o <code>rowCount</code> do modelo: o auditor escolhe deliberadamente o tamanho da folha. O modelo de folha passa a definir <em>só</em> as colunas — coerente com a RN-09, mas divergente do V-06/US-01, cujo exemplo canônico é "20 linhas pré-preenchidas + 5 completas". Ver observação abaixo.</li>
+      <li><strong>Checkbox e completude:</strong> um checkbox desmarcado é valor legítimo (o médico não assinou), então colunas <code>checkbox</code> não são exigidas para a linha estar "completa". Marcar conta como conteúdo (torna a linha em uso), como manda a RN-03.</li>
+      <li><strong>Avançar exige ≥ 1 linha em uso:</strong> folha inteiramente vazia não avança (preserva o <code>isSheetComplete</code> atual).</li>
+      <li><strong>Digitação inválida em coluna tipada é preservada</strong> como texto, não descartada — o descarte da RN-08 é regra de <em>colagem</em>. Descartar o que o auditor acabou de digitar seria hostil.</li>
+      <li><strong>Arrasto:</strong> apenas vertical (pelas linhas), como descrito na jornada.</li>
+    </ul>
+
+    <h4>Conciliação (Tela 04) — inalterada pelo PRD</h4>
+    <ul>
+      <li>É um <strong>modal</strong> sobre a tela de auditoria, uma <strong>vaga por vez</strong> — reproduz o <code>DsAttendanceConciliationModal.vue</code> de produção.</li>
+      <li>O contador "vaga X/N" prova a RF-02: <strong>N conta só as linhas em uso</strong>; as vazias foram descartadas no envio.</li>
+      <li>Para exercitar os três estados, o protótipo atribui <code>matchStatus</code> em ciclo às linhas transcritas: 1ª <code>SINGLE_MATCH</code>, 2ª <code>MULTIPLE_MATCHES</code>, 3ª <code>NO_MATCH</code>. Em produção quem decide é o backend.</li>
+      <li>Os plantões candidatos são dados de escala — legítimos aqui, <em>depois</em> do preenchimento. A RN-01 proíbe sugeri-los durante a transcrição, não na conciliação.</li>
+    </ul>
+
+    <h4>Tela 05 — Validação da folha · inalterada pelo PRD</h4>
+    <ul>
+      <li>Concluir a conciliação <strong>não troca de rota</strong>: é a mesma tela com <code>isConciliationDone</code>. A esquerda (evidência) não muda; a direita troca de blocos.</li>
+      <li>A tabela reaparece <strong>preenchida em modo leitura</strong> — sem as caixas brancas de input, texto puro sobre o cinza — com a coluna <strong>Conciliação</strong> na frente: <span style="color:var(--me-color-success-50)">✓ #stationId</span> ou <span style="color:var(--me-color-alert-50)">⚠ Sem correspondência</span>.</li>
+      <li>Os metadados voltam a exibir <strong>Responsável pelo envio/validação</strong> (só ficam ocultos durante a edição) e o <strong>Status</strong> desaparece.</li>
+      <li><strong>Aprovada é bloqueada</strong> se alguma linha ficou sem correspondência. Para exercitar o caminho de aprovação, transcreva apenas 1 ou 2 linhas (o ciclo de status não gera <code>NO_MATCH</code>).</li>
+      <li><strong>Auditoria em Progresso</strong> exige Justificativa (Troca médica · Divergência de escalas) para liberar o salvamento.</li>
+      <li><strong>Reprovada</strong> + Salvar abre o modal "Reprovar registro" (motivos da modalidade Folha + observação opcional + "Solicitar envio de nova folha").</li>
+    </ul>
+
+    <h4>Cabeçalho da página · fiel ao app</h4>
+    <ul>
+      <li>O <code>h1</code> do <code>Header.vue</code> monta <strong>breadcrumb › título</strong> a partir do <code>useHeaderStore</code>. Nesta página quem escreve é o <code>Approvals/Index.vue</code>: crumb <strong>Aprovações</strong> (link para <code>/aprovacoes</code>) + título da aba ativa + descrição da aba como subtítulo.</li>
+      <li><strong>O cabeçalho não muda entre as três telas</strong>, de propósito: o módulo <code>DsAttendance</code> nunca chama <code>setTitle</code> nem <code>clearTitle</code>, então a rota de auditoria herda título, crumb e subtítulo da lista. O subtítulo "Visualize e gerencie os registros…" numa tela de transcrição é o comportamento atual, não um descuido do protótipo.</li>
+      <li>Consequência conhecida do app (não reproduzida aqui, por não haver recarga de rota): abrir a URL de auditoria direto ou dar F5 deixa <code>headerStore.title</code> vazio e o <code>v-if</code> do <code>Header.vue</code> <strong>oculta o bloco inteiro</strong> — a tela abre sem título. A tela irmã <code>HandoverEvaluation.vue</code> faz o certo, chamando <code>setTitle</code> com o próprio título e o crumb.</li>
+      <li>O <code>me-page-header</code> do me-bricks v0.4.1 não tem breadcrumb (só <code>heading</code>/<code>subheading</code> em texto puro): a composição vai no <strong>slot <code>heading</code></strong>, com tokens <code>--me-*</code>. Diferença remanescente: o kit envolve o título num <code>div</code>, não num <code>h1</code>.</li>
+    </ul>
+
+    <h4>Fora do protótipo</h4>
+    <ul>
+      <li>jspreadsheet CE: a grade aqui é vanilla JS com o comportamento-alvo especificado. O protótipo valida UX, não a integração da lib.</li>
+      <li>Chamadas de rede: o desfecho da validação é registrado num aviso na própria tela, sem <code>approveContainer</code>/<code>rejectContainer</code>.</li>
+      <li><code>me-select</code> não existe no me-bricks v0.4.1 — o C7 é montado à mão com tokens <code>--me-*</code>.</li>
+    </ul>
+  </div>
+
+<script type="module">
+/* =====================================================================
+   PRD 32 — J1: Auditoria de folha de monitoramento
+   Protótipo de comportamento-alvo. Regras referenciadas pelos IDs
+   canônicos do PRD (RN-xx / RF-xx / US-xx) e do telas.md (C1–C8, D-xx).
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   Shell: sidebar + header + rotas
+   --------------------------------------------------------------------- */
+const nav = document.getElementById('nav');
+const hdr = document.getElementById('hdr');
+hdr.menuOpen = nav.expanded;
+hdr.addEventListener('me-menu', (e) => { nav.expanded = hdr.menuOpen = e.detail.open; });
+nav.addEventListener('me-toggle', (e) => { hdr.menuOpen = e.detail.expanded; });
+
+const router = document.getElementById('router');
+// O cabeçalho é ESTÁTICO nas três telas — fidelidade ao app: só o
+// Approvals/Index.vue escreve no headerStore (title/subtitle/breadcrumb), e o
+// módulo DsAttendance não o sobrescreve ao navegar para a rota de auditoria.
+// Nada de subtítulo por rota aqui: isso não existe no produto.
+router.addEventListener('change', (e) => {
+  // "change" também é evento NATIVO: o do editor de célula borbulha até o
+  // me-pages ao confirmar uma edição. Só o evento de rota traz detail.page.
+  if (!e.detail?.page) return;
+  closeAllPops();
+});
+
+/* ---------------------------------------------------------------------
+   Dados do registro (container) — RN-02
+   --------------------------------------------------------------------- */
+const REFERENCE_DATE = '10/07/2026';   // "Data do plantão" informada no upload
+const AUDIT_ID = 15258;                // registro auditável nesta jornada
+
+/* =====================================================================
+   TELA 01 — lista de Aprovações → Registro de plantão (INALTERADA)
+   Entrada e saída da jornada J1. Só o registro "Aguardando Auditoria"
+   é auditável no protótipo; os demais existem como contexto da lista.
+   ===================================================================== */
+const STATUS_BADGE = {                       // StatusBadge.vue → variantes me-badge
+  PENDING_SUBMISSION: { label: 'Aguardando Envio', variant: 'neutral' },
+  PENDING_AUDIT:      { label: 'Aguardando Auditoria', variant: 'yellow' },
+  AUDIT_IN_PROGRESS:  { label: 'Auditoria em Progresso', variant: 'blue' },
+  APPROVED:           { label: 'Aprovado', variant: 'success' },
+  REJECTED:           { label: 'Reprovado', variant: 'danger' },
+  DELETED:            { label: 'Excluído', variant: 'danger' },
+};
+
+const attendanceList = [
+  { id: AUDIT_ID, date: '10/07/2026', upload: '11/07/2026', schedule: 'Clínica Médica',
+    unit: 'Hospital São Lucas', shifts: 'Manhã, Tarde', shiftsCount: 2, status: 'PENDING_AUDIT' },
+  { id: 15242, date: '09/07/2026', upload: '10/07/2026', schedule: 'UTI Adulto',
+    unit: 'Hospital Santa Casa', shifts: 'Noturno', shiftsCount: 1, status: 'APPROVED' },
+  { id: 15230, date: '08/07/2026', upload: '09/07/2026', schedule: 'Pronto Socorro',
+    unit: 'Hospital São Lucas', shifts: 'Manhã', shiftsCount: 1, status: 'REJECTED' },
+  { id: 15221, date: '07/07/2026', upload: '08/07/2026', schedule: 'Maternidade',
+    unit: 'Hospital Santa Casa', shifts: 'Tarde, Noite', shiftsCount: 2, status: 'AUDIT_IN_PROGRESS' },
+  { id: 15210, date: '06/07/2026', upload: '—', schedule: 'Pediatria',
+    unit: 'Hospital Infantil', shifts: 'Manhã', shiftsCount: 1, status: 'PENDING_SUBMISSION' },
+];
+
+function renderAttendanceList() {
+  const host = document.getElementById('attendance-list');
+  const frag = document.createDocumentFragment();
+
+  attendanceList.forEach((item) => {
+    const card = el('div', { class: 'att-card' });
+    const row = el('div', { class: 'row' });
+
+    const colId = el('div', { class: 'col id' });
+    colId.append(el('span', { class: 'idtag' }, `#${item.id}`),
+                 el('span', { class: 'label' }, 'Data do plantão'),
+                 el('span', { class: 'value' }, item.date));
+
+    const colUp = el('div', { class: 'col upload' });
+    colUp.append(el('span', { class: 'label' }, 'Data upload'),
+                 el('span', { class: 'value' }, item.upload));
+
+    const colEsc = el('div', { class: 'col escala' });
+    colEsc.append(el('span', { class: 'label' }, 'Escala'),
+                  el('span', { class: 'value' }, item.schedule),
+                  el('small', { class: 'sub' }, item.unit));
+
+    const colTurno = el('div', { class: 'col turno' });
+    const turnoLabel = el('span', { class: 'label' });
+    const icoBox = el('span', { class: 'turno-icon' });
+    const ico = el('me-icon'); ico.setAttribute('name', 'briefcase-outline');
+    icoBox.appendChild(ico);
+    if (item.shiftsCount > 1) icoBox.appendChild(el('span', { class: 'badge-count' }, String(item.shiftsCount)));
+    turnoLabel.append(icoBox, document.createTextNode('Turno(s)'));
+    colTurno.append(turnoLabel, el('span', { class: 'value' }, item.shifts));
+
+    const colStatus = el('div', { class: 'col status' });
+    const badge = el('me-badge');
+    badge.setAttribute('variant', STATUS_BADGE[item.status].variant);
+    badge.textContent = STATUS_BADGE[item.status].label;
+    colStatus.append(el('span', { class: 'label' }, 'Status'), badge);
+
+    const colBtn = el('div', { class: 'col detalhes' });
+    const btn = el('me-button');
+    btn.setAttribute('appearance', 'outlined');
+    btn.setAttribute('size', 'small');
+    btn.textContent = 'Ver detalhes';
+    // Só o registro auditável entra na jornada; os demais evitam beco sem saída.
+    if (item.id === AUDIT_ID) {
+      btn.addEventListener('click', () => { location.hash = '#/detalhe'; });
+    } else {
+      btn.setAttribute('disabled', '');
+      btn.title = 'O protótipo cobre a jornada J1, que parte de um registro "Aguardando Auditoria"';
+    }
+    colBtn.appendChild(btn);
+
+    row.append(colId, colUp, colEsc, colTurno, colStatus, colBtn);
+    card.appendChild(row);
+    frag.appendChild(card);
+  });
+
+  host.replaceChildren(frag);
+}
+
+/** Atualiza o status do registro auditado e volta para a lista. */
+function returnToList(status, message) {
+  const item = attendanceList.find((a) => a.id === AUDIT_ID);
+  if (status) item.status = status;
+  renderAttendanceList();
+
+  const box = document.getElementById('list-outcome');
+  if (message) {
+    document.getElementById('list-outcome-text').textContent = message;
+    box.dataset.open = 'true';
+  } else {
+    box.dataset.open = 'false';
+  }
+  location.hash = '#/lista';
+  document.querySelector('.content').scrollTop = 0;
+}
+document.getElementById('list-outcome-close').addEventListener('click', () => {
+  document.getElementById('list-outcome').dataset.open = 'false';
+});
+
+/* ---------------------------------------------------------------------
+   Cadastro de médicos da EMPRESA (RN-06) — base do autocomplete.
+   Nada aqui vem da escala nem de plantões cadastrados (RN-01).
+   --------------------------------------------------------------------- */
+const REGISTRY = [
+  ['MARIA SILVA SANTOS', '12345', 'SP'],
+  ['JOÃO DA SILVA', '987', 'RJ'],
+  ['ANA SILVEIRA COSTA', '4521', 'SP'],
+  ['CARLOS EDUARDO LIMA', '33127', 'SP'],
+  ['PATRÍCIA MENDES ROCHA', '7', 'SP'],
+  ['RENATO SILVA JUNIOR', '20981', 'MG'],
+  ['BEATRIZ ALMEIDA', '15630', 'SP'],
+  ['FERNANDO TEIXEIRA GOMES', '1120', 'SP'],
+  ['LUCIANA PEREIRA DIAS', '8842', 'SP'],
+  ['RODRIGO SILVA MARTINS', '1', 'SP'],
+  ['CAMILA SILVA OLIVEIRA', '12351', 'SP'],
+  ['EDUARDO SILVA NOGUEIRA', '12399', 'SP'],
+  ['JULIANA SILVA CAMPOS', '1234', 'RJ'],
+  ['MARCOS ANTÔNIO SILVA', '12300', 'MG'],
+  ['TATIANE SILVA BARROS', '5510', 'SP'],
+  ['GUSTAVO SILVA PRADO', '12318', 'SP'],
+  ['VANESSA SILVA REIS', '770', 'SP'],
+  ['PAULO HENRIQUE SILVA', '12362', 'BA'],
+  ['ADRIANA CASTRO FERREIRA', '6720', 'SP'],
+  ['BRUNO CARVALHO PINTO', '12290', 'SP'],
+  ['CRISTIANE LOPES AZEVEDO', '3390', 'RJ'],
+  ['DIEGO RAMOS FONSECA', '12045', 'SP'],
+  ['ELAINE MOREIRA DUARTE', '9911', 'SP'],
+  ['FÁBIO NUNES BATISTA', '12480', 'SP'],
+  ['GABRIELA SOUZA MELO', '2233', 'PR'],
+  ['HENRIQUE ALVES CORREIA', '12377', 'SP'],
+  ['ISABELA CARDOSO PINHEIRO', '4408', 'SP'],
+  ['JOSÉ ROBERTO MACHADO', '17', 'SP'],
+  ['KARINA VIEIRA SALES', '12502', 'SP'],
+  ['LEONARDO BARBOSA CRUZ', '8125', 'MG'],
+  ['MÔNICA FREITAS ARAÚJO', '12613', 'SP'],
+  ['NELSON QUEIROZ SAMPAIO', '3074', 'SP'],
+  ['OLÍVIA TAVARES BRITO', '12726', 'RJ'],
+  ['PEDRO AUGUSTO MONTEIRO', '10358', 'SP'],
+].map(([name, num, uf]) => ({ name, num, uf, crm: `${num}-${uf}` }));
+
+/* ---------------------------------------------------------------------
+   Modelos de folha (C7) — as COLUNAS vêm exclusivamente daqui (RN-09).
+   O modelo NÃO define mais a quantidade de linhas: a tabela nasce com
+   uma única linha e o auditor dimensiona a folha deliberadamente
+   (botão "Adicionar linha", menu de contexto ou colagem).
+   --------------------------------------------------------------------- */
+const INITIAL_ROW_COUNT = 1;   // mínimo da RN-09; força a escolha explícita
+
+const SHEET_MODELS = {
+  padrao10: {
+    label: 'Folha padrão',
+    columns: [
+      { key: 'data',       label: 'DATA',                   type: 'date',     width: 116 },
+      { key: 'nome',       label: 'NOME DO PROFISSIONAL',   type: 'text',     width: 190, role: 'doctorName' },
+      { key: 'crm',        label: 'CRM',                    type: 'text',     width: 96,  role: 'crm' },
+      { key: 'entrada',    label: 'ENTRADA',                type: 'time',     width: 84 },
+      { key: 'assEntrada', label: 'ASS. E CARIMBO ENTRADA', type: 'checkbox', width: 132 },
+      { key: 'saida',      label: 'SAÍDA',                  type: 'time',     width: 84 },
+      { key: 'assSaida',   label: 'ASS. E CARIMBO SAÍDA',   type: 'checkbox', width: 132 },
+    ],
+  },
+  assinaturaUnica8: {
+    label: 'Assinatura única',
+    columns: [
+      { key: 'data',    label: 'DATA',                 type: 'date',     width: 116 },
+      { key: 'crm',     label: 'CRM',                  type: 'text',     width: 96,  role: 'crm' },
+      { key: 'nome',    label: 'NOME DO PROFISSIONAL', type: 'text',     width: 200, role: 'doctorName' },
+      { key: 'entrada', label: 'ENTRADA',              type: 'time',     width: 84 },
+      { key: 'saida',   label: 'SAÍDA',                type: 'time',     width: 84 },
+      { key: 'ass',     label: 'ASS. E CARIMBO',       type: 'checkbox', width: 124 },
+    ],
+  },
+  semCrm10: {
+    label: 'Sem coluna de CRM',
+    columns: [
+      { key: 'data',    label: 'DATA',                 type: 'date',     width: 116 },
+      { key: 'nome',    label: 'NOME DO PROFISSIONAL', type: 'text',     width: 220, role: 'doctorName' },
+      { key: 'entrada', label: 'ENTRADA',              type: 'time',     width: 90 },
+      { key: 'saida',   label: 'SAÍDA',                type: 'time',     width: 90 },
+      { key: 'ass',     label: 'ASS. E CARIMBO',       type: 'checkbox', width: 110 },
+    ],
+  },
+};
+
+/* =====================================================================
+   Estado da sessão de edição
+   ===================================================================== */
+const state = {
+  modelId: 'padrao10',
+  columns: [],
+  rows: [],
+  sel: { r: 0, c: 0, r2: 0, c2: 0 },   // âncora (r,c) → foco (r2,c2)
+  editing: null,                        // { r, c, input, prev }
+  clipboard: null,                      // matriz interna (cópia dentro da grade)
+  pendingFill: null,                    // { srcR, srcC, from, to } para o C4
+};
+let undoStack = [];
+let redoStack = [];
+let gridFocused = false;
+
+const model = () => SHEET_MODELS[state.modelId];
+
+/* ---------------------------------------------------------------------
+   Tipagem de célula e classificação de linha (RN-03)
+   --------------------------------------------------------------------- */
+function blankCell(col) {
+  if (col.type === 'checkbox') return false;
+  if (col.type === 'date') return REFERENCE_DATE;   // RF-01: nasce pré-preenchida
+  return '';
+}
+function newRow() { return state.columns.map(blankCell); }
+
+function isFilled(col, v) {
+  if (col.type === 'checkbox') return v === true;
+  return String(v ?? '').trim() !== '';
+}
+/** Conteúdo que "conta como preenchimento" e torna a linha EM USO (RN-03). */
+function countsAsContent(col, v) {
+  if (col.type === 'checkbox') return v === true;
+  if (col.type === 'date') return isFilled(col, v) && String(v).trim() !== REFERENCE_DATE;
+  return isFilled(col, v);
+}
+function rowInUse(row) { return state.columns.some((col, i) => countsAsContent(col, row[i])); }
+/** Premissa: colunas checkbox não são exigidas para completude (ver notas). */
+function rowComplete(row) {
+  return rowInUse(row) &&
+    state.columns.every((col, i) => col.type === 'checkbox' || isFilled(col, row[i]));
+}
+function rowPartial(row) { return rowInUse(row) && !rowComplete(row); }
+
+/* ---------------------------------------------------------------------
+   Normalização por tipo (RN-08) — retorna null quando NÃO parseia
+   --------------------------------------------------------------------- */
+const pad2 = (n) => String(n).padStart(2, '0');
+
+function normalizeDate(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  let m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    let [, d, mo, y] = m;
+    if (y.length === 2) y = '20' + y;
+    if (+mo < 1 || +mo > 12 || +d < 1 || +d > 31) return null;
+    return `${pad2(d)}/${pad2(mo)}/${y}`;
+  }
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);                 // ISO (Excel/Sheets)
+  if (m) {
+    const [, y, mo, d] = m;
+    if (+mo < 1 || +mo > 12 || +d < 1 || +d > 31) return null;
+    return `${pad2(d)}/${pad2(mo)}/${y}`;
+  }
+  return null;
+}
+function normalizeTime(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  let m = s.match(/^(\d{1,2})\s*[:hH.]\s*(\d{1,2})$/) || s.match(/^(\d{1,2})(\d{2})$/);
+  if (m) {
+    const h = +m[1], min = +m[2];
+    if (h > 23 || min > 59) return null;
+    return `${pad2(h)}:${pad2(min)}`;
+  }
+  m = s.match(/^(\d{1,2})$/);
+  if (m) { const h = +m[1]; return h > 23 ? null : `${pad2(h)}:00`; }
+  return null;
+}
+const TRUTHY = new Set(['1', 'X', 'TRUE', 'VERDADEIRO', 'SIM', 'S', 'V', '✓', 'OK', 'YES', 'Y']);
+const FALSY  = new Set(['0', 'FALSE', 'FALSO', 'NAO', 'NÃO', 'N', '-', '']);
+function normalizeCheckbox(raw) {
+  const s = String(raw ?? '').trim().toUpperCase();
+  if (TRUTHY.has(s)) return true;
+  if (FALSY.has(s)) return false;
+  return null;
+}
+/** Normaliza para COLAGEM: null = descarta (RN-08). */
+function normalizeForPaste(col, raw) {
+  switch (col.type) {
+    case 'date': return normalizeDate(raw);
+    case 'time': return normalizeTime(raw);
+    case 'checkbox': return normalizeCheckbox(raw);
+    case 'number': {
+      const s = String(raw ?? '').trim().replace(',', '.');
+      if (!s) return '';
+      return Number.isFinite(+s) ? s : null;
+    }
+    default: return String(raw ?? '');   // texto: nada é descartado (RN-04)
+  }
+}
+/** Normaliza para DIGITAÇÃO: se não parseia, preserva o texto do auditor. */
+function normalizeForTyping(col, raw) {
+  const n = normalizeForPaste(col, raw);
+  return n === null ? String(raw ?? '').trim() : n;
+}
+
+/* ---------------------------------------------------------------------
+   Histórico único de desfazer/refazer (RF-07 / RN-07)
+   Snapshot por operação → operação composta = UM passo.
+   --------------------------------------------------------------------- */
+function snap() { return JSON.stringify(state.rows); }
+function beginStep() {
+  undoStack.push(snap());
+  redoStack.length = 0;
+  if (undoStack.length > 200) undoStack.shift();
+}
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(snap());
+  state.rows = JSON.parse(undoStack.pop());
+  clampSelection(); render();
+}
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(snap());
+  state.rows = JSON.parse(redoStack.pop());
+  clampSelection(); render();
+}
+function resetHistory() { undoStack = []; redoStack = []; }
+
+/* =====================================================================
+   Aplicação do modelo de folha
+   ===================================================================== */
+function applySheetModel(id) {
+  state.modelId = id;
+  state.columns = model().columns.map((c) => ({ ...c }));
+  state.rows = Array.from({ length: INITIAL_ROW_COUNT }, newRow);
+  state.sel = { r: 0, c: 0, r2: 0, c2: 0 };
+  state.pendingFill = null;
+  resetHistory();
+  hidePasteWarning();
+  document.getElementById('model-val').textContent = model().label;
+  render();
+}
+
+/* =====================================================================
+   Render
+   ===================================================================== */
+const sheet = document.getElementById('sheet');
+const sheetHead = document.getElementById('sheet-head');
+const sheetBody = document.getElementById('sheet-body');
+
+function render() {
+  // Largura explícita = soma das colunas do modelo. Sem isto a tabela se
+  // encolhe para caber no container em vez de ganhar scroll horizontal próprio.
+  const total = state.columns.reduce((s, col) => s + col.width + 4, 4);
+  sheet.style.width = total + 'px';
+  renderHead();
+  renderBody();
+  renderPartialMarks();
+  paintSelection();
+  renderFooterState();
+}
+
+/** D-05 — faixa na borda esquerda de cada linha parcial, no padding do container. */
+function renderPartialMarks() {
+  const host = document.getElementById('partial-marks');
+  const shellBox = host.parentElement.getBoundingClientRect();
+  const frag = document.createDocumentFragment();
+  state.rows.forEach((row, r) => {
+    if (!rowPartial(row)) return;
+    const tr = sheetBody.children[r];
+    if (!tr) return;
+    const b = tr.getBoundingClientRect();
+    const bar = document.createElement('i');
+    bar.style.top = (b.top - shellBox.top) + 'px';
+    bar.style.height = b.height + 'px';
+    frag.appendChild(bar);
+  });
+  host.replaceChildren(frag);
+}
+
+function renderHead() {
+  const tr = document.createElement('tr');
+  state.columns.forEach((col, c) => {
+    const th = document.createElement('th');
+    th.style.width = col.width + 'px';
+    th.style.minWidth = col.width + 'px';
+
+    const inner = document.createElement('div');
+    inner.className = 'th-inner';
+
+    // C2 — checkbox mestre (só em colunas checkbox)
+    if (col.type === 'checkbox') {
+      const st = masterState(c);
+      const b = document.createElement('button');
+      b.className = 'master';
+      b.type = 'button';
+      b.dataset.col = c;
+      b.disabled = st === 'disabled';
+      b.title = st === 'disabled'
+        ? 'Nenhuma linha em uso na tabela'
+        : 'Marcar/desmarcar as linhas em uso desta coluna';
+      b.setAttribute('aria-label', `Marcar todas as linhas em uso de ${col.label}`);
+      const icon = document.createElement('me-icon');
+      icon.setAttribute('name',
+        st === 'checked' ? 'checkbox-marked'
+        : st === 'indeterminate' ? 'minus-box'
+        : 'checkbox-blank-outline');
+      b.appendChild(icon);
+      inner.appendChild(b);
+    }
+
+    const label = document.createElement('span');
+    label.className = 'th-label';
+    label.textContent = col.label;
+    inner.appendChild(label);
+
+    // C2 — botão de menu da coluna
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'colmenu-btn';
+    menuBtn.type = 'button';
+    menuBtn.dataset.col = c;
+    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.setAttribute('aria-label', `Ações da coluna ${col.label}`);
+    const mi = document.createElement('me-icon');
+    mi.setAttribute('name', 'chevron-down');
+    menuBtn.appendChild(mi);
+    inner.appendChild(menuBtn);
+
+    th.appendChild(inner);
+    tr.appendChild(th);
+  });
+  sheetHead.replaceChildren(tr);
+}
+
+function renderBody() {
+  const frag = document.createDocumentFragment();
+  state.rows.forEach((row, r) => {
+    const tr = document.createElement('tr');
+    if (rowPartial(row)) {
+      tr.classList.add('partial');
+      tr.title = 'Linha incompleta';
+    }
+    state.columns.forEach((col, c) => {
+      const td = document.createElement('td');
+      td.className = 'type-' + col.type;
+      td.dataset.r = r; td.dataset.c = c;
+      td.style.width = col.width + 'px';
+
+      if (col.type === 'checkbox') {
+        const on = row[c] === true;
+        if (!on) td.classList.add('off');
+        const icon = document.createElement('me-icon');
+        icon.setAttribute('name', on ? 'checkbox-marked' : 'checkbox-blank-outline');
+        td.appendChild(icon);
+      } else {
+        const span = document.createElement('span');
+        span.className = 'cellval';
+        span.textContent = row[c] ?? '';
+        td.appendChild(span);
+      }
+      tr.appendChild(td);
+    });
+    frag.appendChild(tr);
+  });
+  sheetBody.replaceChildren(frag);
+}
+
+function cellAt(r, c) {
+  return sheetBody.querySelector(`td[data-r="${r}"][data-c="${c}"]`);
+}
+function selBounds() {
+  const { r, c, r2, c2 } = state.sel;
+  return {
+    r1: Math.min(r, r2), rr: Math.max(r, r2),
+    c1: Math.min(c, c2), cc: Math.max(c, c2),
+  };
+}
+function paintSelection(fillTo = null) {
+  const { r1, rr, c1, cc } = selBounds();
+  for (const td of sheetBody.querySelectorAll('td')) {
+    td.classList.remove('in-range', 'active', 'handle', 'fill-preview');
+  }
+  for (let r = r1; r <= rr; r++) {
+    for (let c = c1; c <= cc; c++) {
+      const td = cellAt(r, c);
+      if (!td) continue;
+      if (r1 !== rr || c1 !== cc) td.classList.add('in-range');
+    }
+  }
+  const act = cellAt(state.sel.r2, state.sel.c2);
+  if (act) act.classList.add('active');
+  renderDeleteRowButton();   // rótulo e bloqueio dependem da seleção
+  // alça no canto inferior direito da seleção
+  const br = cellAt(rr, cc);
+  if (br && !state.editing) br.classList.add('handle');
+
+  if (fillTo !== null && (fillTo > rr || fillTo < r1)) {
+    const from = fillTo > rr ? rr + 1 : r1 - 1;      // arrasto para baixo ou para cima
+    const lo = Math.min(from, fillTo), hi = Math.max(from, fillTo);
+    for (let r = lo; r <= hi; r++) {
+      for (let c = c1; c <= cc; c++) cellAt(r, c)?.classList.add('fill-preview');
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Rodapé: completude (RF-02) + estado do C6
+   --------------------------------------------------------------------- */
+const btnAvancar = document.getElementById('btn-avancar');
+const btnUndo = document.getElementById('btn-undo');
+const btnDeleteRow = document.getElementById('btn-delete-row');
+const rowCountEl = document.getElementById('row-count');
+const completeHint = document.getElementById('complete-hint');
+
+function renderFooterState() {
+  const inUse = state.rows.filter(rowInUse);
+  const partials = state.rows.filter(rowPartial).length;
+  const complete = inUse.length - partials;
+  const empty = state.rows.length - inUse.length;
+
+  const canAdvance = partials === 0 && inUse.length > 0;
+  btnAvancar.toggleAttribute('disabled', !canAdvance);
+
+  rowCountEl.textContent = `${state.rows.length} linha${state.rows.length > 1 ? 's' : ''}`;
+  completeHint.textContent = partials > 0
+    ? `${partials} linha${partials > 1 ? 's' : ''} incompleta${partials > 1 ? 's' : ''} · ${complete} completa${complete !== 1 ? 's' : ''} · ${empty} vazia${empty !== 1 ? 's' : ''}`
+    : inUse.length === 0
+      ? `${empty} linha${empty !== 1 ? 's' : ''} vazia${empty !== 1 ? 's' : ''} — transcreva ao menos uma linha da folha`
+      : `${complete} linha${complete > 1 ? 's' : ''} completa${complete > 1 ? 's' : ''} · ${empty} vazia${empty !== 1 ? 's' : ''} (descartada${empty !== 1 ? 's' : ''} no envio)`;
+
+  btnUndo.toggleAttribute('disabled', undoStack.length === 0);
+}
+
+/**
+ * C6 — "Excluir linha". Age sobre a linha da célula ativa, ou sobre todas as
+ * linhas do intervalo selecionado. Mesma regra do menu de contexto (C5):
+ * bloqueado se restaria menos de 1 linha (RN-09).
+ */
+function renderDeleteRowButton() {
+  if (!btnDeleteRow) return;
+  const { r1, rr } = selBounds();
+  const count = rr - r1 + 1;
+  const blocked = state.rows.length - count < 1;
+
+  btnDeleteRow.textContent = count > 1 ? `Excluir ${count} linhas` : 'Excluir linha';
+  const icon = document.createElement('me-icon');
+  icon.setAttribute('slot', 'start');
+  icon.setAttribute('name', 'trash-can-outline');
+  btnDeleteRow.prepend(icon);
+
+  btnDeleteRow.toggleAttribute('disabled', blocked);
+  btnDeleteRow.title = blocked
+    ? 'A tabela precisa de no mínimo 1 linha'
+    : count > 1
+      ? `Exclui as ${count} linhas selecionadas`
+      : `Exclui a linha ${r1 + 1}`;
+}
+
+/* =====================================================================
+   Seleção e navegação (RF-10)
+   ===================================================================== */
+function clampSelection() {
+  const maxR = state.rows.length - 1, maxC = state.columns.length - 1;
+  const s = state.sel;
+  s.r = Math.min(Math.max(0, s.r), maxR);   s.r2 = Math.min(Math.max(0, s.r2), maxR);
+  s.c = Math.min(Math.max(0, s.c), maxC);   s.c2 = Math.min(Math.max(0, s.c2), maxC);
+}
+function setSelection(r, c, extend = false) {
+  const maxR = state.rows.length - 1, maxC = state.columns.length - 1;
+  r = Math.min(Math.max(0, r), maxR);
+  c = Math.min(Math.max(0, c), maxC);
+  if (extend) { state.sel.r2 = r; state.sel.c2 = c; }
+  else { state.sel = { r, c, r2: r, c2: c }; }
+  paintSelection();
+  scrollIntoView(r, c);
+}
+function scrollIntoView(r, c) {
+  const td = cellAt(r, c);
+  if (!td) return;
+  const box = td.getBoundingClientRect();
+  const wrap = sheet.closest('.sheet-scroll').getBoundingClientRect();
+  if (box.left < wrap.left) sheet.closest('.sheet-scroll').scrollLeft -= (wrap.left - box.left + 8);
+  if (box.right > wrap.right) sheet.closest('.sheet-scroll').scrollLeft += (box.right - wrap.right + 8);
+}
+
+/* =====================================================================
+   Edição de célula
+   ===================================================================== */
+function startEdit(r, c, seed = null) {
+  const col = state.columns[c];
+  if (col.type === 'checkbox') { toggleCheckbox(r, c); return; }
+  commitEdit();
+  const td = cellAt(r, c);
+  if (!td) return;
+  state.sel = { r, c, r2: r, c2: c };
+  paintSelection();
+
+  const prev = state.rows[r][c];
+  const input = document.createElement('input');
+  input.className = 'cell-editor';
+  input.type = 'text';
+  input.value = seed === null ? String(prev ?? '') : seed;
+  td.replaceChildren(input);
+  state.editing = { r, c, input, prev };
+  hidePasteWarning();
+
+  input.addEventListener('input', () => {
+    if (col.role === 'doctorName' || col.role === 'crm') openAutocomplete();
+    else closeAutocomplete();
+  });
+  input.addEventListener('keydown', onEditorKeydown);
+  input.focus();
+  if (seed === null) input.select(); else input.setSelectionRange(seed.length, seed.length);
+  if (seed !== null && (col.role === 'doctorName' || col.role === 'crm')) openAutocomplete();
+}
+
+function commitEdit() {
+  if (!state.editing) return;
+  const { r, c, input, prev } = state.editing;
+  state.editing = null;
+  closeAutocomplete();
+  const col = state.columns[c];
+  const next = normalizeForTyping(col, input.value);
+  if (String(next) !== String(prev ?? '')) {
+    beginStep();
+    state.rows[r][c] = next;
+  }
+  render();
+}
+function cancelEdit() {
+  if (!state.editing) return;
+  state.editing = null;
+  closeAutocomplete();
+  render();
+}
+
+function onEditorKeydown(e) {
+  // As teclas do editor pertencem ao input, nunca à grade: sem isto, o
+  // keydown borbulharia até o <table> e seria processado duas vezes.
+  e.stopPropagation();
+  if (!state.editing) return;   // editor já desmontado (confirmado/cancelado)
+  const ac = acOpen();
+
+  // Navegação dentro da lista de sugestões (C3)
+  if (ac && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    e.preventDefault(); moveAcHighlight(e.key === 'ArrowDown' ? 1 : -1); return;
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (ac) closeAutocomplete();        // 1º Esc fecha a lista mantendo o texto
+    else cancelEdit();                  // 2º Esc cancela a edição (RF-10)
+    sheet.focus();
+    return;
+  }
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    const { r, c } = state.editing;
+    const picked = ac ? acHighlightedItem() : null;
+    if (picked) applySuggestion(picked);   // seleciona a sugestão (cruzamento)
+    else commitEdit();                     // confirma o texto livre (RN-04)
+
+    if (e.key === 'Enter') {
+      setSelection(r + 1, c);              // confirma e desce
+    } else if (c + 1 <= state.columns.length - 1) {
+      setSelection(r, c + 1);              // confirma e avança
+    } else {
+      setSelection(r + 1, 0);              // fim da linha: primeira célula da próxima
+    }
+    sheet.focus();
+  }
+}
+
+function toggleCheckbox(r, c) {
+  beginStep();
+  state.rows[r][c] = !state.rows[r][c];
+  state.sel = { r, c, r2: r, c2: c };
+  render();
+}
+
+/* =====================================================================
+   C3 — Autocomplete de profissional (RF-03 / RF-04 / RN-04 / RN-05)
+   Editor de célula CUSTOMIZADO: texto livre é sempre aceito.
+   ===================================================================== */
+const acList = document.getElementById('ac-list');
+let acItems = [];
+let acIndex = -1;
+
+const deaccent = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+function searchByName(term) {
+  const t = deaccent(term).trim();
+  if (t.length < 3) return null;                       // RN-05: mínimo de 3
+  const hits = REGISTRY.filter((d) => deaccent(d.name).includes(t));
+  const wordStart = new RegExp('\\b' + escRe(t));
+  return hits.sort((a, b) => {
+    const aw = wordStart.test(deaccent(a.name)) ? 0 : 1;
+    const bw = wordStart.test(deaccent(b.name)) ? 0 : 1;
+    if (aw !== bw) return aw - bw;                      // início de palavra primeiro
+    return a.name.localeCompare(b.name, 'pt-BR');       // depois alfabética
+  });
+}
+function searchByCrm(term) {
+  const m = String(term).toUpperCase().replace(/\s+/g, '').match(/^(\d+)-?([A-Z]{0,2})$/);
+  if (!m) return null;                                  // RN-05: mínimo de 1 dígito
+  const [, num, uf] = m;
+  const hits = REGISTRY.filter((d) => d.num.startsWith(num) && (!uf || d.uf.startsWith(uf)));
+  return hits.sort((a, b) => {
+    const ax = a.num === num ? 0 : 1, bx = b.num === num ? 0 : 1;
+    if (ax !== bx) return ax - bx;                      // correspondência exata primeiro
+    return (+a.num) - (+b.num) || a.uf.localeCompare(b.uf);  // depois numérica crescente
+  });
+}
+
+function acOpen() { return acList.dataset.open === 'true'; }
+function closeAutocomplete() {
+  acList.dataset.open = 'false';
+  acItems = []; acIndex = -1;
+}
+function openAutocomplete() {
+  if (!state.editing) return closeAutocomplete();
+  const { r, c, input } = state.editing;
+  const col = state.columns[c];
+  const results = col.role === 'crm' ? searchByCrm(input.value) : searchByName(input.value);
+
+  // Abaixo do mínimo de caracteres: NUNCA lista aberta (RN-05)
+  if (results === null) return closeAutocomplete();
+  if (!results.length) {
+    acList.replaceChildren(el('div', { class: 'empty' },
+      'Nenhum profissional no cadastro — a digitação livre é aceita.'));
+    positionPop(acList, cellAt(r, c));
+    acList.dataset.open = 'true';
+    acItems = []; acIndex = -1;
+    return;
+  }
+
+  const shown = results.slice(0, 8);                     // teto de 8 (RF-03)
+  const rest = results.length - shown.length;
+  const frag = document.createDocumentFragment();
+  shown.forEach((d, i) => {
+    const item = el('div', { class: 'item', role: 'option', 'data-i': i });
+    item.append(
+      el('span', { class: 'ac-name' }, d.name),
+      el('span', { class: 'ac-crm' }, d.crm),           // formato canônico 12345-SP
+    );
+    item.addEventListener('mousedown', (e) => { e.preventDefault(); applySuggestion(d); });
+    item.addEventListener('mouseenter', () => { acIndex = i; paintAc(); });
+    frag.appendChild(item);
+  });
+  if (rest > 0) {
+    frag.appendChild(el('div', { class: 'hint' },
+      `+ ${rest} resultado${rest > 1 ? 's' : ''} — continue digitando para refinar`));
+  }
+  acList.replaceChildren(frag);
+  positionPop(acList, cellAt(r, c));
+  acList.dataset.open = 'true';
+  acItems = shown;
+  acIndex = -1;
+  paintAc();
+}
+function paintAc() {
+  acList.querySelectorAll('.item').forEach((n, i) => n.classList.toggle('hl', i === acIndex));
+}
+function moveAcHighlight(delta) {
+  const n = acItems.length;
+  if (!n) return;
+  acIndex = ((acIndex < 0 ? (delta > 0 ? -1 : 0) : acIndex) + delta + n) % n;
+  paintAc();
+  acList.querySelectorAll('.item')[acIndex]?.scrollIntoView({ block: 'nearest' });
+}
+function acHighlightedItem() { return acIndex >= 0 ? acItems[acIndex] : null; }
+
+/** RF-04 — preenchimento cruzado: nome E CRM da mesma linha, um passo de desfazer. */
+function applySuggestion(doctor) {
+  if (!state.editing) return;
+  const { r, c } = state.editing;
+  state.editing = null;
+  closeAutocomplete();
+
+  const iName = state.columns.findIndex((x) => x.role === 'doctorName');
+  const iCrm  = state.columns.findIndex((x) => x.role === 'crm');
+
+  beginStep();                                    // o par conta como UM passo
+  if (iName >= 0) state.rows[r][iName] = doctor.name;
+  if (iCrm  >= 0) state.rows[r][iCrm]  = doctor.crm;   // sempre 12345-SP
+  // Modelo com só uma das colunas: o cruzamento simplesmente não ocorre.
+  render();
+  setSelection(r, c);
+  sheet.focus();
+}
+
+/* =====================================================================
+   C2 — Checkbox mestre (RF-05) e "Aplicar à coluna" (RF-06)
+   ===================================================================== */
+function masterState(c) {
+  const inUse = state.rows.filter(rowInUse);
+  if (!inUse.length) return 'disabled';
+  const on = inUse.filter((row) => row[c] === true).length;
+  if (on === 0) return 'unchecked';
+  if (on === inUse.length) return 'checked';
+  return 'indeterminate';
+}
+function toggleMaster(c) {
+  const st = masterState(c);
+  if (st === 'disabled') return;
+  const target = st !== 'checked';       // marcado → desmarca; senão marca
+  beginStep();                            // ação inteira = UM passo (RN-07)
+  state.rows.forEach((row) => { if (rowInUse(row)) row[c] = target; });
+  render();
+}
+
+function firstFilledValue(c) {
+  const col = state.columns[c];
+  for (const row of state.rows) if (isFilled(col, row[c])) return row[c];
+  return null;
+}
+function applyToColumn(c) {
+  const col = state.columns[c];
+  const value = firstFilledValue(c);
+  if (value === null) return;             // ação desabilitada
+  beginStep();
+  state.rows.forEach((row) => {
+    if (!rowInUse(row)) return;           // só linhas EM USO
+    if (isFilled(col, row[c])) return;    // não sobrescreve preenchidas
+    row[c] = value;
+  });
+  render();
+}
+
+/* =====================================================================
+   R3 — Copiar e colar (RF-08 / RN-08)
+   ===================================================================== */
+function selectionMatrix() {
+  const { r1, rr, c1, cc } = selBounds();
+  const out = [];
+  for (let r = r1; r <= rr; r++) {
+    const line = [];
+    for (let c = c1; c <= cc; c++) {
+      const col = state.columns[c];
+      const v = state.rows[r][c];
+      line.push(col.type === 'checkbox' ? (v ? 'x' : '') : String(v ?? ''));
+    }
+    out.push(line);
+  }
+  return out;
+}
+function copySelection(e) {
+  const matrix = selectionMatrix();
+  state.clipboard = matrix;
+  const tsv = matrix.map((l) => l.join('\t')).join('\n');
+  if (e?.clipboardData) { e.clipboardData.setData('text/plain', tsv); e.preventDefault(); }
+  return tsv;
+}
+function parseTsv(text) {
+  return text.replace(/\r\n?/g, '\n').replace(/\n$/, '')
+    .split('\n').map((line) => line.split('\t'));
+}
+/** Colagem: normaliza por tipo, descarta o que não parseia, cria linhas. */
+function pasteMatrix(matrix) {
+  if (!matrix?.length) return;
+  const { r1, c1 } = selBounds();
+  beginStep();                                        // a colagem inteira = UM passo
+
+  // RN-09: colagem que excede o fim da tabela CRIA as linhas necessárias,
+  // que nascem com a data sugerida (RF-01).
+  const needed = r1 + matrix.length - state.rows.length;
+  for (let i = 0; i < needed; i++) state.rows.push(newRow());
+
+  let discarded = 0;
+  matrix.forEach((line, dr) => {
+    line.forEach((raw, dc) => {
+      const r = r1 + dr, c = c1 + dc;
+      if (c > state.columns.length - 1) return;        // colunas são fixas (RN-09)
+      const col = state.columns[c];
+      const v = normalizeForPaste(col, raw);
+      if (v === null) {                                // coluna tipada: descarta
+        discarded++;
+        state.rows[r][c] = blankOnDiscard(col);
+        return;
+      }
+      state.rows[r][c] = v;
+    });
+  });
+
+  render();
+  if (discarded > 0) showPasteWarning(discarded);      // C8 — aviso agregado único
+  else hidePasteWarning();
+}
+/** Valor da célula cujo conteúdo colado foi descartado: célula VAZIA. */
+function blankOnDiscard(col) { return col.type === 'checkbox' ? false : ''; }
+
+const pasteWarning = document.getElementById('paste-warning');
+const pasteWarningText = document.getElementById('paste-warning-text');
+function showPasteWarning(n) {
+  pasteWarningText.textContent =
+    `${n} valor${n > 1 ? 'es' : ''} não reconhecido${n > 1 ? 's' : ''} ` +
+    `${n > 1 ? 'foram' : 'foi'} ignorado${n > 1 ? 's' : ''} na colagem`;
+  pasteWarning.dataset.open = 'true';
+}
+function hidePasteWarning() { pasteWarning.dataset.open = 'false'; }
+document.getElementById('paste-warning-close').addEventListener('click', hidePasteWarning);
+
+/* =====================================================================
+   R4 — Preenchimento por arrasto (RF-09) + C4
+   ===================================================================== */
+function applyFillCopy(fromRow, toRow) {
+  const { r1, rr, c1, cc } = selBounds();
+  const srcRows = rr - r1 + 1;
+  const lo = Math.min(fromRow, toRow), hi = Math.max(fromRow, toRow);
+  for (let r = lo; r <= hi; r++) {
+    if (r < 0 || r > state.rows.length - 1) continue;
+    for (let c = c1; c <= cc; c++) {
+      // origem multi-célula repete o padrão ciclicamente
+      const offset = ((r - r1) % srcRows + srcRows) % srcRows;
+      state.rows[r][c] = state.rows[r1 + offset][c];
+    }
+  }
+}
+function applyFillSeries(srcR, srcC, fromRow, toRow) {
+  const base = parseDate(state.rows[srcR][srcC]);
+  if (!base) return;
+  const lo = Math.min(fromRow, toRow), hi = Math.max(fromRow, toRow);
+  const down = toRow >= fromRow;
+  let step = 1;
+  for (let r = down ? lo : hi; down ? r <= hi : r >= lo; r += down ? 1 : -1) {
+    const d = new Date(base.getTime());
+    d.setDate(d.getDate() + step * (down ? 1 : -1));
+    state.rows[r][srcC] = fmtDate(d);
+    step++;
+  }
+}
+function parseDate(s) {
+  const m = String(s ?? '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return isNaN(d) ? null : d;
+}
+function fmtDate(d) { return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`; }
+
+const fillMenu = document.getElementById('fill-menu');
+function openFillMenu(anchorTd) {
+  const mk = (label, active, fn) => {
+    const it = el('div', { class: 'item', role: 'menuitem' });
+    const ic = el('me-icon');
+    ic.setAttribute('name', active ? 'radiobox-marked' : 'radiobox-blank');
+    it.append(ic, document.createTextNode(label));
+    it.addEventListener('click', fn);
+    return it;
+  };
+  fillMenu.replaceChildren(
+    mk('Copiar valores', true, dismissFillMenu),   // estado já vigente
+    mk('Preencher série', false, chooseSeries),
+  );
+  positionPop(fillMenu, anchorTd);
+  fillMenu.dataset.open = 'true';
+}
+function chooseSeries() {
+  const p = state.pendingFill;
+  fillMenu.dataset.open = 'false';
+  if (!p) return;
+  // NÃO abre novo passo: a série SUBSTITUI a cópia dentro do MESMO passo (RF-07)
+  applyFillSeries(p.srcR, p.srcC, p.from, p.to);
+  state.pendingFill = null;
+  render();
+}
+function dismissFillMenu() {
+  fillMenu.dataset.open = 'false';
+  state.pendingFill = null;    // a cópia é mantida
+}
+
+/* =====================================================================
+   R5 — Gestão de linhas (RF-12 / RN-09) + C5
+   ===================================================================== */
+function addRowAtEnd() {
+  beginStep();
+  state.rows.push(newRow());
+  render();
+  setSelection(state.rows.length - 1, 0);
+}
+function insertRow(at) {
+  beginStep();
+  state.rows.splice(at, 0, newRow());
+  render();
+  setSelection(at, state.sel.c2);
+}
+function deleteRows(from, to) {
+  const count = to - from + 1;
+  if (state.rows.length - count < 1) return;   // mínimo de 1 linha (RN-09)
+  beginStep();
+  state.rows.splice(from, count);
+  clampSelection();
+  render();
+}
+
+const rowMenu = document.getElementById('row-menu');
+function openRowMenu(x, y) {
+  const { r1, rr } = selBounds();
+  const count = rr - r1 + 1;
+  const blocked = state.rows.length - count < 1;
+
+  const mk = (icon, label, disabled, fn, title) => {
+    const it = el('div', { class: 'item', role: 'menuitem' });
+    if (disabled) { it.setAttribute('aria-disabled', 'true'); if (title) it.title = title; }
+    const ic = el('me-icon'); ic.setAttribute('name', icon);
+    it.append(ic, document.createTextNode(label));
+    if (!disabled) it.addEventListener('click', () => { closeAllPops(); fn(); });
+    return it;
+  };
+  rowMenu.replaceChildren(
+    mk('table-row-plus-before', 'Inserir linha acima', false, () => insertRow(r1)),
+    mk('table-row-plus-after', 'Inserir linha abaixo', false, () => insertRow(rr + 1)),
+    el('div', { class: 'sep' }),
+    mk('table-row-remove',
+       count > 1 ? `Excluir ${count} linhas` : 'Excluir linha',
+       blocked, () => deleteRows(r1, rr),
+       'A tabela precisa de no mínimo 1 linha'),
+  );
+  positionPopAt(rowMenu, x, y);
+  rowMenu.dataset.open = 'true';
+}
+
+/* =====================================================================
+   Menu de coluna (C2) e select de modelo (C7)
+   ===================================================================== */
+const colMenu = document.getElementById('col-menu');
+function openColMenu(c, anchor) {
+  const value = firstFilledValue(c);
+  const disabled = value === null;
+  const it = el('div', { class: 'item', role: 'menuitem' });
+  const ic = el('me-icon'); ic.setAttribute('name', 'arrow-expand-down');
+  it.append(ic, document.createTextNode('Aplicar à coluna'));
+  if (disabled) {
+    it.setAttribute('aria-disabled', 'true');
+    it.title = 'Preencha ao menos uma célula desta coluna para replicar o valor';
+  } else {
+    it.addEventListener('click', () => { closeAllPops(); applyToColumn(c); });
+  }
+  const children = [it];
+  if (!disabled) {
+    const shown = state.columns[c].type === 'checkbox' ? (value ? 'marcado' : 'desmarcado') : value;
+    children.push(el('div', { class: 'hint' },
+      `Replica "${shown}" — o valor da primeira célula preenchida — nas células vazias das linhas em uso.`));
+  }
+  colMenu.replaceChildren(...children);
+  positionPop(colMenu, anchor);
+  colMenu.dataset.open = 'true';
+  anchor.setAttribute('aria-expanded', 'true');
+}
+
+const modelMenu = document.getElementById('model-menu');
+const modelBtn = document.getElementById('model-btn');
+let pendingModelId = null;
+
+modelBtn.addEventListener('click', () => {
+  if (modelMenu.dataset.open === 'true') { closeAllPops(); return; }
+  const frag = document.createDocumentFragment();
+  for (const [id, m] of Object.entries(SHEET_MODELS)) {
+    const it = el('div', { class: 'item', role: 'option' });
+    const ic = el('me-icon');
+    ic.setAttribute('name', 'check');
+    ic.style.visibility = id === state.modelId ? 'visible' : 'hidden';
+    it.append(ic, document.createTextNode(m.label));
+    it.addEventListener('click', () => { closeAllPops(); requestModelChange(id); });
+    frag.appendChild(it);
+  }
+  modelMenu.replaceChildren(frag);
+  positionPop(modelMenu, modelBtn, true);
+  modelMenu.dataset.open = 'true';
+  modelBtn.setAttribute('aria-expanded', 'true');
+});
+
+/** D-07: troca direta quando não há conteúdo; modal de confirmação quando há. */
+function requestModelChange(id) {
+  if (id === state.modelId) return;
+  const hasContent = state.rows.some(rowInUse);
+  if (!hasContent) { applySheetModel(id); return; }
+  pendingModelId = id;
+  document.getElementById('model-overlay').dataset.open = 'true';
+}
+document.getElementById('model-cancel').addEventListener('click', () => {
+  pendingModelId = null;
+  document.getElementById('model-overlay').dataset.open = 'false';
+});
+document.getElementById('model-confirm').addEventListener('click', () => {
+  document.getElementById('model-overlay').dataset.open = 'false';
+  if (pendingModelId) applySheetModel(pendingModelId);   // histórico descartado
+  pendingModelId = null;
+});
+
+/* =====================================================================
+   Camada flutuante: posicionamento e fechamento
+   ===================================================================== */
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  n.append(...kids);
+  return n;
+}
+function positionPop(pop, anchor, matchWidth = false) {
+  if (!anchor) return;
+  const b = anchor.getBoundingClientRect();
+  pop.style.visibility = 'hidden';
+  pop.dataset.open = 'true';
+  if (matchWidth) pop.style.minWidth = b.width + 'px';
+  const pb = pop.getBoundingClientRect();
+  let top = b.bottom + 4;
+  if (top + pb.height > innerHeight - 8) top = Math.max(8, b.top - pb.height - 4);
+  let left = b.left;
+  if (left + pb.width > innerWidth - 8) left = Math.max(8, innerWidth - pb.width - 8);
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  pop.style.visibility = '';
+}
+function positionPopAt(pop, x, y) {
+  pop.style.visibility = 'hidden';
+  pop.dataset.open = 'true';
+  const pb = pop.getBoundingClientRect();
+  pop.style.top = Math.min(y, innerHeight - pb.height - 8) + 'px';
+  pop.style.left = Math.min(x, innerWidth - pb.width - 8) + 'px';
+  pop.style.visibility = '';
+}
+function closeAllPops({ keepFill = false } = {}) {
+  for (const p of document.querySelectorAll('.pop')) {
+    if (keepFill && p === fillMenu) continue;
+    if (p === acList) continue;
+    p.dataset.open = 'false';
+  }
+  if (!keepFill && fillMenu.dataset.open === 'true') dismissFillMenu();
+  for (const b of document.querySelectorAll('[aria-expanded="true"]')) {
+    if (b.id !== 'proto-toggle') b.setAttribute('aria-expanded', 'false');
+  }
+}
+
+/* =====================================================================
+   Eventos da grade
+   ===================================================================== */
+let dragMode = null;    // 'range' | 'fill'
+let fillTargetRow = null;
+
+sheet.addEventListener('mousedown', (e) => {
+  gridFocused = true;
+
+  // C2 — cliques no cabeçalho
+  const master = e.target.closest('.master');
+  if (master) { e.preventDefault(); closeAllPops(); toggleMaster(+master.dataset.col); return; }
+  const colBtn = e.target.closest('.colmenu-btn');
+  if (colBtn) {
+    e.preventDefault();
+    const wasOpen = colBtn.getAttribute('aria-expanded') === 'true';
+    closeAllPops();
+    if (!wasOpen) openColMenu(+colBtn.dataset.col, colBtn);
+    return;
+  }
+  if (e.target.closest('th')) return;
+
+  const td = e.target.closest('td');
+  if (!td) return;
+  if (e.target.closest('input.cell-editor')) return;   // clique dentro do editor
+
+  const r = +td.dataset.r, c = +td.dataset.c;
+
+  // Alça de preenchimento: canto inferior direito da célula-canto da seleção
+  if (td.classList.contains('handle')) {
+    const b = td.getBoundingClientRect();
+    if (e.clientX >= b.right - 10 && e.clientY >= b.bottom - 10) {
+      e.preventDefault();
+      commitEdit();
+      closeAllPops();
+      dragMode = 'fill';
+      fillTargetRow = selBounds().rr;
+      return;
+    }
+  }
+
+  closeAllPops();
+  commitEdit();
+
+  if (e.button === 2) {                                 // clique direito: C5
+    if (r < selBounds().r1 || r > selBounds().rr) setSelection(r, c);
+    return;
+  }
+  if (state.columns[c].type === 'checkbox' && !e.shiftKey) {
+    e.preventDefault(); toggleCheckbox(r, c); return;
+  }
+  e.preventDefault();
+  setSelection(r, c, e.shiftKey);
+  dragMode = 'range';
+  sheet.focus();
+});
+
+sheet.addEventListener('mousemove', (e) => {
+  if (!dragMode) return;
+  const td = e.target.closest('td');
+  if (!td) return;
+  if (dragMode === 'range') {
+    setSelection(+td.dataset.r, +td.dataset.c, true);
+  } else {
+    fillTargetRow = +td.dataset.r;
+    paintSelection(fillTargetRow);
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  if (dragMode === 'fill') {
+    const { r1, rr, c1, cc } = selBounds();
+    const target = fillTargetRow;
+    if (target !== null && (target > rr || target < r1)) {
+      const from = target > rr ? rr + 1 : r1 - 1;
+      beginStep();                                       // arrasto inteiro = UM passo
+      applyFillCopy(from, target);                       // cópia literal (padrão)
+      render();
+      // C4 aparece SOMENTE quando a origem é UMA célula de data (RF-09)
+      const singleCell = r1 === rr && c1 === cc;
+      if (singleCell && state.columns[c1].type === 'date' && parseDate(state.rows[r1][c1])) {
+        state.pendingFill = { srcR: r1, srcC: c1, from, to: target };
+        openFillMenu(cellAt(target, c1));
+      }
+    } else {
+      paintSelection();
+    }
+  }
+  dragMode = null;
+  fillTargetRow = null;
+});
+
+sheet.addEventListener('dblclick', (e) => {
+  const td = e.target.closest('td');
+  if (!td) return;
+  startEdit(+td.dataset.r, +td.dataset.c);
+});
+
+sheet.addEventListener('contextmenu', (e) => {
+  const td = e.target.closest('td');
+  if (!td) return;
+  e.preventDefault();
+  commitEdit();
+  openRowMenu(e.clientX, e.clientY);
+});
+
+sheet.addEventListener('focus', () => { gridFocused = true; });
+
+/* --- Teclado na grade (RF-10 / RF-07 / RF-08) --- */
+sheet.addEventListener('keydown', (e) => {
+  if (state.editing) return;                    // o editor cuida das próprias teclas
+  const { r2: r, c2: c } = state.sel;
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (ctrl && e.key.toLowerCase() === 'z') {
+    e.preventDefault(); e.shiftKey ? redo() : undo(); return;
+  }
+  if (ctrl && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
+  if (ctrl && e.key.toLowerCase() === 'c') { return; }   // tratado no evento 'copy'
+  if (ctrl && e.key.toLowerCase() === 'v') {
+    // Sem acesso ao clipboard do SO, usa a cópia interna.
+    if (state.clipboard) { e.preventDefault(); pasteMatrix(state.clipboard); }
+    return;
+  }
+
+  switch (e.key) {
+    case 'ArrowUp':    e.preventDefault(); setSelection(r - 1, c, e.shiftKey); return;
+    case 'ArrowDown':  e.preventDefault(); setSelection(r + 1, c, e.shiftKey); return;
+    case 'ArrowLeft':  e.preventDefault(); setSelection(r, c - 1, e.shiftKey); return;
+    case 'ArrowRight': e.preventDefault(); setSelection(r, c + 1, e.shiftKey); return;
+    case 'Enter':      e.preventDefault(); startEdit(r, c); return;
+    case 'F2':         e.preventDefault(); startEdit(r, c); return;
+    case 'Tab':        e.preventDefault(); setSelection(r, c + 1); return;
+    case 'Escape':     e.preventDefault(); closeAllPops(); return;
+    case 'Delete':
+    case 'Backspace': {
+      e.preventDefault();
+      const { r1, rr, c1, cc } = selBounds();
+      beginStep();
+      for (let rr2 = r1; rr2 <= rr; rr2++)
+        for (let cc2 = c1; cc2 <= cc; cc2++)
+          state.rows[rr2][cc2] = state.columns[cc2].type === 'checkbox' ? false : '';
+      render();
+      return;
+    }
+    case ' ': {
+      if (e.shiftKey) {                          // Shift+Espaço: seleciona a linha (D-02)
+        e.preventDefault();
+        state.sel = { r, c: 0, r2: r, c2: state.columns.length - 1 };
+        paintSelection();
+        return;
+      }
+      if (state.columns[c].type === 'checkbox') { e.preventDefault(); toggleCheckbox(r, c); return; }
+      break;
+    }
+  }
+
+  // Digitar com célula selecionada inicia a edição SUBSTITUINDO o conteúdo
+  if (!ctrl && !e.altKey && e.key.length === 1) {
+    e.preventDefault();
+    if (state.columns[c].type === 'checkbox') return;
+    startEdit(r, c, e.key);
+  }
+});
+
+/* --- Copiar / colar via clipboard do SO (Excel, Google Sheets) --- */
+document.addEventListener('copy', (e) => {
+  if (!gridFocused || state.editing || !isAuditRoute()) return;
+  copySelection(e);
+});
+document.addEventListener('paste', (e) => {
+  if (!gridFocused || state.editing || !isAuditRoute()) return;
+  const text = e.clipboardData?.getData('text/plain');
+  if (!text) return;
+  e.preventDefault();
+  pasteMatrix(parseTsv(text));
+});
+document.addEventListener('mousedown', (e) => {
+  // Cliques dentro da grade são tratados pelo handler do <table>, que já
+  // confirma a edição na ordem certa — aqui só cuidamos do "clicou fora".
+  if (e.target.closest('#sheet')) return;
+  gridFocused = false;
+  if (!e.target.closest('.pop')) closeAllPops();
+  if (state.editing && !e.target.closest('#ac-list')) commitEdit();
+}, true);
+
+function isAuditRoute() { return location.hash.startsWith('#/auditoria'); }
+
+// Os marcadores de linha parcial são posicionados em px: reposiciona no resize.
+addEventListener('resize', () => { closeAllPops(); renderPartialMarks(); });
+
+/* =====================================================================
+   C6 — barra de ações
+   ===================================================================== */
+document.getElementById('btn-add-row').addEventListener('click', () => { closeAllPops(); addRowAtEnd(); });
+btnDeleteRow.addEventListener('click', () => {
+  if (btnDeleteRow.hasAttribute('disabled')) return;
+  closeAllPops();
+  commitEdit();
+  const { r1, rr } = selBounds();
+  deleteRows(r1, rr);          // um passo de desfazer, reversível com conteúdo
+  sheet.focus();
+});
+btnUndo.addEventListener('click', () => { closeAllPops(); commitEdit(); undo(); });
+
+const helpBtn = document.getElementById('btn-help');
+const helpPop = document.getElementById('help-pop');
+helpBtn.addEventListener('click', () => {
+  const wasOpen = helpPop.dataset.open === 'true';
+  closeAllPops();
+  if (!wasOpen) { positionPop(helpPop, helpBtn); helpBtn.setAttribute('aria-expanded', 'true'); }
+});
+
+/* =====================================================================
+   Navegação da jornada
+   ===================================================================== */
+document.getElementById('btn-iniciar').addEventListener('click', () => {
+  applySheetModel('padrao10');           // aplica o modelo + pré-preenchimento (RF-01)
+  document.getElementById('col-work').dataset.state = 'edit';
+  location.hash = '#/auditoria';
+  setTimeout(() => sheet.focus(), 50);
+});
+document.getElementById('btn-fechar-detalhe').addEventListener('click', () => {
+  returnToList(null, null);
+});
+/* Crumb "Aprovações": no app é um router-link para /aprovacoes, então sair por
+   ele desmonta a tela de auditoria e descarta a sessão de edição — inclusive o
+   histórico de desfazer (RF-07). Mesmo efeito de "Fechar" / "Cancelar". */
+document.getElementById('crumb-aprovacoes').addEventListener('click', (e) => {
+  e.preventDefault();
+  closeAllPops();
+  resetHistory();
+  colWork.dataset.state = 'edit';
+  returnToList(null, null);
+});
+document.getElementById('btn-cancelar').addEventListener('click', () => {
+  resetHistory();                        // histórico é da sessão de edição
+  location.hash = '#/detalhe';
+});
+btnAvancar.addEventListener('click', () => {
+  commitEdit();
+  closeAllPops();
+  openConciliation();
+});
+
+/* =====================================================================
+   TELA 04 — Modal "Detalhes da Conciliação" (INALTERADA por este PRD)
+
+   Espelha DsAttendanceConciliationModal.vue: o clique em "Avançar para
+   conciliação" envia as linhas EM USO (RF-02 — as vazias são descartadas)
+   e o backend responde uma "vaga" por linha, com matchStatus. O modal
+   percorre essas vagas UMA A UMA.
+
+   Aqui os candidatos são mock. São dados de ESCALA — legítimos nesta
+   etapa: a RN-01 proíbe sugerir plantões durante a transcrição, e o
+   cruzamento acontece justamente depois dela.
+   ===================================================================== */
+const CANDIDATES = [
+  {
+    stationId: 88214, stationType: 'fixo',
+    breadcrumb: 'Boas Novas Gestão > Hospital São Lucas > Clínica Médica > Plantonista',
+    allocatedBy: 'Marina Camargo',
+    start: { weekday: 'sexta-feira', date: '10/07/2026', time: '07:00' },
+    end:   { weekday: 'sexta-feira', date: '10/07/2026', time: '19:00' },
+    doctor: { name: 'MARIA SILVA SANTOS', crm: '12345/SP', formation: 'Clínica Médica',
+              team: 'Equipe A', position: 'Plantonista', shift: 'Manhã' },
+  },
+  {
+    stationId: 88215, stationType: 'cobertura',
+    breadcrumb: 'Boas Novas Gestão > Hospital São Lucas > Clínica Médica > Plantonista',
+    allocatedBy: 'Marina Camargo',
+    start: { weekday: 'sexta-feira', date: '10/07/2026', time: '07:00' },
+    end:   { weekday: 'sexta-feira', date: '10/07/2026', time: '13:00' },
+    doctor: { name: 'JOÃO DA SILVA', crm: '987/RJ', formation: 'Não informado',
+              team: 'Equipe B', position: 'Plantonista', shift: 'Manhã' },
+  },
+  {
+    stationId: 88240, stationType: 'extra',
+    breadcrumb: 'Boas Novas Gestão > Hospital São Lucas > Pronto Socorro > Plantonista',
+    allocatedBy: 'Rafael Nunes',
+    start: { weekday: 'sexta-feira', date: '10/07/2026', time: '13:00' },
+    end:   { weekday: 'sexta-feira', date: '10/07/2026', time: '19:00' },
+    doctor: { name: 'JOÃO DA SILVA', crm: '987/RJ', formation: 'Não informado',
+              team: 'Equipe B', position: 'Plantonista', shift: 'Tarde' },
+  },
+];
+
+const concOverlay = document.getElementById('conc-overlay');
+const concBody = document.getElementById('conc-body');
+const concCounter = document.getElementById('conc-counter');
+const concNext = document.getElementById('conc-next');
+const concBack = document.getElementById('conc-back');
+
+const conc = { rows: [], index: 0, answers: {} };
+
+/** Monta as vagas a partir das linhas EM USO — as vazias nunca chegam aqui. */
+function openConciliation() {
+  const inUse = [];
+  state.rows.forEach((row, r) => { if (rowInUse(row)) inUse.push({ row, rowIndex: r }); });
+  if (!inUse.length) return;
+
+  // matchStatus em ciclo só para o protótipo exercitar os três estados.
+  const STATUSES = ['SINGLE_MATCH', 'MULTIPLE_MATCHES', 'NO_MATCH'];
+  conc.rows = inUse.map((item, i) => ({
+    ...item,
+    matchStatus: STATUSES[i % STATUSES.length],
+    candidates: STATUSES[i % STATUSES.length] === 'SINGLE_MATCH' ? [CANDIDATES[0]]
+              : STATUSES[i % STATUSES.length] === 'MULTIPLE_MATCHES' ? CANDIDATES
+              : [],
+    matchMessage: 'Vários candidatos encontrados. Selecione um para continuar a conciliação.',
+  }));
+  conc.index = 0;
+  conc.answers = {};
+  concOverlay.dataset.open = 'true';
+  renderConciliation();
+}
+function closeConciliation() { concOverlay.dataset.open = 'false'; }
+
+/** Linha da folha → colunas do DsAttendanceInfoSheetsCard. */
+function sheetInfoOf(entry) {
+  const get = (role, key) => {
+    const i = state.columns.findIndex((c) => c.role === role || c.key === key);
+    return i >= 0 ? entry.row[i] : undefined;
+  };
+  const entrada = get(null, 'entrada') ?? '-';
+  const saida = get(null, 'saida') ?? '-';
+  const ass = state.columns.map((c, i) => [c, entry.row[i]]).filter(([c]) => c.type === 'checkbox');
+  return {
+    doctorName: String(get('doctorName') ?? '-').toUpperCase() || '-',
+    crm: get('crm') ?? '-',
+    date: get(null, 'data') ?? '-',
+    time: entrada && saida ? `${entrada} - ${saida}` : '-',
+    station: '-',                                  // produção fixa '-' nesta coluna
+    entryTime: entrada || '-',
+    entrySignature: ass[0] ? ass[0][1] === true : false,
+    exitTime: saida || '-',
+    exitSignature: ass[1] ? ass[1][1] === true : (ass[0] ? ass[0][1] === true : false),
+    hasSignatureColumns: ass.length > 0,
+  };
+}
+
+function infoSheetCard(info) {
+  const wrap = el('div', { class: 'info-sheet' });
+  const table = el('table');
+  const headRow = el('tr');
+  const cols = ['Médico', 'CRM', 'Data', 'Horário', 'Posto', 'Entrada'];
+  cols.forEach((label) => {
+    if (label !== 'Posto') return headRow.appendChild(el('th', {}, label));
+    const th = el('th');
+    const box = el('span', {
+      class: 'posto-th',
+      title: 'Esse campo não é equivalente às posições do Minha Escala e não será considerado para a conciliação',
+    });
+    const ic = el('me-icon'); ic.setAttribute('name', 'information-outline');
+    box.append(ic, document.createTextNode('Posto'));
+    th.appendChild(box);
+    headRow.appendChild(th);
+  });
+  if (info.hasSignatureColumns) headRow.appendChild(el('th', {}, 'Ass. e Carimbo'));
+  headRow.appendChild(el('th', {}, 'Saída'));
+  if (info.hasSignatureColumns) headRow.appendChild(el('th', {}, 'Ass. e Carimbo'));
+
+  const check = (on) => {
+    const td = el('td');
+    const ic = el('me-icon');
+    ic.setAttribute('name', on ? 'checkbox-marked' : 'checkbox-blank-outline');
+    td.appendChild(ic);
+    return td;
+  };
+  const bodyRow = el('tr');
+  bodyRow.append(
+    el('td', {}, String(info.doctorName)),
+    el('td', {}, String(info.crm)),
+    el('td', {}, String(info.date)),
+    el('td', {}, String(info.time)),
+    el('td', {}, String(info.station)),
+    el('td', {}, String(info.entryTime)),
+  );
+  if (info.hasSignatureColumns) bodyRow.appendChild(check(info.entrySignature));
+  bodyRow.appendChild(el('td', {}, String(info.exitTime)));
+  if (info.hasSignatureColumns) bodyRow.appendChild(check(info.exitSignature));
+
+  table.append(el('thead', {}, headRow), el('tbody', {}, bodyRow));
+  wrap.appendChild(table);
+  return wrap;
+}
+
+function candidateCard(c, active) {
+  const card = el('div', { class: 'cand-card' + (active ? ' active' : '') });
+
+  const head = el('div', { class: 'cand-head' });
+  const titleRow = el('div', { class: 'cand-title-row' });
+  titleRow.append(
+    el('div', { class: 'cand-station' }, el('span', {}, `#${c.stationId}`)),
+    el('span', { class: 'cand-title' }, 'Detalhes do Plantão'),
+  );
+  head.append(titleRow, el('span', { class: 'cand-breadcrumb' }, c.breadcrumb));
+  card.appendChild(head);
+
+  const alloc = el('div', { class: 'cand-row' });
+  alloc.append(el('b', {}, 'Alocado por:'), el('span', {}, c.allocatedBy));
+  card.appendChild(alloc);
+
+  const dates = el('div', { class: 'cand-dates' });
+  const line = (prefix, d) => {
+    const s = el('span');
+    s.append(document.createTextNode(`${prefix} `), el('b', {}, `${d.weekday},`),
+             document.createTextNode(` ${d.date} `), el('b', {}, `às ${d.time}`));
+    return s;
+  };
+  dates.append(line('De', c.start), line('Até', c.end),
+               el('span', { class: 'tz' }, 'Horário de Brasília'));
+  card.appendChild(dates);
+
+  const doc = el('div', { class: 'cand-doctor' });
+  doc.appendChild(el('span', { class: 'cand-duty' },
+    c.stationType.charAt(0).toUpperCase() + c.stationType.slice(1)));
+
+  const idCol = el('div', { class: 'cand-doctor-id' });
+  const av = el('div', { class: 'cand-avatar' });
+  const avIc = el('me-icon'); avIc.setAttribute('name', 'doctor'); av.appendChild(avIc);
+  idCol.append(av,
+    el('p', { class: 'nm' }, firstAndSecondName(c.doctor.name)),
+    el('p', { class: 'crm' }, c.doctor.crm));
+
+  const facts = el('div', { class: 'cand-facts' });
+  [['Formação', c.doctor.formation], ['Equipe', c.doctor.team],
+   ['Posição', c.doctor.position], ['Turno', c.doctor.shift]].forEach(([k, v]) => {
+    const p = el('p');
+    p.append(el('strong', {}, `${k}:`), document.createTextNode(' ' + (v || 'Não informado')));
+    facts.appendChild(p);
+  });
+
+  doc.append(idCol, el('div', { class: 'cand-divider' }), facts);
+  card.appendChild(doc);
+  return card;
+}
+function firstAndSecondName(full) {
+  return String(full).trim().split(/\s+/).slice(0, 2).join(' ');
+}
+
+function radio(label, selected, onPick) {
+  const r = el('div', { class: 'conc-radio' + (selected ? ' sel' : ''), role: 'radio' });
+  const ic = el('me-icon');
+  ic.setAttribute('name', selected ? 'radiobox-marked' : 'radiobox-blank');
+  r.append(ic, document.createTextNode(label));
+  r.addEventListener('click', onPick);
+  return r;
+}
+
+function renderConciliation() {
+  const row = conc.rows[conc.index];
+  if (!row) return;
+  const answer = conc.answers[conc.index];
+  const frag = document.createDocumentFragment();
+
+  // "Informações da folha" — sempre presente
+  const info = el('div');
+  info.append(el('p', { class: 'conc-block-title' }, 'Informações da folha'),
+              infoSheetCard(sheetInfoOf(row)));
+  frag.appendChild(info);
+
+  if (row.matchStatus === 'SINGLE_MATCH') {
+    const block = el('div');
+    block.appendChild(el('p', { class: 'conc-block-title' }, 'Melhor candidato'));
+    const split = el('div', { class: 'single-match' });
+    split.append(
+      el('div', { class: 'card-col' }, candidateCard(row.candidates[0], true)),
+    );
+    const ask = el('div', { class: 'ask-col' });
+    ask.appendChild(el('p', {}, 'Essa vaga corresponde com a linha indicada do registro?'));
+    ask.append(
+      radio('Sim', answer === 'yes', () => { conc.answers[conc.index] = 'yes'; renderConciliation(); }),
+      radio('Não', answer === 'no', () => { conc.answers[conc.index] = 'no'; renderConciliation(); }),
+    );
+    split.appendChild(ask);
+    block.appendChild(split);
+    frag.appendChild(block);
+
+  } else if (row.matchStatus === 'MULTIPLE_MATCHES') {
+    const block = el('div');
+    block.appendChild(el('p', { class: 'multi-hint' }, row.matchMessage));
+    const none = el('div', { class: 'multi-none' });
+    none.appendChild(radio('Nenhum dos candidatos abaixo corresponde à linha do registro',
+      answer === 'none', () => { conc.answers[conc.index] = 'none'; renderConciliation(); }));
+    block.appendChild(none);
+    block.appendChild(el('p', { class: 'conc-block-title' }, 'Melhores candidatos:'));
+
+    const list = el('div', { class: 'multi-list' + (row.candidates.length <= 2 ? ' grid2' : '') });
+    row.candidates.forEach((c, i) => {
+      const sel = answer === String(i);
+      const item = el('div', { class: 'multi-item' + (sel ? ' sel' : '') });
+      const ic = el('me-icon');
+      ic.setAttribute('name', sel ? 'checkbox-marked' : 'checkbox-blank-outline');
+      item.append(ic, candidateCard(c, sel));
+      item.addEventListener('click', () => { conc.answers[conc.index] = String(i); renderConciliation(); });
+      list.appendChild(item);
+    });
+    block.appendChild(list);
+    frag.appendChild(block);
+
+  } else {
+    const box = el('div', { class: 'no-match' });
+    const ic = el('me-icon'); ic.setAttribute('name', 'alert-circle-outline');
+    const txt = el('div');
+    txt.append(
+      el('p', { class: 't' }, 'Nenhum plantão encontrado'),
+      el('p', { class: 'd' }, 'Não foi possível encontrar um plantão correspondente para este registro. Você pode avançar sem conciliar esta linha.'),
+    );
+    box.append(ic, txt);
+    frag.appendChild(box);
+  }
+
+  concBody.replaceChildren(frag);
+  concBody.scrollTop = 0;
+
+  // Footer: contador + rótulo/bloqueio do botão principal
+  concCounter.textContent = `Conciliação de vaga ${conc.index + 1}/${conc.rows.length}`;
+  const isLast = conc.index === conc.rows.length - 1;
+  concNext.textContent = isLast ? 'Concluir' : 'Próxima vaga';
+  const needsAnswer = row.matchStatus === 'SINGLE_MATCH' || row.matchStatus === 'MULTIPLE_MATCHES';
+  concNext.toggleAttribute('disabled', needsAnswer && answer === undefined);
+}
+
+concNext.addEventListener('click', () => {
+  if (concNext.hasAttribute('disabled')) return;
+  if (conc.index < conc.rows.length - 1) { conc.index++; renderConciliation(); return; }
+  confirmConciliation();
+});
+concBack.addEventListener('click', closeConciliation);
+document.getElementById('conc-close').addEventListener('click', closeConciliation);
+document.getElementById('conc-backdrop').addEventListener('click', closeConciliation);
+
+/* =====================================================================
+   TELA 05 — Validação da folha (pós-conciliação) · INALTERADA pelo PRD
+
+   Confirmar a conciliação faz, em produção, isConciliationDone=true e
+   isValidating=false: a MESMA tela troca de blocos — a tabela aparece
+   preenchida em mode="view" com a coluna "Conciliação" na frente, e o
+   auditor toma a decisão da auditoria.
+   ===================================================================== */
+const colWork = document.getElementById('col-work');
+const VALIDATION_OPTIONS = [
+  { value: 'REPROVADO', label: 'Reprovada' },
+  { value: 'AUDITORIA_EM_PROGRESSO', label: 'Auditoria em Progresso' },
+  { value: 'APROVADO', label: 'Aprovada' },
+];
+const AUDIT_IN_PROGRESS_REASONS = [
+  { value: 'DOCTOR_SWAP', label: 'Troca médica' },
+  { value: 'SCHEDULE_DIVERGENCE', label: 'Divergência de escalas' },
+];
+const REJECTION_REASONS = [           // modalidade FOLHA
+  { value: 'DIVERGENCE_SHEET_APP', label: 'Divergência entre folha e app' },
+  { value: 'INCOMPLETE_SHEET', label: 'Folha incompleta' },
+  { value: 'REDIGITIZE', label: 'Redigitalizar' },
+  { value: 'REDO_SHEET', label: 'Refazer folha' },
+];
+
+const validation = { rows: [], status: null, reason: null, reject: { reason: null, newSheet: false } };
+
+/** Monta viewRows: cada linha em uso + a célula de conciliação. */
+function confirmConciliation() {
+  validation.rows = conc.rows.map((row, i) => {
+    const answer = conc.answers[i];
+    // Candidato escolhido → success com o #stationId; senão → warning.
+    let cell;
+    if (row.matchStatus === 'SINGLE_MATCH' && answer === 'yes') {
+      cell = { type: 'success', text: `#${row.candidates[0].stationId}` };
+    } else if (row.matchStatus === 'MULTIPLE_MATCHES' && answer !== undefined && answer !== 'none') {
+      cell = { type: 'success', text: `#${row.candidates[Number(answer)].stationId}` };
+    } else {
+      cell = { type: 'warning', text: 'Sem correspondência' };
+    }
+    return { values: row.row.slice(), conciliation: cell };
+  });
+
+  validation.status = null;
+  validation.reason = null;
+  document.getElementById('validation-obs').value = '';
+
+  closeConciliation();
+  colWork.dataset.state = 'done';
+  renderSheetView();
+  renderValidation();
+  document.querySelector('.content').scrollTop = 0;
+}
+
+/** AttendanceSheetCard mode="view" — sem caixas brancas, texto sobre o cinza. */
+function renderSheetView() {
+  const table = document.getElementById('sheet-view-table');
+  const headRow = el('tr');
+  headRow.appendChild(el('th', { style: 'width:140px' }, 'Conciliação'));   // coluna extra, à frente
+  state.columns.forEach((col) => headRow.appendChild(el('th', {}, col.label)));
+
+  const tb = document.createElement('tbody');
+  validation.rows.forEach((vr) => {
+    const tr = el('tr');
+    const ok = vr.conciliation.type === 'success';
+    const td = el('td', { class: 'status-cell ' + (ok ? 'ok' : 'warn') });
+    const box = el('div');
+    const ic = el('me-icon');
+    ic.setAttribute('name', ok ? 'check-circle-outline' : 'alert-circle-outline');
+    box.append(ic, el('span', {}, vr.conciliation.text));
+    td.appendChild(box);
+    tr.appendChild(td);
+
+    state.columns.forEach((col, i) => {
+      if (col.type === 'checkbox') {
+        const c = el('td');
+        const cIc = el('me-icon');
+        cIc.setAttribute('name', vr.values[i] === true ? 'checkbox-marked' : 'checkbox-blank-outline');
+        c.appendChild(cIc);
+        tr.appendChild(c);
+      } else {
+        tr.appendChild(el('td', {}, String(vr.values[i] ?? '')));
+      }
+    });
+    tb.appendChild(tr);
+  });
+  table.replaceChildren(el('thead', {}, headRow), tb);
+}
+
+/** "Aprovada" é bloqueada se alguma linha ficou sem correspondência. */
+function hasConciliationWarning() {
+  return validation.rows.some((r) => r.conciliation.type === 'warning');
+}
+
+function renderValidation() {
+  const host = document.getElementById('validation-radios');
+  const warn = hasConciliationWarning();
+  const frag = document.createDocumentFragment();
+  VALIDATION_OPTIONS.forEach((opt) => {
+    const disabled = opt.value === 'APROVADO' && warn;
+    const r = radio(opt.label, validation.status === opt.value, () => {
+      if (disabled) return;
+      validation.status = opt.value;
+      if (opt.value !== 'AUDITORIA_EM_PROGRESSO') validation.reason = null;
+      renderValidation();
+    });
+    if (disabled) {
+      r.setAttribute('aria-disabled', 'true');
+      r.title = 'Há linhas sem correspondência na conciliação';
+    }
+    frag.appendChild(r);
+  });
+  host.replaceChildren(frag);
+
+  // Justificativa só no estado "Auditoria em Progresso"
+  const reasonField = document.getElementById('reason-field');
+  reasonField.style.display = validation.status === 'AUDITORIA_EM_PROGRESSO' ? '' : 'none';
+  document.getElementById('reason-val').textContent =
+    AUDIT_IN_PROGRESS_REASONS.find((o) => o.value === validation.reason)?.label ?? 'Selecione';
+
+  const blocked = validation.status === null ||
+    (validation.status === 'AUDITORIA_EM_PROGRESSO' && !validation.reason);
+  document.getElementById('btn-salvar-validacao').toggleAttribute('disabled', blocked);
+}
+
+/** Dropdowns do bloco de validação e do modal de reprovação. */
+function bindDropdown(btnId, valId, options, get, set) {
+  const btn = document.getElementById(btnId);
+  btn.addEventListener('click', () => {
+    if (modelMenu.dataset.open === 'true') { closeAllPops(); return; }
+    const frag = document.createDocumentFragment();
+    options.forEach((opt) => {
+      const it = el('div', { class: 'item', role: 'option' });
+      const ic = el('me-icon');
+      ic.setAttribute('name', 'check');
+      ic.style.visibility = get() === opt.value ? 'visible' : 'hidden';
+      it.append(ic, document.createTextNode(opt.label));
+      it.addEventListener('click', () => {
+        closeAllPops();
+        set(opt.value);
+        document.getElementById(valId).textContent = opt.label;
+      });
+      frag.appendChild(it);
+    });
+    modelMenu.replaceChildren(frag);
+    positionPop(modelMenu, btn, true);
+    modelMenu.dataset.open = 'true';
+    btn.setAttribute('aria-expanded', 'true');
+  });
+}
+bindDropdown('reason-btn', 'reason-val', AUDIT_IN_PROGRESS_REASONS,
+  () => validation.reason, (v) => { validation.reason = v; renderValidation(); });
+bindDropdown('reject-reason-btn', 'reject-reason-val', REJECTION_REASONS,
+  () => validation.reject.reason, (v) => {
+    validation.reject.reason = v;
+    document.getElementById('reject-confirm').toggleAttribute('disabled', !v);
+  });
+
+document.getElementById('btn-voltar-validacao').addEventListener('click', () => {
+  colWork.dataset.state = 'edit';
+  returnToList(null, null);              // sai sem registrar desfecho
+});
+
+/* Salvar validação — "Reprovada" abre o modal de reprovação (produção). */
+const rejectOverlay = document.getElementById('reject-overlay');
+document.getElementById('btn-salvar-validacao').addEventListener('click', (e) => {
+  if (e.currentTarget.hasAttribute('disabled')) return;
+  if (validation.status === 'REPROVADO') { rejectOverlay.dataset.open = 'true'; return; }
+  const label = VALIDATION_OPTIONS.find((o) => o.value === validation.status).label;
+  const obs = document.getElementById('validation-obs').value.trim();
+  const novoStatus = validation.status === 'APROVADO' ? 'APPROVED' : 'AUDIT_IN_PROGRESS';
+  finishJourney(novoStatus, `Registro #${AUDIT_ID}: validação salva — folha ${label.toLowerCase()}.` +
+    (validation.reason ? ` Justificativa: ${AUDIT_IN_PROGRESS_REASONS.find((o) => o.value === validation.reason).label}.` : '') +
+    (obs ? ' Observação registrada.' : ''));
+});
+
+function closeReject() { rejectOverlay.dataset.open = 'false'; }
+document.getElementById('reject-cancel').addEventListener('click', closeReject);
+document.getElementById('reject-close').addEventListener('click', closeReject);
+document.getElementById('reject-backdrop').addEventListener('click', closeReject);
+const rejectNewSheet = document.getElementById('reject-new-sheet');
+rejectNewSheet.addEventListener('click', () => {
+  validation.reject.newSheet = !validation.reject.newSheet;
+  rejectNewSheet.classList.toggle('sel', validation.reject.newSheet);
+  rejectNewSheet.setAttribute('aria-checked', String(validation.reject.newSheet));
+  rejectNewSheet.querySelector('me-icon')
+    .setAttribute('name', validation.reject.newSheet ? 'checkbox-marked' : 'checkbox-blank-outline');
+});
+document.getElementById('reject-confirm').addEventListener('click', (e) => {
+  if (e.currentTarget.hasAttribute('disabled')) return;
+  const reason = REJECTION_REASONS.find((o) => o.value === validation.reject.reason).label;
+  closeReject();
+  finishJourney('REJECTED', `Registro #${AUDIT_ID} reprovado — ${reason}.` +
+    (validation.reject.newSheet ? ' Novo envio de folha solicitado.' : ''));
+});
+
+/** Fim da jornada: atualiza o status na lista (Tela 01) e retorna para lá. */
+function finishJourney(status, text) {
+  const conciliated = validation.rows.filter((r) => r.conciliation.type === 'success').length;
+  colWork.dataset.state = 'edit';        // devolve a tela ao estado de entrada
+  returnToList(status, `${text} ${conciliated} de ${validation.rows.length} vaga(s) conciliada(s).`);
+}
+
+addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (rejectOverlay.dataset.open === 'true') return closeReject();
+  if (concOverlay.dataset.open === 'true') closeConciliation();
+}, true);
+
+/* =====================================================================
+   Evidência (mock da folha) — inalterada pelo PRD, presente para a
+   jornada ser operável: é a fonte da transcrição.
+   ===================================================================== */
+const EVIDENCE_ROWS = [
+  ['10/07/2026', 'Maria Silva Santos', '12345-SP', '07:00', true, '19:00', true],
+  ['10/07/2026', 'João da Silva', '987-RJ', '07:00', true, '19:00', true],
+  ['10/07/2026', 'Ana Silveira Costa', '4521-SP', '07:00', true, '13:00', true],
+  ['10/07/2026', 'Carlos Eduardo Lima', '33127-SP', '13:00', true, '19:00', true],
+  ['10/07/2026', 'Patrícia Mendes Rocha', '7-SP', '07:00', true, '19:00', false],
+  ['10/07/2026', 'Renato Silva Junior', '20981-MG', '19:00', true, '07:00', true],
+  ['10/07/2026', 'Beatriz Almeida', '15630-SP', '19:00', true, '07:00', true],
+  ['11/07/2026', 'Fernando Teixeira Gomes', '1120-SP', '19:00', true, '07:00', true],
+  ['10/07/2026', 'Luciana Pereira Dias', '8842-SP', '07:00', true, '13:00', true],
+  ['10/07/2026', 'Heloísa Brandão Neves', '55901-PR', '13:00', true, '19:00', true],
+];
+
+function buildEvidence() {
+  const wrap = el('div', { class: 'evidence' });
+
+  const bar = el('div', { class: 'evidence-bar' });
+  bar.append(el('span', {}, 'Folha-de-monitoramento.pdf · 1 de 1'), el('span', { class: 'spacer' }));
+  const mkBtn = (icon, label) => {
+    const b = document.createElement('me-button');
+    b.setAttribute('appearance', 'plain');
+    b.setAttribute('size', 'small');
+    b.setAttribute('aria-label', label);
+    const i = el('me-icon'); i.setAttribute('slot', 'start'); i.setAttribute('name', icon);
+    b.appendChild(i);
+    return b;
+  };
+  const zoomOut = mkBtn('magnify-minus-outline', 'Diminuir zoom');
+  const zoomIn = mkBtn('magnify-plus-outline', 'Aumentar zoom');
+  const rotate = mkBtn('rotate-right', 'Rotacionar');
+  bar.append(zoomOut, zoomIn, rotate);
+
+  const viewport = el('div', { class: 'evidence-viewport' });
+  const paper = el('div', { class: 'evidence-paper' });
+
+  paper.append(
+    el('h4', {}, 'Folha de Monitoramento de Plantão Médico'),
+    el('p', { class: 'sub' }, 'Hospital São Lucas · Escala: Clínica Médica'),
+  );
+  const line = el('div', { class: 'form-line' });
+  line.append(
+    el('span', {}, 'Data: ', el('b', {}, '10 / 07 / 2026')),
+    el('span', {}, 'Turnos: ', el('b', {}, 'Manhã · Tarde')),
+    el('span', {}, 'Setor: ', el('b', {}, 'Ala B — 2º andar')),
+  );
+  paper.append(line);
+
+  const table = el('table', { class: 'paper-sheet' });
+  const head = el('tr');
+  ['Data', 'Nome do profissional', 'CRM', 'Entrada', 'Ass. / carimbo', 'Saída', 'Ass. / carimbo']
+    .forEach((h) => head.appendChild(el('th', {}, h)));
+  const tb = document.createElement('tbody');
+  EVIDENCE_ROWS.forEach((row) => {
+    const tr = el('tr');
+    tr.append(
+      el('td', { class: 'hw' }, row[0].slice(0, 5)),
+      el('td', { class: 'hw name' }, row[1]),
+      el('td', { class: 'hw' }, row[2]),
+      el('td', { class: 'hw' }, row[3]),
+      el('td', { class: 'sig' }, row[4] ? '✓ Rubr.' : ''),
+      el('td', { class: 'hw' }, row[5]),
+      el('td', { class: 'sig' }, row[6] ? '✓ Rubr.' : ''),
+    );
+    tb.appendChild(tr);
+  });
+  table.append(el('thead', {}, head), tb);
+  paper.append(table);
+
+  paper.append(el('p', { class: 'sub', style: 'margin-top:14px; text-align:left;' },
+    'Obs.: linha 8 — plantão noturno iniciado em 11/07. Linha 5 — profissional não assinou a saída.'));
+
+  viewport.appendChild(paper);
+  wrap.append(bar, viewport);
+
+  // Zoom / rotação (comportamento atual da tela)
+  let zoom = 1, rot = 0;
+  const applyTransform = () => { paper.style.transform = `scale(${zoom}) rotate(${rot}deg)`; };
+  zoomIn.addEventListener('click', () => { zoom = Math.min(2, zoom + 0.15); applyTransform(); });
+  zoomOut.addEventListener('click', () => { zoom = Math.max(0.5, zoom - 0.15); applyTransform(); });
+  rotate.addEventListener('click', () => { rot = (rot + 90) % 360; applyTransform(); });
+
+  return wrap;
+}
+document.getElementById('evidence-slot-02').appendChild(buildEvidence());
+document.getElementById('evidence-slot-03').appendChild(buildEvidence());
+
+/* =====================================================================
+   Andaime de protótipo
+   ===================================================================== */
+const protoToggle = document.getElementById('proto-toggle');
+const protoPanel = document.getElementById('proto-panel');
+protoToggle.addEventListener('click', () => {
+  const open = protoPanel.dataset.open === 'true';
+  protoPanel.dataset.open = String(!open);
+  protoToggle.setAttribute('aria-expanded', String(!open));
+});
+
+/* ---------------------------------------------------------------------
+   Filtros da Tela 01: abrir um fecha os outros; tags refletem o Status.
+   --------------------------------------------------------------------- */
+const filtersRow = document.getElementById('filters');
+filtersRow.addEventListener('me-toggle', (e) => {
+  if (!e.detail?.open) return;
+  for (const f of filtersRow.querySelectorAll('me-select-filter')) {
+    if (f !== e.target) f.open = false;
+  }
+});
+
+const statusFilter = document.getElementById('status-filter');
+const tagsRow = document.getElementById('active-tags');
+const clearBtn = tagsRow.querySelector('.clear-filters');
+
+function renderFilterTags() {
+  const values = statusFilter.value ?? [];
+  for (const t of tagsRow.querySelectorAll('me-filter-tag')) t.remove();
+  for (const v of values) {
+    const tag = document.createElement('me-filter-tag');
+    tag.setAttribute('value', v);
+    tag.textContent = STATUS_BADGE[v]?.label ?? v;
+    tagsRow.insertBefore(tag, clearBtn);
+  }
+  tagsRow.style.display = values.length ? 'flex' : 'none';
+}
+statusFilter.addEventListener('change', renderFilterTags);
+tagsRow.addEventListener('me-remove', (e) => {
+  const opt = [...statusFilter.querySelectorAll('me-option')].find((o) => o.value === e.detail.value);
+  if (opt?.selected) opt.click();
+});
+clearBtn.addEventListener('click', () => {
+  [...statusFilter.querySelectorAll('me-option')].filter((o) => o.selected).forEach((o) => o.click());
+});
+
+/* Boot */
+renderAttendanceList();
+renderFilterTags();
+applySheetModel('padrao10');
+</script>
+</body>
+</html>

@@ -48,12 +48,18 @@ const ARQUIVOS_VERSIONADOS = ['README.md', 'AGENTS.md', 'index.html'];
  *                     dois hotfixes como evidência e a mensagem de uso traz
  *                     exemplos; nada disso é estado, é ilustração. Sem esta
  *                     entrada a guarda se auto-reprovaria no primeiro push.
+ *   PRD32-*.html    — único demo que consome o CDN em vez dos caminhos
+ *                     relativos (é protótipo para compartilhar solto). Fica
+ *                     pinado na @v0.4.1 contra a qual foi construído: decisão
+ *                     tomada ao publicar a v0.4.6. Para passar a acompanhar o
+ *                     kit, mova esta linha para ARQUIVOS_VERSIONADOS.
  * Ficar nesta lista é uma decisão, não um esquecimento.
  */
 const ARQUIVOS_HISTORICOS = [
   'components/define.js',
   'test/collision.html',
   'tools/release.mjs',
+  'demo/PRD32-auditoria-folha-de-monitoramento.html',
 ];
 
 /* Casa v0.4.5 tanto em bricks@v0.4.5/... quanto em "Design System · v0.4.5".
