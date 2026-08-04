@@ -6,7 +6,8 @@
  *
  * Atributos: closable (mostra "X" no header; emite "me-close" cancelável —
  * se ninguém chamar preventDefault, o card se esconde sozinho).
- * Custom props locais: --padding (default 24px), --radius (default 8px).
+ * Custom props locais: --padding (default 24px; 16px quando o PRÓPRIO card tem
+ * menos de 360px — container query), --radius (default 8px).
  * Slots: header, default (corpo), footer.
  * Parts: base, header, body, footer, close-button.
  */
@@ -17,24 +18,34 @@ template.innerHTML = `
   <style>
     :host {
       display: block;
+      /* O padding responde à largura do CARD, não à da tela: um card estreito
+         num grid de 3 colunas no desktop tem o mesmo aperto que um em mobile. */
+      container-type: inline-size;
       font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
       color: var(--me-color-text, #16161D);
     }
     :host([hidden]) { display: none; }
 
     .card {
+      /* Quem define --padding vence SEMPRE; a query só troca o default:
+         24px vira 17% da largura num card de 280px (48px de respiro). */
+      --_padding: var(--padding, 24px);
       box-sizing: border-box;
       background: var(--me-color-surface, #FFFFFF);
       border-radius: var(--radius, var(--me-radius-l, 8px));
       box-shadow: var(--me-shadow-card, 0 1px 4px rgb(22 22 29 / 0.10));
       overflow: hidden;
     }
+    @container (width < 360px) {
+      .card { --_padding: var(--padding, 16px); }
+    }
 
     .header {
       display: none;
+      flex-wrap: wrap; /* .card corta overflow sem scroll; estourar = sumir */
       align-items: flex-start;
       gap: 8px;
-      padding: var(--padding, 24px);
+      padding: var(--_padding);
       padding-bottom: 0;
     }
     .card.has-header .header { display: flex; }
@@ -68,7 +79,7 @@ template.innerHTML = `
     }
 
     .body {
-      padding: var(--padding, 24px);
+      padding: var(--_padding);
       font-size: var(--me-font-size-body, 16px);
       line-height: var(--me-line-height-body, 24px);
       letter-spacing: var(--me-letter-spacing, 0.5px);
@@ -76,10 +87,11 @@ template.innerHTML = `
 
     .footer {
       display: none;
+      flex-wrap: wrap; /* idem header: melhor quebrar linha que ser cortado */
       align-items: center;
       justify-content: flex-end; /* v-card-actions com v-spacer: ações à direita */
       gap: 16px;
-      padding: var(--padding, 24px);
+      padding: var(--_padding);
       padding-top: 0;
     }
     .card.has-footer .footer { display: flex; }

@@ -45,9 +45,13 @@ checkboxTemplate.innerHTML = `
     }
     :host([hidden]) { display: none; }
 
+    /* flex-start, não center: com rótulo de uma linha os dois dão o mesmo
+       resultado, mas quando ele quebra — o normal em mobile — o center joga a
+       caixa para o meio do parágrafo. Medido: rótulo de 3 linhas (72px) deixava
+       a caixa de 18px a 27px do topo, longe da linha a que ela se refere. */
     .base {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       cursor: pointer;
       user-select: none;      /* select-none do app */
     }
@@ -60,7 +64,10 @@ checkboxTemplate.innerHTML = `
       box-sizing: border-box;
       height: 18px;
       width: 18px;
-      margin: 0 16px 0 0;     /* mr-4 */
+      /* mr-4 (16px). Os 3px de topo centram a caixa de 18px na primeira linha do
+         rótulo, que tem 24px de line-height: (24-18)/2 = 3. É o que mantém o
+         visual idêntico ao do align-items:center quando o rótulo é de uma linha. */
+      margin: 3px 16px 0 0;
       background-color: var(--me-color-white, #FFFFFF);
       border-radius: var(--me-radius-s, 4px);
       border: 2px solid var(--me-color-neutral-20, #E2E2E9);

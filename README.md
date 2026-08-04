@@ -142,6 +142,12 @@ superfície de marca continua teal (18 verificações).
 O `test/badge-variants.html` cobre o outro eixo do `<me-badge>`: que as sete variantes usam só
 cores do `tokens.css`, e que `brand`/`blue`/sem-atributo são a mesma coisa.
 
+O `test/responsive-mobile.html` mede layout em 320px, 390px e 1200px (iframes, porque media query
+avalia contra a viewport): abaixo de 800px a sidebar oculta quando recolhida e sobreposta quando
+aberta (sem roubar largura do conteúdo em nenhum dos dois estados), as abas em uma linha com faixa
+rolável e a primeira alcançável, e a paginação quebrando em duas linhas dentro do host — mantendo,
+em 1200px, sidebar em fluxo, abas de largura igual e paginação em uma linha.
+
 **Partes internas** são estilizáveis via `::part()`:
 
 ```css

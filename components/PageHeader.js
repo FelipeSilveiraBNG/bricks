@@ -6,8 +6,10 @@
  * para ações (sino de notificação, avatar etc.) via slot "end".
  *
  * Toggle mobile (como o botão v-if="isMobile" do app): com o atributo "menu",
- * um botão de seta aparece à esquerda APENAS em telas < 800px e emite o evento
- * "me-menu" ao clicar (detail.open = estado desejado). O consumidor liga esse
+ * um botão aparece à esquerda APENAS em telas < 800px e emite o evento
+ * "me-menu" ao clicar (detail.open = estado desejado). O ícone é o quadrado
+ * rosa com chevrons duplos brancos — o mesmo do toggle do me-sidebar, porque o
+ * Header.vue importa os mesmos SVGs (ver o comentário do .menu no CSS). O consumidor liga esse
  * evento à sidebar (ex.: sidebar.expanded = e.detail.open). O atributo refletido
  * "menu-open" alterna a direção da seta (fechado → expandir; aberto → recolher).
  *
@@ -37,8 +39,21 @@ template.innerHTML = `
       background: var(--me-color-surface, #FFFFFF);
     }
 
-    /* Botão de menu mobile (text-gray-500 do app). Oculto por padrão; só
-       aparece com [menu] em telas < 800px (espelha v-if="isMobile"). */
+    /* Botão de menu mobile. Oculto por padrão; só aparece com [menu] em telas
+       < 800px (espelha v-if="isMobile").
+
+       O ÍCONE É O QUADRADO ROSA, o mesmo do toggle do me-sidebar. Não é escolha
+       nossa: o Header.vue importa exatamente os dois SVGs que o Sidebar.vue usa
+       (assets/icons/rightArrow.vue e leftArrow.vue — quadrado #CB2957 rx=6 de
+       24px com chevrons duplos brancos de 2px). Antes daqui saía um chevron
+       vazado em currentColor, e o resultado era o MESMO botão do app desenhado
+       de duas formas diferentes dentro do kit: certo no Sidebar.js, errado aqui.
+
+       A caixa de 40px é divergência DELIBERADA: no app o botão tem o tamanho do
+       ícone (24×24, padding 0), o que fica abaixo do mínimo de alvo de toque.
+       Aqui o ícone continua com 24px e a área clicável cresce em volta dele.
+       Sem hover de fundo — o app não tem, e um retângulo tintado de 40px atrás
+       de um quadrado rosa de 24px só suja o desenho. O anel de foco fica. */
     .menu {
       display: none;
       flex: none;
@@ -51,10 +66,8 @@ template.innerHTML = `
       border: none;
       background: none;
       border-radius: var(--me-radius-m, 6px);
-      color: var(--me-color-text-muted, #68688D);
       cursor: pointer;
     }
-    .menu:hover { background: var(--me-color-brand-hover, rgb(47 127 145 / 0.08)); }
     .menu:focus-visible {
       outline: none;
       box-shadow: var(--me-focus-ring, 0 0 0 3px rgb(47 127 145 / 0.35));
@@ -87,11 +100,20 @@ template.innerHTML = `
       text-overflow: ellipsis;
     }
 
+    /* Trunca como o .heading acima, e é uma DIVERGÊNCIA DELIBERADA do app: lá o
+       subtítulo quebra livremente, e é isso que produzia o defeito medido — num
+       shell de 390px o "Visão geral dos plantões da unidade" virava três linhas
+       e empurrava a barra para 82px de altura, com o título espremido ao lado.
+       Truncar os dois mantém o header com altura previsível; deixar um truncar e
+       o outro quebrar era o pior dos dois mundos. */
     .subheading {
       font-size: var(--me-font-size-small, 14px);
       line-height: var(--me-line-height-small, 18px);
       letter-spacing: var(--me-letter-spacing, 0.5px);
       color: var(--me-color-brand-dark, #163D45); /* teal escuro do wordmark, como no app */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .subheading:empty { display: none; }
 
@@ -104,12 +126,17 @@ template.innerHTML = `
   </style>
   <header class="base" part="base">
     <button class="menu" part="menu" type="button" aria-label="Abrir menu" aria-expanded="false">
-      <!-- Chevron duplo cinza (como os arrows do Header.vue): → expandir / ← recolher -->
+      <!-- Quadrado rosa com chevrons duplos brancos, idêntico ao toggle do
+           me-sidebar: são os mesmos assets/icons/{left,right}Arrow.vue que o
+           Header.vue importa. Fechado mostra » (expandir), aberto « (recolher),
+           na mesma lógica do <left-arrow v-if="isOpen"> do app. -->
       <svg class="expand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M6 7l5 5-5 5M12 7l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="24" height="24" rx="6" fill="var(--me-color-tertiary-30, #CB2957)"/>
+        <path d="M7.5 7l5 5-5 5M13 7l5 5-5 5" stroke="var(--me-color-white, #FFFFFF)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M18 7l-5 5 5 5M12 7l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect width="24" height="24" rx="6" fill="var(--me-color-tertiary-30, #CB2957)"/>
+        <path d="M16.5 17l-5-5 5-5M11 17l-5-5 5-5" stroke="var(--me-color-white, #FFFFFF)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
     <div class="titles">

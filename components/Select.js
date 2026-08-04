@@ -213,9 +213,13 @@ define('me-select-option', MeSelectOption);
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
+    /* 320px é a largura de repouso, não um trilho fixo. Medido: com os 320px
+       fixos, numa viewport de 320px (coluna de 273px) o campo vazava 31px da
+       coluna. Mesmo arranjo do me-input; para fixar de novo, --me-select-width. */
     :host {
       display: inline-block;
-      width: 320px;
+      width: 100%;
+      max-width: var(--me-select-width, 320px);
       font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
     }
     :host([hidden]) { display: none; }
@@ -322,7 +326,13 @@ template.innerHTML = `
       line-height: 1;
       white-space: nowrap;
       max-width: 100%;
-      overflow: hidden;
+      /* SEM overflow:hidden aqui de propósito. Quem precisa recortar é o rótulo,
+         e ele já recorta logo abaixo (com ellipsis, que o clip da pílula não
+         daria). Na pílula o clip era redundante e cobrava um preço: MEDIDO, ele
+         impedia a área de toque do × de passar da caixa de 18px do botão — com
+         overflow:hidden a sonda a 11px do centro caía no campo, e com visible
+         acertava o botão. */
+      min-width: 0;
     }
     .tag span {
       overflow: hidden;
@@ -330,6 +340,7 @@ template.innerHTML = `
     }
     .tag button {
       flex: none;
+      position: relative;   /* âncora da área de toque abaixo */
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -341,6 +352,16 @@ template.innerHTML = `
       background: none;
       color: inherit;
       cursor: pointer;
+    }
+    /* Área de toque de 24×24 (o mínimo do WCAG 2.5.8) sem mexer no desenho: o
+       botão tem 18px medidos no v-chip, e o hover pinta um círculo do tamanho da
+       caixa — engordar a caixa engordaria o círculo. Um pseudo-elemento sem
+       pintura estende só o alvo do ponteiro. Padding não serviria aqui: a caixa
+       é border-box (medido: com padding:3px o botão continuou com 18×18). */
+    .tag button::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
     }
     .tag button:hover { background: color-mix(in srgb, var(--me-color-brand, #2F7F91) 18%, transparent); }
     .tag button:focus-visible {
@@ -365,6 +386,11 @@ template.innerHTML = `
       letter-spacing: var(--me-letter-spacing, 0.5px);
     }
     :host([size="small"]) input { font-size: var(--me-font-size-small, 14px); }
+    /* Ver Input.js: menos de 16px faz o Safari do iOS dar zoom ao focar e não
+       desfazer. Em ponteiro grosso o texto digitado volta para 16px. */
+    @media (pointer: coarse) {
+      :host([size="small"]) input { font-size: var(--me-font-size-body, 16px); }
+    }
     /* Sem searchable o campo não é digitável, mas segue focável pelo teclado. */
     :host(:not([searchable])) input { caret-color: transparent; cursor: pointer; }
     /* Enquanto a label repousa por cima, o placeholder nativo some (evita texto

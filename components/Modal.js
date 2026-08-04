@@ -104,7 +104,12 @@ template.innerHTML = `
       flex-direction: column;
       width: calc(100vw - 48px);
       max-width: var(--me-modal-width, 896px);
+      /* Duas declarações, não uma: dvh desconta a barra de endereço que aparece
+         e desaparece no Safari/Chrome mobile, e 90vh ali significa 90% da tela
+         COM a barra recolhida — ou seja, mais alto que a área visível quando ela
+         está aberta. Onde dvh não existe, a primeira linha vale. */
       max-height: var(--me-modal-max-height, 90vh);
+      max-height: var(--me-modal-max-height, 90dvh);
       overflow: hidden;
       padding: 0;
       border: 0;
@@ -122,7 +127,13 @@ template.innerHTML = `
     /* 448px = max-w-md (o "modal de filtro" do app); 80vw = o modal largo da
        conciliação. O default de 896px é o max-w-4xl do Modal.vue. */
     :host([size="small"]) dialog { max-width: var(--me-modal-width, 448px); }
-    :host([size="large"]) dialog { max-width: var(--me-modal-width, 80vw); }
+    /* O max() é o conserto de um defeito medido: com 80vw puro, o large ficava
+       MAIS ESTREITO que o default em telas pequenas (390px de viewport → 312px
+       no large contra 342px no default), porque 80vw é menor que
+       calc(100vw - 48px) em qualquer viewport acima de 240px. Com o piso em
+       896px — o teto do default — o large nunca é mais estreito que ele, e em
+       desktop volta a valer os 80vw. */
+    :host([size="large"]) dialog { max-width: var(--me-modal-width, max(80vw, 896px)); }
 
     /* #111827 a 50%, medido. Sem token do kit para esta cor — o mais próximo
        (--me-color-gray-50) é bem mais claro —, então fica var local. */

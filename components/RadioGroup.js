@@ -36,9 +36,12 @@ radioTemplate.innerHTML = `
     :host([hidden]) { display: none; }
     :host([disabled]) { opacity: 0.45; pointer-events: none; }
 
+    /* flex-start, não center: com rótulo de uma linha o resultado é o mesmo (o
+       nudge de 3px no .control cuida disso), mas quando o rótulo quebra — o
+       normal em mobile — o center joga o círculo para o meio do parágrafo. */
     .base {
       display: flex;
-      align-items: center;             /* radio simples: círculo e label centralizados (app) */
+      align-items: flex-start;
       gap: 8px;
     }
 
@@ -51,6 +54,9 @@ radioTemplate.innerHTML = `
       justify-content: center;
       width: 18px;                     /* w-[18px] do app */
       height: 18px;
+      /* Centra o círculo de 18px na primeira linha do rótulo (line-height 24px):
+         (24-18)/2 = 3. Ver o comentário do .base. */
+      margin-top: 3px;
       /* gray-400 no app. Escolhido gray-5 (cinza puro) em vez de neutral-50:
          mesmo ΔE (~7,9), mas erra na claridade e não no matiz, então não puxa
          para o lilás. O Figma desenha este anel em primary-30 — divergência
@@ -170,10 +176,18 @@ groupTemplate.innerHTML = `
     :host([orientation="horizontal"]) {
       flex-direction: row;
       align-items: stretch;
+      /* Sem wrap, a linha horizontal não tinha saída em tela estreita: medido a
+         320px, dois cards ficavam com 163,5px e 132,8px (desiguais, porque o
+         basis 0 encolhe o segundo até o mínimo) e o segundo passava da borda. */
+      flex-wrap: wrap;
     }
-    /* Cards dividem o espaço igualmente na horizontal */
+    /* Cards dividem o espaço igualmente na horizontal enquanto couberem. O basis
+       de 220px é o piso que dispara a quebra: com dois cards numa coluna de
+       343px (viewport de 390px), 2×220 não cabe e cada um passa a ocupar a linha
+       inteira, em vez de ficarem os dois amassados. Onde há espaço, o grow
+       reparte igual, que é o desenho do app. Ajuste por --me-radio-card-min. */
     :host([orientation="horizontal"]) ::slotted(me-radio[appearance="card"]) {
-      flex: 1 1 0;
+      flex: 1 1 var(--me-radio-card-min, 220px);
     }
   </style>
   <slot></slot>
