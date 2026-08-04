@@ -100,11 +100,20 @@ template.innerHTML = `
       text-overflow: ellipsis;
     }
 
+    /* Trunca como o .heading acima, e é uma DIVERGÊNCIA DELIBERADA do app: lá o
+       subtítulo quebra livremente, e é isso que produzia o defeito medido — num
+       shell de 390px o "Visão geral dos plantões da unidade" virava três linhas
+       e empurrava a barra para 82px de altura, com o título espremido ao lado.
+       Truncar os dois mantém o header com altura previsível; deixar um truncar e
+       o outro quebrar era o pior dos dois mundos. */
     .subheading {
       font-size: var(--me-font-size-small, 14px);
       line-height: var(--me-line-height-small, 18px);
       letter-spacing: var(--me-letter-spacing, 0.5px);
       color: var(--me-color-brand-dark, #163D45); /* teal escuro do wordmark, como no app */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .subheading:empty { display: none; }
 

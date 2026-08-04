@@ -27,6 +27,20 @@ template.innerHTML = `
   <style>
     :host {
       display: inline-block;
+      /* Sem isto o ellipsis do .label nunca dispara quando o consumidor usa o
+         botão como item flex (o style="flex:1" das receitas de footer): o
+         min-width:auto de um item flex vale o tamanho mínimo do CONTEÚDO, e com
+         o rótulo em nowrap esse mínimo é a frase inteira — medido, dois botões
+         num contêiner de 200px somavam 358px e vazavam. Com min-width:0 o host
+         encolhe e quem corta é o rótulo, com reticências. */
+      min-width: 0;
+      /* E o teto, que é o que define "não consegue mais crescer". Um botão solto
+         é inline-block, e a largura de shrink-to-fit tem o MIN-CONTENT como piso
+         — com o rótulo em nowrap, esse piso é a frase inteira, então o botão
+         passava da página em vez de truncar (medido: rótulo de 78 caracteres
+         virava um botão de 574,5px numa viewport de 390px). O min-width:0 acima
+         não cobre este caso: ele solta o item flex, não o shrink-to-fit. */
+      max-width: 100%;
       font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
     }
     :host([hidden]) { display: none; }
@@ -145,6 +159,21 @@ template.innerHTML = `
       opacity: 0.4;
       cursor: not-allowed;
       pointer-events: none;
+    }
+
+    /* O rótulo cresce na horizontal enquanto pode, e trunca com reticências
+       quando não pode mais. Sem isto o rótulo QUEBRAVA linha dentro de um botão
+       de altura fixa (40px) que tem overflow:hidden por causa do ripple —
+       medido: "Confirmar exclusão do plantão" numa coluna de 200px virava um
+       botão de 112,8px com 4 linhas de texto (58,8px), das quais 18,8px ficavam
+       cortados, invisíveis e sem nenhuma pista de que havia texto ali.
+       O min-width:0 é o que permite ao rótulo encolher abaixo do seu min-content
+       dentro do flex do botão — sem ele o ellipsis nunca dispara. */
+    .label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     ::slotted(me-icon) { font-size: 1.25em; }
