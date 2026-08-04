@@ -6,7 +6,7 @@
  * Aparência replicada do Modal.vue do app — o componente mais usado do design
  * system deles: 98 arquivos o consomem.
  *
- * SPEC MEDIDA (Storybook + demo/PRD32-auditoria-folha-de-monitoramento.html,
+ * SPEC MEDIDA (Storybook + demo/prd32/auditoria-folha-de-monitoramento.html,
  * que já reproduzia esses modais à mão):
  *   backdrop     #111827 a 50%
  *   caixa        branco, radius 8px, max-height 90vh, overflow hidden, coluna

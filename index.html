@@ -1222,10 +1222,12 @@ pag.movePageTo(3);</pre>
       <!-- Vitrine das demos da pasta demo/. A lista é montada em runtime pelo
            bloco "Vitrine de demos" no script do fim do arquivo: criar um
            arquivo em demo/ com os metas demo-title/demo-description basta, não
-           se edita mais nada aqui.
-           Os cards abaixo são o fallback de quem abre a página sem rede — um
-           retrato, então podem ficar atrasados; a lista de verdade é a de
-           runtime. -->
+           se edita mais nada aqui. Subpasta de demo/ vira uma subseção com
+           cabeçalho próprio, rotulada pelo _secao.html de dentro dela.
+           O conteúdo de #demos-lista abaixo é o fallback de quem abre a página
+           sem rede — um retrato, então pode ficar atrasado; a lista de verdade
+           é a de runtime. Ele imita a forma gerada (grade da raiz, depois uma
+           grade por pasta) porque é o mesmo lugar na tela. -->
       <me-page name="demos">
         <h2>Demos</h2>
         <p class="desc">
@@ -1234,27 +1236,33 @@ pag.movePageTo(3);</pre>
           copie o trecho que precisar. Como são páginas fora do roteador desta documentação,
           use o voltar do navegador para retornar.
         </p>
-        <div class="cards" id="demos-cards">
-          <a href="demo/app-shell.html">
-            <strong>App shell</strong>
-            <small>protótipo completo: sidebar + page header + cards</small>
-          </a>
-          <a href="demo/pages.html">
-            <strong>Navegação por rotas</strong>
-            <small>me-pages com deep-link por hash, sem build</small>
-          </a>
-          <a href="demo/registro-plantao.html">
-            <strong>Registro de plantão</strong>
-            <small>tela de aprovações: filtros, tabela e ações em massa</small>
-          </a>
-          <a href="demo/PRD32-auditoria-folha-de-monitoramento.html">
-            <strong>Auditoria de folha (PRD 32)</strong>
-            <small>jornada J1 com cabeçalho fiel ao app</small>
-          </a>
-          <a href="demo/config-modelo-de-folha.html">
-            <strong>Config do modelo de folha (PRD 32)</strong>
-            <small>colunas em lista vertical, sem ajuste de linhas</small>
-          </a>
+        <div id="demos-lista">
+          <div class="cards">
+            <a href="demo/app-shell.html">
+              <strong>App shell</strong>
+              <small>protótipo completo: sidebar + page header + cards</small>
+            </a>
+            <a href="demo/pages.html">
+              <strong>Navegação por rotas</strong>
+              <small>me-pages com deep-link por hash, sem build</small>
+            </a>
+            <a href="demo/registro-plantao.html">
+              <strong>Registro de plantão</strong>
+              <small>tela de aprovações: filtros, tabela e ações em massa</small>
+            </a>
+          </div>
+          <h3 class="section">PRD 32 · Auditoria de folha</h3>
+          <p class="desc">protótipos das telas do PRD 32, em revisão</p>
+          <div class="cards">
+            <a href="demo/prd32/auditoria-folha-de-monitoramento.html">
+              <strong>Auditoria de folha</strong>
+              <small>jornada J1 com cabeçalho fiel ao app</small>
+            </a>
+            <a href="demo/prd32/config-modelo-de-folha.html">
+              <strong>Config do modelo de folha</strong>
+              <small>colunas em lista vertical, sem ajuste de linhas</small>
+            </a>
+          </div>
         </div>
       </me-page>
 
@@ -1285,48 +1293,70 @@ pag.movePageTo(3);</pre>
       }
     })();
 
-    // ===== Vitrine de demos: descobre demo/*.html em runtime =====
+    // ===== Vitrine de demos: descobre demo/**/*.html em runtime =====
     // Antes cada demo nova exigia um card escrito à mão em #/demos, e a lista
     // atrasava. Site estático não tem listagem de diretório garantida, então
     // tentamos duas fontes, na ordem em que cada uma é a confiável:
     //   1) listagem do servidor de dev — `npx serve .` responde /demo/ com um
     //      índice HTML. É a única que enxerga arquivo ainda não commitado, ou
     //      seja, o caso de quem está criando a demo agora;
-    //   2) API de conteúdo do GitHub — é o que vale no GitHub Pages, onde
+    //   2) árvore do git via API do GitHub — é o que vale no GitHub Pages, onde
     //      /demo/ é 404. Só mostra o que já está na main.
     // Se as duas falharem (offline, rate-limit), os cards embutidos no HTML
     // continuam valendo — é para isso que eles existem.
+    //
+    // Subpasta de demo/ vira uma subseção com cabeçalho próprio: agrupar é só
+    // um groupBy pelo diretório-pai, e o que importa é que descobrir passou a
+    // descer as pastas em vez de olhar só o primeiro nível.
     (async () => {
-      const grade = document.getElementById('demos-cards');
-      if (!grade) return;
+      const lista = document.getElementById('demos-lista');
+      if (!lista) return;
 
       const REPO = 'FelipeSilveiraBNG/bricks';
       const base = new URL('demo/', location.href);
 
-      /* Nomes de arquivo dentro de demo/, sem caminho. */
-      async function viaServidorLocal() {
-        const res = await fetch(base);
+      /* Caminhos .html relativos a demo/, subpasta inclusa ('prd32/x.html'). */
+      async function viaServidorLocal(sub = '', vistos = new Set()) {
+        const dir = new URL(sub, base);
+        if (vistos.has(dir.pathname)) return []; // trava contra link circular
+        vistos.add(dir.pathname);
+
+        const res = await fetch(dir);
         if (!res.ok) return []; // Pages devolve 404 aqui, e é o esperado
         const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-        return [...doc.querySelectorAll('a[href]')]
-          .map((a) => new URL(a.getAttribute('href'), base))
-          // Só link para arquivo .html DIRETO em demo/. O teste contra
-          // base.pathname descarta o link de diretório-pai e protege do
-          // servidor que responde /demo/ com o index das docs (aí os hrefs
-          // resolvem para /demo/demo/... e caem fora).
-          .filter((u) => u.pathname.endsWith('.html') &&
-                         u.pathname.slice(base.pathname.length).indexOf('/') === -1 &&
-                         u.pathname.startsWith(base.pathname))
+        const alvos = [...doc.querySelectorAll('a[href]')]
+          .map((a) => new URL(a.getAttribute('href'), dir))
+          // Estritamente ABAIXO de demo/. O `>` no comprimento é que descarta o
+          // link de diretório-pai que o `npx serve` põe na listagem: sem ele o
+          // alvo vira string vazia, que resolveria para a raiz do servidor.
+          // Também protege do servidor que responde /demo/ com o index das docs
+          // (aí os hrefs resolvem para /demo/demo/... e caem fora).
+          .filter((u) => u.pathname.startsWith(base.pathname) &&
+                         u.pathname.length > base.pathname.length)
           .map((u) => decodeURIComponent(u.pathname.slice(base.pathname.length)));
+
+        // Sem extensão é diretório. Vale para as duas listagens que usamos, que
+        // divergem na barra final: `python -m http.server` linka `prd32/`,
+        // `npx serve` linka `prd32`.
+        const pastas = [...new Set(alvos
+          .filter((p) => !/\.[a-z0-9]+$/i.test(p.replace(/\/$/, '')))
+          .map((p) => (p.endsWith('/') ? p : `${p}/`)))];
+        const dentro = await Promise.all(pastas.map((p) => viaServidorLocal(p, vistos)));
+
+        return [...alvos.filter((p) => /\.html$/i.test(p)), ...dentro.flat()];
       }
 
+      /* Árvore inteira num request só, em vez de um por diretório: sem token o
+         limite é 60 chamadas/hora e essa é a fonte do Pages. `truncated: true`
+         só acontece em repo grande — se um dia acontecer, faltam demos na
+         lista e é hora de paginar por diretório. */
       async function viaGitHub() {
-        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/demo?ref=main`);
+        const res = await fetch(`https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`);
         if (!res.ok) return [];
-        const itens = await res.json();
-        return itens
-          .filter((i) => i.type === 'file' && i.name.endsWith('.html'))
-          .map((i) => i.name);
+        const { tree = [] } = await res.json();
+        return tree
+          .filter((n) => n.type === 'blob' && n.path.startsWith('demo/') && /\.html$/i.test(n.path))
+          .map((n) => n.path.slice('demo/'.length));
       }
 
       /* Título e descrição do card vêm da própria demo, em <meta name="demo-*">:
@@ -1335,44 +1365,92 @@ pag.movePageTo(3);</pre>
          Range porque só o começo do arquivo interessa e a maior demo passa de
          150KB — daí os metas ficarem no topo do <head>. Servidor que ignore
          Range devolve o arquivo inteiro e o parse segue igual. */
-      async function ficha(nome) {
+      async function ficha(caminho) {
+        const nome = caminho.slice(caminho.lastIndexOf('/') + 1);
+        const pasta = caminho.slice(0, caminho.length - nome.length).replace(/\/$/, '');
         const rotulo = nome.replace(/\.html$/i, '').replace(/[-_]+/g, ' ');
+        const magra = { caminho, nome, pasta, titulo: rotulo, descricao: '' };
         try {
-          const res = await fetch(new URL(nome, base), { headers: { Range: 'bytes=0-8191' } });
-          if (!res.ok) return { nome, titulo: rotulo, descricao: '' };
+          const res = await fetch(new URL(caminho, base), { headers: { Range: 'bytes=0-8191' } });
+          if (!res.ok) return magra;
           const cabeca = (await res.text()).split(/<\/head>/i)[0];
           const doc = new DOMParser().parseFromString(cabeca, 'text/html');
           const meta = (n) => doc.querySelector(`meta[name="${n}"]`)?.content?.trim() || '';
           return {
-            nome,
+            ...magra,
             titulo: meta('demo-title') || doc.querySelector('title')?.textContent.trim() || rotulo,
             descricao: meta('demo-description'),
           };
         } catch {
-          return { nome, titulo: rotulo, descricao: '' };
+          return magra;
         }
       }
 
-      let nomes = [];
-      try { nomes = await viaServidorLocal(); } catch { /* sem rede: tenta a API */ }
-      if (!nomes.length) { try { nomes = await viaGitHub(); } catch { /* fallback embutido */ } }
-      if (!nomes.length) return;
+      let caminhos = [];
+      try { caminhos = await viaServidorLocal(); } catch { /* sem rede: tenta a API */ }
+      if (!caminhos.length) { try { caminhos = await viaGitHub(); } catch { /* fallback embutido */ } }
+      if (!caminhos.length) return;
 
-      const fichas = (await Promise.all(nomes.map(ficha)))
-        .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+      const fichas = await Promise.all([...new Set(caminhos)].map(ficha));
+
+      // Arquivo com _ na frente não é demo. O _secao.html de uma pasta rotula a
+      // subseção dela com os MESMOS metas de um card — daí ele passar por
+      // ficha() como qualquer outro e sair da lista só aqui.
+      const rotulos = new Map();
+      const cards = [];
+      for (const f of fichas) {
+        if (!f.nome.startsWith('_')) cards.push(f);
+        else if (f.nome.toLowerCase() === '_secao.html' && f.pasta) rotulos.set(f.pasta, f);
+      }
+
+      const grupos = new Map();
+      for (const f of cards) {
+        if (!grupos.has(f.pasta)) grupos.set(f.pasta, []);
+        grupos.get(f.pasta).push(f);
+      }
+      const porTitulo = (a, b) => a.localeCompare(b, 'pt-BR');
+      // Raiz primeiro e sem cabeçalho — é o que a página já era antes de haver
+      // pasta nenhuma. Depois as pastas em ordem alfabética.
+      const pastas = [...grupos.keys()].filter(Boolean).sort(porTitulo);
 
       // textContent, nunca innerHTML: título e descrição vêm de um arquivo lido
       // por fetch, e a vitrine não é lugar de executar o que veio de lá.
-      grade.replaceChildren(...fichas.map((f) => {
-        const card = document.createElement('a');
-        card.href = `demo/${f.nome}`;
-        const titulo = document.createElement('strong');
-        titulo.textContent = f.titulo;
-        const descricao = document.createElement('small');
-        descricao.textContent = f.descricao || f.nome;
-        card.append(titulo, descricao);
-        return card;
-      }));
+      const cria = (tag, texto, classe) => {
+        const el = document.createElement(tag);
+        el.textContent = texto;
+        if (classe) el.className = classe;
+        return el;
+      };
+
+      const blocos = [];
+      for (const pasta of ['', ...pastas]) {
+        const doGrupo = grupos.get(pasta);
+        if (!doGrupo) continue;
+
+        if (pasta) {
+          const secao = rotulos.get(pasta);
+          // Sem _secao.html o cabeçalho é o nome da pasta; nível a mais vira
+          // "pasta / subpasta", que é feio mas mostra a demo em vez de sumir
+          // com ela.
+          const titulo = secao?.titulo ||
+            pasta.split('/').map((s) => s.replace(/[-_]+/g, ' ')).join(' / ');
+          blocos.push(cria('h3', titulo, 'section'));
+          if (secao?.descricao) blocos.push(cria('p', secao.descricao, 'desc'));
+        }
+
+        const grade = cria('div', '', 'cards');
+        grade.append(...doGrupo
+          .sort((a, b) => porTitulo(a.titulo, b.titulo))
+          .map((f) => {
+            const card = document.createElement('a');
+            card.href = `demo/${f.caminho}`;
+            card.append(cria('strong', f.titulo), cria('small', f.descricao || f.nome));
+            return card;
+          }));
+        blocos.push(grade);
+      }
+
+      lista.replaceChildren(...blocos);
     })();
 
     // Marca no menu lateral a rota ativa do roteador de docs

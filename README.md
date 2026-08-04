@@ -26,19 +26,20 @@ Depois abra:
 - `demo/app-shell.html` — página completa composta (sidebar + header + cards + form).
 - `demo/pages.html` — mini-app com rotas por hash (`me-pages` + sidebar sincronizada).
 - `demo/registro-plantao.html` — tela de aprovações: filtros, tabela e ações em massa.
-- `demo/PRD32-auditoria-folha-de-monitoramento.html` — jornada J1 da auditoria de folha.
-  Carrega o kit pelo CDN, para abrir solto fora do repo, e fica pinado na tag contra a
-  qual foi construído (ver `ARQUIVOS_HISTORICOS` em `tools/release.mjs`).
-- `demo/config-modelo-de-folha.html` — config do modelo de folha do PRD 32: colunas em
-  lista vertical, sem o bloco de ajuste de linhas. Também carrega pelo CDN, mas
-  acompanha o kit a cada release (`ARQUIVOS_VERSIONADOS`).
+- `demo/prd32/` — protótipos das telas do PRD 32, agrupados numa subseção da vitrine:
+  - `auditoria-folha-de-monitoramento.html` — jornada J1 da auditoria de folha. Carrega o
+    kit pelo CDN, para abrir solto fora do repo, e fica pinada na tag contra a qual foi
+    construída (ver `ARQUIVOS_HISTORICOS` em `tools/release.mjs`).
+  - `config-modelo-de-folha.html` — config do modelo de folha: colunas em lista vertical,
+    sem o bloco de ajuste de linhas. Também carrega pelo CDN, mas acompanha o kit a cada
+    release (`ARQUIVOS_VERSIONADOS`).
 
 ### Criando uma demo
 
 A vitrine de `#/demos` lê os arquivos de `demo/` em runtime — pela listagem do servidor
-estático quando você está local (inclusive arquivo ainda não commitado) e pela API de
-conteúdo do GitHub no Pages. O que ela precisa de você são dois metas no topo do `<head>`,
-antes do `<style>`:
+estático quando você está local (inclusive arquivo ainda não commitado) e pela árvore do
+git via API do GitHub no Pages. O que ela precisa de você são dois metas no topo do
+`<head>`, antes do `<style>`:
 
 ```html
 <meta name="demo-title" content="Registro de plantão" />
@@ -47,6 +48,27 @@ antes do `<style>`:
 
 Sem eles a demo ainda aparece, com o `<title>` no lugar do rótulo. Os cards escritos à mão
 que sobraram no `index.html` são só o fallback de quem abre a página sem rede.
+
+### Agrupando demos numa subseção
+
+Uma **subpasta** de `demo/` vira uma subseção com cabeçalho próprio em `#/demos`, e as
+demos soltas na raiz seguem na grade de cima, sem cabeçalho. Não há nada a registrar: criar
+`demo/minha-pasta/` e pôr demos dentro basta.
+
+O cabeçalho usa o nome da pasta. Para dar um rótulo de verdade, crie um `_secao.html` lá
+dentro com os **mesmos** metas de uma demo — arquivo começando com `_` nunca vira card, então
+ele rotula a lista sem entrar nela:
+
+```html
+<!-- demo/prd32/_secao.html -->
+<meta name="demo-title" content="PRD 32 · Auditoria de folha" />
+<meta name="demo-description" content="protótipos das telas do PRD 32, em revisão" />
+```
+
+Ao **mover** uma demo para uma pasta, corrija o caminho dela em `tools/release.mjs`
+(`ARQUIVOS_VERSIONADOS`/`ARQUIVOS_HISTORICOS`) se ela citar versão: no caminho antigo a
+entrada deixa de casar e o arquivo reaparece como citação não classificada, reprovando a
+guarda de versão.
 
 ## Usando num protótipo
 

@@ -59,15 +59,18 @@ const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /*
  * Arquivos que carregam a versão ATUAL — todos bumpam junto no release.
- *   config-modelo-de-folha.html — demo que consome o CDN, como a PRD32-*.html,
- *     mas aqui a escolha foi a oposta: acompanha o kit em vez de ficar pinada.
- *     É protótipo em revisão, e revisar contra componente velho não serve.
+ *   config-modelo-de-folha.html — demo que consome o CDN, como a auditoria ao
+ *     lado dela em demo/prd32/, mas aqui a escolha foi a oposta: acompanha o kit
+ *     em vez de ficar pinada. É protótipo em revisão, e revisar contra
+ *     componente velho não serve.
+ * Caminho de demo entra aqui com a pasta: mover a demo sem corrigir a linha faz
+ * a guarda reprovar, porque o arquivo reaparece como citação não classificada.
  */
 const ARQUIVOS_VERSIONADOS = [
   'README.md',
   'AGENTS.md',
   'index.html',
-  'demo/config-modelo-de-folha.html',
+  'demo/prd32/config-modelo-de-folha.html',
 ];
 
 /*
@@ -79,18 +82,18 @@ const ARQUIVOS_VERSIONADOS = [
  *                     dois hotfixes como evidência e a mensagem de uso traz
  *                     exemplos; nada disso é estado, é ilustração. Sem esta
  *                     entrada a guarda se auto-reprovaria no primeiro push.
- *   PRD32-*.html    — único demo que consome o CDN em vez dos caminhos
- *                     relativos (é protótipo para compartilhar solto). Fica
- *                     pinado na @v0.4.1 contra a qual foi construído: decisão
- *                     tomada ao publicar a v0.4.6. Para passar a acompanhar o
- *                     kit, mova esta linha para ARQUIVOS_VERSIONADOS.
+ *   prd32/auditoria-…  — demo que consome o CDN em vez dos caminhos relativos
+ *                     (é protótipo para compartilhar solto). Fica pinada na
+ *                     @v0.4.1 contra a qual foi construída: decisão tomada ao
+ *                     publicar a v0.4.6. Para passar a acompanhar o kit, mova
+ *                     esta linha para ARQUIVOS_VERSIONADOS.
  * Ficar nesta lista é uma decisão, não um esquecimento.
  */
 const ARQUIVOS_HISTORICOS = [
   'components/define.js',
   'test/collision.html',
   'tools/release.mjs',
-  'demo/PRD32-auditoria-folha-de-monitoramento.html',
+  'demo/prd32/auditoria-folha-de-monitoramento.html',
 ];
 
 /* Casa v0.4.5 tanto em bricks@v0.4.5/... quanto em "Design System · v0.4.5".
