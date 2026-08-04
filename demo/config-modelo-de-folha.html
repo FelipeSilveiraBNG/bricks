@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Config · Modelo de folha (sem ajuste de linhas) — PRD 32 (protótipo)</title>
+
+  <!-- me-bricks (UI Kit Minha Escala) v0.5.5 — URLs absolutas do CDN, versão travada.
+       Fonte da API: AGENTS.md em FelipeSilveiraBNG/bricks. Doc: https://felipesilveirabng.github.io/bricks/
+       Precisa ser servido via HTTP (ES modules não carregam em file://). -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.5/tokens.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/gh/FelipeSilveiraBNG/bricks@v0.5.5/components/index.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--me-font-family, 'Inter', system-ui, -apple-system, sans-serif);
+      font-size: var(--me-font-size-body, 16px);
+      line-height: var(--me-line-height-body, 24px);
+      letter-spacing: var(--me-letter-spacing, 0.5px);
+      color: var(--me-color-text, #16161D);
+      /* fundo escurecido do backdrop do modal (Modal.vue) */
+      background: rgba(22, 22, 29, 0.45);
+    }
+
+    /* ============================================================
+       SHELL — modal "Editar Escala"
+       Cópia de EditScheduleModal/index.vue (80vw × 90vh, header + nav 320px + conteúdo)
+       ============================================================ */
+    .edit-modal {
+      position: fixed; inset: 0; margin: auto;
+      width: 80vw; height: 90vh;
+      background: var(--me-color-white, #fff);
+      border-radius: var(--me-radius-l, 8px);
+      box-shadow: var(--me-shadow-overlay);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .edit-modal__header {
+      flex: none; padding: 16px 24px;
+      border-bottom: 1px solid var(--me-color-neutral-30, #D8D8E2);
+      text-align: center;
+    }
+    .edit-modal__header p {
+      margin: 0; font-weight: var(--me-font-weight-bold, 700);
+      font-size: 18px; color: var(--me-color-text, #16161D);
+    }
+    .edit-modal__body { flex: 1; display: flex; min-height: 0; }
+
+    /* nav lateral */
+    .nav {
+      width: 320px; flex: none;
+      background: var(--me-color-neutral-10, #F0F0F4);
+      border-right: 1px solid var(--me-color-neutral-30, #D8D8E2);
+      display: flex; flex-direction: column; overflow-y: auto;
+    }
+    .nav__section {
+      padding: 16px 16px 8px;
+      font-size: var(--me-font-size-body, 16px); font-weight: 400; line-height: 24px;
+      letter-spacing: 0.08px; color: var(--me-color-secondary-10, #68688D); text-align: left;
+    }
+    .nav__item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px; border: 0; width: 100%; cursor: pointer;
+      background: none; text-align: left; font-family: inherit;
+      font-size: var(--me-font-size-body, 16px); line-height: 24px;
+      color: var(--me-color-text, #16161D);
+      transition: background var(--me-transition, .2s ease), color var(--me-transition, .2s ease);
+    }
+    .nav__item me-icon { font-size: 24px; }
+    .nav__item:hover { background: #E8E8EE; }
+    .nav__item.is-active {
+      background: var(--me-color-primary-30, #2F7F91);
+      color: var(--me-color-white, #fff);
+      font-weight: var(--me-font-weight-bold, 700);
+    }
+    .nav__item span { white-space: nowrap; }
+
+    /* coluna de conteúdo */
+    .content-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .content {
+      flex: 1; overflow-y: auto; padding: 24px;
+      background: var(--me-color-white, #fff);
+    }
+    .content h2 {
+      margin: 0 0 24px; font-weight: var(--me-font-weight-bold, 700);
+      font-size: 20px; line-height: 24px; color: #323232; text-align: left;
+    }
+    .content-footer { flex: none; padding: 0 24px 24px; }
+    .content-footer .row { display: flex; gap: 24px; }
+    .content-footer me-button { flex: 1; }
+
+    /* aba fora de escopo do protótipo */
+    .stub {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; height: 320px; color: var(--me-color-text-muted, #68688D);
+      border: 1px dashed var(--me-color-neutral-40, #BCBCCD);
+      border-radius: var(--me-radius-l, 8px); text-align: center; padding: 24px;
+    }
+    .stub me-icon { font-size: 40px; color: var(--me-color-neutral-40, #BCBCCD); }
+
+    /* ============================================================
+       ESTADO A — lista de políticas (BasePolicyTable.vue)
+       ============================================================ */
+    .policy-toolbar {
+      display: flex; align-items: center; gap: 16px;
+      justify-content: space-between; flex-wrap: wrap; margin-bottom: 20px;
+    }
+    .policy-toolbar .search { flex: 1 1 280px; max-width: 360px; }
+    .policy-toolbar .right { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+    .legend { display: flex; align-items: center; gap: 16px; }
+    .legend .item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--me-color-text-muted, #68688D); }
+    .dot { width: 10px; height: 10px; border-radius: 999px; flex: none; }
+    .dot--vigente { background: var(--me-color-success-50, #198038); }
+    .dot--vencida { background: var(--me-color-negative-50, #DA1E28); }
+    .dot--futura  { background: var(--me-color-primary-20, #3CA2B9); }
+
+    .policy-grid { border: 1px solid var(--me-color-neutral-20, #E2E2E9); border-radius: var(--me-radius-l, 8px); overflow: hidden; }
+    .policy-grid__head, .policy-grid__row {
+      display: grid; grid-template-columns: 4fr 3fr 3fr 2fr; align-items: center;
+      gap: 16px; padding: 12px 16px;
+    }
+    .policy-grid__head {
+      background: var(--me-color-neutral-10, #F0F0F4);
+      font-size: var(--me-font-size-small, 14px); font-weight: var(--me-font-weight-bold, 700);
+      color: var(--me-color-secondary-20, #52526F);
+    }
+    .policy-grid__head .actions-col { text-align: right; }
+    .policy-grid__row { border-top: 1px solid var(--me-color-neutral-20, #E2E2E9); font-size: var(--me-font-size-small, 14px); }
+    .policy-grid__row .name { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; color: var(--me-color-text, #16161D); }
+    .policy-grid__row .muted { color: var(--me-color-text-muted, #68688D); }
+    .policy-grid__row .actions { display: inline-flex; align-items: center; gap: 12px; justify-content: flex-end; }
+    .icon-btn {
+      border: 0; background: none; cursor: pointer; color: var(--me-color-primary-30, #2F7F91);
+      display: inline-flex; align-items: center; padding: 4px; border-radius: var(--me-radius-s, 4px);
+    }
+    .icon-btn:hover { background: var(--me-color-primary-5, #D8EEF3); }
+    .icon-btn me-icon { font-size: 20px; }
+
+    /* ============================================================
+       ESTADO B — formulário da política (DsAttendancePolicy.vue)
+       ============================================================ */
+    .form-title { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .form-title h3 { margin: 0; font-weight: 700; font-size: 18px; color: var(--me-color-primary-50, #163D45); }
+    .form-sub { color: var(--me-color-text-muted, #68688D); font-size: 13px; margin: 0 0 24px; }
+    .policy-name {
+      font-weight: 700; font-size: 20px; color: var(--me-color-text, #16161D);
+      border: 0; border-bottom: 2px dashed var(--me-color-neutral-30, #D8D8E2);
+      background: none; font-family: inherit; padding: 4px 0; width: 100%; max-width: 480px;
+      letter-spacing: inherit;
+    }
+    .policy-name:focus { outline: none; border-bottom-color: var(--me-color-primary-30, #2F7F91); }
+
+    .section { margin-top: 28px; }
+    .section__title { font-weight: 700; color: var(--me-color-primary-50, #163D45); text-align: left; margin: 0 0 16px; font-size: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-2 .full { grid-column: 1 / -1; }
+    .switch-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+
+    /* seção "Modelos da folha" */
+    .templates-list .template-row {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+    }
+    .templates-list .template-row .info { flex: 1; text-align: left; min-width: 0; }
+    .templates-list .template-row .info .k { font-weight: 700; color: var(--me-color-primary-50, #163D45); font-size: 14px; }
+    .templates-list .template-row .info .v { font-size: 14px; color: var(--me-color-primary-50, #163D45); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 16px; margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--me-color-neutral-20, #E2E2E9); }
+
+    /* ============================================================
+       OVERLAY — modelo de folha (SheetTemplateModal.vue) — versão NOVA (sem linhas)
+       ============================================================ */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(22, 22, 29, 0.45);
+      display: none; align-items: center; justify-content: center; padding: 24px;
+    }
+    .overlay.is-open { display: flex; }
+    .sheet-modal {
+      width: min(1152px, 92vw); max-height: 88vh;
+      background: var(--me-color-white, #fff);
+      border-radius: var(--me-radius-l, 8px); box-shadow: var(--me-shadow-overlay);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sheet-modal__header {
+      flex: none; padding: 16px 24px;
+      border-bottom: 1px solid var(--me-color-neutral-30, #D8D8E2);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .sheet-name {
+      font-weight: 700; font-size: 18px; color: var(--me-color-text, #16161D);
+      border: 0; border-bottom: 2px dashed var(--me-color-neutral-30, #D8D8E2);
+      background: none; font-family: inherit; padding: 4px 2px; letter-spacing: inherit; min-width: 260px;
+    }
+    .sheet-name:focus { outline: none; border-bottom-color: var(--me-color-primary-30, #2F7F91); }
+    .sheet-modal__header .close {
+      border: 0; background: none; cursor: pointer; color: var(--me-color-text-muted, #68688D);
+      display: inline-flex; padding: 4px; border-radius: var(--me-radius-s, 4px);
+    }
+    .sheet-modal__header .close:hover { background: var(--me-color-neutral-10, #F0F0F4); }
+
+    .sheet-modal__body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+    /* ---- lista vertical de colunas (novo layout) ---- */
+    .cols-panel { width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 24px; }
+    .cols-help { font-size: 13px; line-height: 18px; color: var(--me-color-text-muted, #68688D); margin: 0; text-align: left; }
+
+    .col-group { display: flex; flex-direction: column; gap: 8px; }
+    .col-group__head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+    .col-group__title {
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--me-color-secondary-10, #68688D);
+    }
+    .col-group__count {
+      font-size: 12px; font-weight: 700; color: var(--me-color-secondary-10, #68688D);
+      background: var(--me-color-neutral-10, #F0F0F4); border-radius: 999px; padding: 1px 8px;
+    }
+
+    .col-item {
+      display: grid; grid-template-columns: 28px 1fr auto auto; align-items: center; gap: 12px;
+      padding: 8px 12px; background: var(--me-color-white, #fff);
+      border: 1px solid var(--me-color-neutral-20, #E2E2E9); border-radius: var(--me-radius-m, 6px);
+    }
+    .col-item + .col-item { margin-top: 8px; }
+    .col-item--fixed { background: var(--me-color-neutral-5, #FAFAFA); }
+    .col-item--custom { cursor: default; }
+    .col-item--dragging { opacity: .45; }
+    .col-item--drop-target { box-shadow: inset 0 2px 0 var(--me-color-primary-30, #2F7F91); }
+
+    .col-item__index { text-align: center; font-size: 13px; font-weight: 700; color: var(--me-color-neutral-40, #BCBCCD); }
+    .col-item__handle { display: inline-flex; justify-content: center; color: var(--me-color-neutral-40, #BCBCCD); cursor: grab; }
+    .col-item__handle:active { cursor: grabbing; }
+    .col-item__handle me-icon { font-size: 20px; }
+    .col-item__name { font-size: 14px; font-weight: 600; color: var(--me-color-secondary-20, #52526F); text-align: left; }
+
+    .col-name-input {
+      width: 100%; font-family: inherit; font-size: 14px; font-weight: 500; color: var(--me-color-text, #16161D);
+      border: 1px solid var(--me-color-neutral-30, #D8D8E2); border-radius: var(--me-radius-s, 4px);
+      padding: 7px 10px; background: var(--me-color-white, #fff); letter-spacing: inherit;
+    }
+    .col-name-input:focus { outline: none; border-color: var(--me-color-primary-30, #2F7F91); box-shadow: var(--me-focus-ring); }
+    .col-name-input::placeholder { color: var(--me-color-neutral-50, #9E9EB7); font-style: italic; }
+
+    /* me-select ocupa toda a célula, até o selo de tipo (remove o max-width:320 do host) */
+    .col-name-select { display: block; width: 100%; max-width: none !important; }
+    .col-name-select::part(base) { width: 100%; max-width: none; }
+
+    .type-badge {
+      font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px;
+      background: var(--me-color-neutral-10, #F0F0F4); color: var(--me-color-secondary-10, #68688D); white-space: nowrap;
+    }
+    .lock { display: inline-flex; color: var(--me-color-neutral-40, #BCBCCD); }
+    .lock me-icon { font-size: 18px; }
+    .row-del {
+      border: 0; background: none; cursor: pointer; color: var(--me-color-negative-50, #DA1E28);
+      display: inline-flex; padding: 4px; border-radius: var(--me-radius-s, 4px);
+    }
+    .row-del:hover { background: var(--me-color-negative-5, #FCE9EA); }
+    .row-del me-icon { font-size: 20px; }
+
+    .col-empty { font-size: 13px; color: var(--me-color-text-muted, #68688D); padding: 8px 4px; text-align: left; }
+
+    /* botão "Adicionar coluna" — secundário (outlined) do bricks, largura total */
+    .add-col-full { display: block; width: 100%; margin-top: 8px; }
+    .add-col-full::part(base) { width: 100%; }
+
+    .sheet-modal__footer {
+      flex: none; padding: 16px 24px; border-top: 1px solid var(--me-color-neutral-30, #D8D8E2);
+      display: flex; justify-content: flex-end; gap: 16px;
+    }
+
+    /* ============================================================
+       NOTA DO PROTÓTIPO (flutuante, fora da UI)
+       ============================================================ */
+    .proto-note {
+      position: fixed; right: 16px; bottom: 16px; z-index: 100; max-width: 340px;
+      background: var(--me-color-secondary-50, #16161D); color: #fff;
+      border-radius: var(--me-radius-l, 8px); box-shadow: var(--me-shadow-overlay);
+      font-size: 12px; line-height: 17px; overflow: hidden;
+    }
+    .proto-note__head {
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+      background: rgba(255,255,255,.06); cursor: pointer; font-weight: 700;
+    }
+    .proto-note__head me-icon { font-size: 16px; }
+    .proto-note__head .spacer { flex: 1; }
+    .proto-note__body { padding: 12px; display: none; color: #E2E2E9; }
+    .proto-note.is-open .proto-note__body { display: block; }
+    .proto-note__body p { margin: 0 0 8px; }
+    .proto-note__body code { background: rgba(255,255,255,.12); padding: 1px 5px; border-radius: 4px; }
+    .proto-note__body a { color: var(--me-color-primary-10, #84C8D7); }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       MODAL "EDITAR ESCALA" (EditScheduleModal/index.vue)
+       ============================================================ -->
+  <div class="edit-modal">
+    <div class="edit-modal__header">
+      <p>Editar Escala</p>
+    </div>
+
+    <div class="edit-modal__body">
+      <!-- NAV LATERAL -->
+      <nav class="nav" id="nav">
+        <button class="nav__item" data-tab="basico">
+          <me-icon name="hospital-building"></me-icon><span>Informações básicas</span>
+        </button>
+        <button class="nav__item" data-tab="requisitos">
+          <me-icon name="clipboard-list-outline"></me-icon><span>Requisitos da escala</span>
+        </button>
+        <button class="nav__item" data-tab="trocas">
+          <me-icon name="swap-horizontal"></me-icon><span>Trocas e jornada</span>
+        </button>
+
+        <span class="nav__section">Políticas</span>
+        <button class="nav__item" data-tab="restricao">
+          <me-icon name="file-document-outline"></me-icon><span>Política de restrição</span>
+        </button>
+        <button class="nav__item is-active" data-tab="registro">
+          <me-icon name="location-enter"></me-icon><span>Política de registro de plantão</span>
+        </button>
+        <button class="nav__item" data-tab="pagamento">
+          <me-icon name="cash-multiple"></me-icon><span>Política de pagamento</span>
+        </button>
+      </nav>
+
+      <!-- COLUNA DE CONTEÚDO -->
+      <div class="content-col">
+        <div class="content">
+          <h2 id="tab-title">Política de registro de plantão</h2>
+
+          <!-- ESTADO A — lista de políticas -->
+          <div id="view-list">
+            <div class="policy-toolbar">
+              <div class="search">
+                <me-input label="Buscar política">
+                  <me-icon slot="start" name="magnify"></me-icon>
+                </me-input>
+              </div>
+              <div class="right">
+                <div class="legend">
+                  <span class="item"><span class="dot dot--vigente"></span>Em vigência</span>
+                  <span class="item"><span class="dot dot--vencida"></span>Vencida</span>
+                  <span class="item"><span class="dot dot--futura"></span>Futura</span>
+                </div>
+                <me-button appearance="outlined" size="small">
+                  <me-icon slot="start" name="plus"></me-icon>Nova política
+                </me-button>
+              </div>
+            </div>
+
+            <div class="policy-grid">
+              <div class="policy-grid__head">
+                <div>Nome</div><div>Período</div><div>Criado por</div>
+                <div class="actions-col">Ações</div>
+              </div>
+
+              <div class="policy-grid__row">
+                <div class="name"><span class="dot dot--vigente"></span>Registro por folha — Clínica Médica</div>
+                <div class="muted">01/01/2026 à 31/12/2026</div>
+                <div class="muted">Ana Ribeiro</div>
+                <div class="actions">
+                  <button class="icon-btn" title="Editar" data-edit-policy>
+                    <me-icon name="pencil-outline"></me-icon>
+                  </button>
+                  <me-switch checked size="small" title="Desativar"></me-switch>
+                </div>
+              </div>
+
+              <div class="policy-grid__row">
+                <div class="name"><span class="dot dot--futura"></span>Registro por folha — Pediatria</div>
+                <div class="muted">01/09/2026 à Indeterminado</div>
+                <div class="muted">Ana Ribeiro</div>
+                <div class="actions">
+                  <button class="icon-btn" title="Editar" data-edit-policy>
+                    <me-icon name="pencil-outline"></me-icon>
+                  </button>
+                  <me-switch checked size="small" title="Desativar"></me-switch>
+                </div>
+              </div>
+
+              <div class="policy-grid__row">
+                <div class="name"><span class="dot dot--vencida"></span>Registro por folha — Pronto-socorro (2025)</div>
+                <div class="muted">01/01/2025 à 31/12/2025</div>
+                <div class="muted">Carlos Menezes</div>
+                <div class="actions">
+                  <button class="icon-btn" title="Editar" data-edit-policy>
+                    <me-icon name="pencil-outline"></me-icon>
+                  </button>
+                  <me-switch size="small" title="Ativar"></me-switch>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ESTADO B — edição da política -->
+          <div id="view-form" hidden>
+            <div class="form-title">
+              <button class="icon-btn" id="back-to-list" title="Voltar à lista"><me-icon name="arrow-left"></me-icon></button>
+              <h3>Editar política de registro de plantão</h3>
+            </div>
+            <p class="form-sub">Vigência do vínculo entre escala e a política</p>
+
+            <input class="policy-name" value="Registro por folha — Clínica Médica" aria-label="Nome da política" />
+
+            <div class="section">
+              <p class="section__title">Vigência</p>
+              <div class="grid-2">
+                <me-input label="Início da vigência" type="date" value="2026-01-01">
+                  <me-icon slot="end" name="calendar"></me-icon>
+                </me-input>
+                <me-input label="Fim da vigência" type="date" value="2026-12-31">
+                  <me-icon slot="end" name="calendar"></me-icon>
+                </me-input>
+              </div>
+              <div class="switch-row">
+                <me-switch size="small"></me-switch><span>Fim de vigência indeterminado</span>
+              </div>
+            </div>
+
+            <div class="section">
+              <p class="section__title">Modalidade de registro</p>
+              <div class="grid-2">
+                <me-select label="Modalidade de registro" name="modalidade" class="full-select">
+                  <me-select-option value="folha" selected>Folha de monitoramento</me-select-option>
+                  <me-select-option value="externo">Aplicativo externo</me-select-option>
+                  <me-select-option value="app">Minha Escala App</me-select-option>
+                  <me-select-option value="nao-diaria">Folha não diária</me-select-option>
+                </me-select>
+              </div>
+            </div>
+
+            <div class="section">
+              <p class="section__title">Tolerâncias de registro</p>
+              <div class="grid-2">
+                <me-input label="Tolerância de atraso" type="number" value="15" placeholder="minutos"></me-input>
+                <me-input label="Tolerância de saída antecipada" type="number" value="15" placeholder="minutos"></me-input>
+              </div>
+            </div>
+
+            <div class="section">
+              <p class="section__title">Limite de envio</p>
+              <div class="grid-2">
+                <me-input label="Limite de envio" type="number" value="48" placeholder="horas"></me-input>
+                <me-select label="Cálculo de horas" name="calculo">
+                  <me-select-option value="uteis" selected>Horas Úteis</me-select-option>
+                  <me-select-option value="corridas">Horas Corridas</me-select-option>
+                </me-select>
+              </div>
+            </div>
+
+            <!-- SEÇÃO "MODELOS DA FOLHA" — abre a config do modelo (overlay) -->
+            <div class="section">
+              <p class="section__title">Modelos da folha</p>
+              <div class="templates-list" id="templates-list">
+                <div class="template-row">
+                  <div class="info">
+                    <div class="k">Nome do modelo</div>
+                    <div class="v">Folha padrão 10L</div>
+                  </div>
+                  <me-button appearance="outlined" size="small" data-open-sheet="Folha padrão 10L">
+                    <me-icon slot="start" name="pencil-outline"></me-icon>Editar
+                  </me-button>
+                  <me-button appearance="outlined" variant="danger" size="small" data-remove-template>
+                    <me-icon slot="start" name="trash-can-outline"></me-icon>Excluir
+                  </me-button>
+                </div>
+              </div>
+              <me-button appearance="outlined" data-open-sheet="Novo Modelo de Folha">
+                <me-icon slot="start" name="plus"></me-icon>Novo modelo
+              </me-button>
+            </div>
+
+            <div class="form-actions">
+              <me-button appearance="outlined" id="cancel-form">Cancelar</me-button>
+              <me-button>Salvar Alterações</me-button>
+            </div>
+          </div>
+
+          <!-- Estados das outras abas (fora de escopo do protótipo) -->
+          <div id="view-stub" hidden>
+            <div class="stub">
+              <me-icon name="cog-outline"></me-icon>
+              <div><strong id="stub-name">—</strong></div>
+              <div>Esta aba está fora do escopo deste protótipo.<br/>O foco é a configuração do modelo de folha (Política de registro de plantão).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-footer">
+          <div class="row">
+            <me-button appearance="outlined">Fechar</me-button>
+            <me-button>Salvar</me-button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       OVERLAY — CONFIG DO MODELO DE FOLHA (SheetTemplateModal.vue) — versão NOVA
+       Sem o bloco de "ajuste de linhas" (linhas 82-110 do original removidas)
+       ============================================================ -->
+  <div class="overlay" id="sheet-overlay">
+    <div class="sheet-modal">
+      <div class="sheet-modal__header">
+        <input class="sheet-name" id="sheet-name" value="Folha padrão 10L" aria-label="Nome do modelo" />
+        <button class="close" id="sheet-close" title="Fechar"><me-icon name="close"></me-icon></button>
+      </div>
+
+      <div class="sheet-modal__body">
+        <div class="cols-panel">
+          <p class="cols-help">
+            Defina as colunas da folha, de cima para baixo, na ordem em que aparecem.
+            As colunas fixas vêm do modelo e não podem ser alteradas.
+          </p>
+
+          <div class="col-group">
+            <div class="col-group__head">
+              <span class="col-group__title">Colunas fixas</span>
+              <span class="col-group__count" id="fixed-count">9</span>
+            </div>
+            <div id="fixed-list"><!-- injetadas por JS --></div>
+          </div>
+
+          <div class="col-group">
+            <div class="col-group__head">
+              <span class="col-group__title">Colunas adicionais</span>
+              <span class="col-group__count" id="custom-count">0</span>
+            </div>
+            <div id="custom-list"><!-- injetadas por JS --></div>
+            <me-button appearance="outlined" class="add-col-full" id="add-col" data-testid="add-column-button">
+              <me-icon slot="start" name="plus"></me-icon>Adicionar coluna
+            </me-button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sheet-modal__footer">
+        <me-button appearance="outlined" id="sheet-close-2">Fechar</me-button>
+        <me-button id="sheet-save">Salvar</me-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTA DO PROTÓTIPO -->
+  <div class="proto-note" id="proto-note">
+    <div class="proto-note__head" id="proto-note-head">
+      <me-icon name="flask-outline"></me-icon>
+      <span>Nota do protótipo</span>
+      <span class="spacer"></span>
+      <me-icon name="chevron-up" id="proto-note-chevron"></me-icon>
+    </div>
+    <div class="proto-note__body">
+      <p><strong>PRD 32 · me-bricks v0.5.5.</strong> Caminho: Editar Escala → aba <em>Política de registro de plantão</em> → editar política → <em>Modelos da folha</em> → <strong>configuração do modelo de folha</strong>.</p>
+      <p>Esta é a <strong>versão nova</strong> da config do modelo: o bloco de <code>ajuste de linhas</code> (contagem de linhas <code>rows</code> + "Nova linha") foi removido — passa a ser exclusivo das telas do outro protótipo (preenchimento pelo auditor).</p>
+      <p><strong>Proposta de layout:</strong> colunas em <em>lista vertical</em> (fixas × adicionais), com edição inline, tipo derivado e reordenação por arraste — no lugar dos chips horizontais + popover do <code>SheetTemplateModal.vue</code>.</p>
+    </div>
+  </div>
+
+  <script type="module">
+    // ---------- modelo de colunas (novo layout: lista vertical) ----------
+    // FIXED_COLUMNS para modalidade FOLHA (SheetTemplateModal.vue:176-186)
+    const FIXED_COLUMNS = [
+      'Nome do médico', 'CRM', 'Data', 'Jornada início', 'Jornada Fim',
+      'Entrada', 'Ass. e Carimbo Entrada', 'Saída', 'Ass. e Carimbo Saída'
+    ];
+    const COLUMN_OPTIONS = ['Setor', 'Especialidade', 'Valor do plantão'];
+    // tipo derivado (detectColumnType do PRD) — só leitura, ajuda de leitura
+    const TYPE_MAP = {
+      'Nome do médico': 'Texto', 'CRM': 'Texto', 'Data': 'Data',
+      'Jornada início': 'Hora', 'Jornada Fim': 'Hora', 'Entrada': 'Hora',
+      'Ass. e Carimbo Entrada': 'Checkbox', 'Saída': 'Hora', 'Ass. e Carimbo Saída': 'Checkbox',
+      'Setor': 'Texto', 'Especialidade': 'Texto', 'Valor do plantão': 'Número'
+    };
+    const typeOf = (name) => TYPE_MAP[name] || 'Texto';
+
+    // colunas adicionais (editáveis); as fixas vêm de FIXED_COLUMNS
+    let customColumns = ['Setor', 'Especialidade'];
+    let dragIndex = null;
+
+    const fixedList = document.getElementById('fixed-list');
+    const customList = document.getElementById('custom-list');
+    const fixedCount = document.getElementById('fixed-count');
+    const customCount = document.getElementById('custom-count');
+
+    const makeBadge = (name) => {
+      const b = document.createElement('span');
+      b.className = 'type-badge'; b.textContent = typeOf(name); return b;
+    };
+
+    function renderFixed() {
+      fixedList.innerHTML = '';
+      FIXED_COLUMNS.forEach((col, i) => {
+        const row = document.createElement('div');
+        row.className = 'col-item col-item--fixed';
+        row.innerHTML = `<span class="col-item__index">${i + 1}</span>`;
+        const name = document.createElement('span');
+        name.className = 'col-item__name'; name.textContent = col;
+        row.appendChild(name);
+        row.appendChild(makeBadge(col));
+        const lock = document.createElement('span');
+        lock.className = 'lock'; lock.title = 'Coluna fixa do modelo';
+        lock.innerHTML = '<me-icon name="lock-outline"></me-icon>';
+        row.appendChild(lock);
+        fixedList.appendChild(row);
+      });
+      fixedCount.textContent = FIXED_COLUMNS.length;
+    }
+
+    function renderCustom() {
+      customList.innerHTML = '';
+      if (!customColumns.length) {
+        const empty = document.createElement('div');
+        empty.className = 'col-empty';
+        empty.textContent = 'Nenhuma coluna adicional. Use "Adicionar coluna" abaixo.';
+        customList.appendChild(empty);
+      }
+      customColumns.forEach((col, i) => {
+        const row = document.createElement('div');
+        row.className = 'col-item col-item--custom';
+
+        // arraste só pela alça — mantém o me-select clicável
+        const handle = document.createElement('span');
+        handle.className = 'col-item__handle'; handle.title = 'Arraste para reordenar';
+        handle.draggable = true;
+        handle.innerHTML = '<me-icon name="drag-vertical"></me-icon>';
+        row.appendChild(handle);
+
+        const bdg = makeBadge(col);
+
+        // dropdown do me-bricks (me-select) — seleção simples pela lista
+        const select = document.createElement('me-select');
+        select.className = 'col-name-select';
+        select.setAttribute('placeholder', 'Selecionar coluna');
+        select.setAttribute('size', 'small');
+        select.setAttribute('aria-label', 'Nome da coluna ' + (FIXED_COLUMNS.length + i + 1));
+        COLUMN_OPTIONS.forEach((opt) => {
+          const o = document.createElement('me-select-option');
+          o.setAttribute('value', opt);
+          o.textContent = opt;
+          if (opt === col) o.setAttribute('selected', '');
+          select.appendChild(o);
+        });
+        select.addEventListener('change', (e) => {
+          customColumns[i] = (e.detail && e.detail.value) || '';
+          bdg.textContent = typeOf(customColumns[i]);
+        });
+        row.appendChild(select);
+        row.appendChild(bdg);
+
+        const del = document.createElement('button');
+        del.className = 'row-del'; del.title = 'Excluir coluna';
+        del.innerHTML = '<me-icon name="trash-can-outline"></me-icon>';
+        del.addEventListener('click', () => { customColumns.splice(i, 1); renderCustom(); });
+        row.appendChild(del);
+
+        // drag & drop — reordena apenas entre as adicionais (gatilho: alça)
+        handle.addEventListener('dragstart', () => { dragIndex = i; row.classList.add('col-item--dragging'); });
+        handle.addEventListener('dragend', () => { dragIndex = null; row.classList.remove('col-item--dragging'); renderCustom(); });
+        row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('col-item--drop-target'); });
+        row.addEventListener('dragleave', () => row.classList.remove('col-item--drop-target'));
+        row.addEventListener('drop', (e) => {
+          e.preventDefault();
+          if (dragIndex === null || dragIndex === i) return;
+          const [moved] = customColumns.splice(dragIndex, 1);
+          customColumns.splice(i, 0, moved);
+          dragIndex = null;
+          renderCustom();
+        });
+
+        customList.appendChild(row);
+      });
+      customCount.textContent = customColumns.length;
+    }
+
+    function renderColumns() { renderFixed(); renderCustom(); }
+    renderColumns();
+
+    // Adicionar coluna: cria linha editável e foca (SheetTemplateModal.vue:235)
+    document.getElementById('add-col').addEventListener('click', () => {
+      customColumns.push('');
+      renderCustom();
+      const inputs = customList.querySelectorAll('.col-name-input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    // ---------- navegação lista <-> form ----------
+    const viewList = document.getElementById('view-list');
+    const viewForm = document.getElementById('view-form');
+    const viewStub = document.getElementById('view-stub');
+    const tabTitle = document.getElementById('tab-title');
+    const stubName = document.getElementById('stub-name');
+
+    function showView(name) {
+      viewList.hidden = name !== 'list';
+      viewForm.hidden = name !== 'form';
+      viewStub.hidden = name !== 'stub';
+    }
+
+    document.querySelectorAll('[data-edit-policy]').forEach((btn) => {
+      btn.addEventListener('click', () => showView('form'));
+    });
+    document.getElementById('back-to-list').addEventListener('click', () => showView('list'));
+    document.getElementById('cancel-form').addEventListener('click', () => showView('list'));
+
+    // ---------- overlay do modelo de folha ----------
+    const overlay = document.getElementById('sheet-overlay');
+    const sheetName = document.getElementById('sheet-name');
+    function openSheet(name) {
+      sheetName.value = name;
+      // "Novo modelo": só as colunas fixas, sem adicionais (SheetTemplateModal.vue:204)
+      customColumns = (name === 'Novo Modelo de Folha') ? [] : ['Setor', 'Especialidade'];
+      renderColumns();
+      overlay.classList.add('is-open');
+    }
+    function closeSheet() { overlay.classList.remove('is-open'); }
+
+    document.querySelectorAll('[data-open-sheet]').forEach((btn) => {
+      btn.addEventListener('click', () => openSheet(btn.getAttribute('data-open-sheet')));
+    });
+    document.getElementById('sheet-close').addEventListener('click', closeSheet);
+    document.getElementById('sheet-close-2').addEventListener('click', closeSheet);
+    document.getElementById('sheet-save').addEventListener('click', closeSheet);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSheet(); });
+
+    // ---------- nav de abas (só "registro" é interativa) ----------
+    document.querySelectorAll('.nav__item').forEach((item) => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav__item').forEach((i) => i.classList.remove('is-active'));
+        item.classList.add('is-active');
+        const tab = item.dataset.tab;
+        tabTitle.textContent = item.querySelector('span').textContent;
+        if (tab === 'registro') { showView('list'); }
+        else { stubName.textContent = item.querySelector('span').textContent; showView('stub'); }
+      });
+    });
+
+    // ---------- estado inicial: abre direto na config do modelo de folha ----------
+    // A tela-alvo do protótipo é o modelo de folha; o Editar Escala + form ficam
+    // atrás como contexto (feche o modal para navegar por eles).
+    showView('form');
+    openSheet('Folha padrão 10L');
+
+    // ---------- nota do protótipo (toggle) ----------
+    const note = document.getElementById('proto-note');
+    note.classList.add('is-open');
+    document.getElementById('proto-note-head').addEventListener('click', () => {
+      note.classList.toggle('is-open');
+      document.getElementById('proto-note-chevron').setAttribute(
+        'name', note.classList.contains('is-open') ? 'chevron-up' : 'chevron-down'
+      );
+    });
+  </script>
+</body>
+</html>
