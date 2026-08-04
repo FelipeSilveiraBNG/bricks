@@ -277,27 +277,6 @@
       flex: none; padding: 16px 24px; border-top: 1px solid var(--me-color-neutral-30, #D8D8E2);
       display: flex; justify-content: flex-end; gap: 16px;
     }
-
-    /* ============================================================
-       NOTA DO PROTÓTIPO (flutuante, fora da UI)
-       ============================================================ */
-    .proto-note {
-      position: fixed; right: 16px; bottom: 16px; z-index: 100; max-width: 340px;
-      background: var(--me-color-secondary-50, #16161D); color: #fff;
-      border-radius: var(--me-radius-l, 8px); box-shadow: var(--me-shadow-overlay);
-      font-size: 12px; line-height: 17px; overflow: hidden;
-    }
-    .proto-note__head {
-      display: flex; align-items: center; gap: 8px; padding: 10px 12px;
-      background: rgba(255,255,255,.06); cursor: pointer; font-weight: 700;
-    }
-    .proto-note__head me-icon { font-size: 16px; }
-    .proto-note__head .spacer { flex: 1; }
-    .proto-note__body { padding: 12px; display: none; color: #E2E2E9; }
-    .proto-note.is-open .proto-note__body { display: block; }
-    .proto-note__body p { margin: 0 0 8px; }
-    .proto-note__body code { background: rgba(255,255,255,.12); padding: 1px 5px; border-radius: 4px; }
-    .proto-note__body a { color: var(--me-color-primary-10, #84C8D7); }
   </style>
 </head>
 <body>
@@ -554,21 +533,6 @@
     </div>
   </div>
 
-  <!-- NOTA DO PROTÓTIPO -->
-  <div class="proto-note" id="proto-note">
-    <div class="proto-note__head" id="proto-note-head">
-      <me-icon name="flask-outline"></me-icon>
-      <span>Nota do protótipo</span>
-      <span class="spacer"></span>
-      <me-icon name="chevron-up" id="proto-note-chevron"></me-icon>
-    </div>
-    <div class="proto-note__body">
-      <p><strong>PRD 32 · me-bricks v0.5.5.</strong> Caminho: Editar Escala → aba <em>Política de registro de plantão</em> → editar política → <em>Modelos da folha</em> → <strong>configuração do modelo de folha</strong>.</p>
-      <p>Esta é a <strong>versão nova</strong> da config do modelo: o bloco de <code>ajuste de linhas</code> (contagem de linhas <code>rows</code> + "Nova linha") foi removido — passa a ser exclusivo das telas do outro protótipo (preenchimento pelo auditor).</p>
-      <p><strong>Proposta de layout:</strong> colunas em <em>lista vertical</em> (fixas × adicionais), com edição inline, tipo derivado e reordenação por arraste — no lugar dos chips horizontais + popover do <code>SheetTemplateModal.vue</code>.</p>
-    </div>
-  </div>
-
   <script type="module">
     // ---------- modelo de colunas (novo layout: lista vertical) ----------
     // FIXED_COLUMNS para modalidade FOLHA (SheetTemplateModal.vue:176-186)
@@ -752,16 +716,6 @@
     // atrás como contexto (feche o modal para navegar por eles).
     showView('form');
     openSheet('Folha padrão 10L');
-
-    // ---------- nota do protótipo (toggle) ----------
-    const note = document.getElementById('proto-note');
-    note.classList.add('is-open');
-    document.getElementById('proto-note-head').addEventListener('click', () => {
-      note.classList.toggle('is-open');
-      document.getElementById('proto-note-chevron').setAttribute(
-        'name', note.classList.contains('is-open') ? 'chevron-up' : 'chevron-down'
-      );
-    });
   </script>
 </body>
 </html>
