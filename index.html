@@ -1219,8 +1219,13 @@ pag.movePageTo(3);</pre>
         </div>
       </me-page>
 
-      <!-- Vitrine das demos da pasta demo/. Cada arquivo novo em demo/ precisa de
-           um card aqui — não há listagem de diretório num site estático. -->
+      <!-- Vitrine das demos da pasta demo/. A lista é montada em runtime pelo
+           bloco "Vitrine de demos" no script do fim do arquivo: criar um
+           arquivo em demo/ com os metas demo-title/demo-description basta, não
+           se edita mais nada aqui.
+           Os cards abaixo são o fallback de quem abre a página sem rede — um
+           retrato, então podem ficar atrasados; a lista de verdade é a de
+           runtime. -->
       <me-page name="demos">
         <h2>Demos</h2>
         <p class="desc">
@@ -1229,7 +1234,7 @@ pag.movePageTo(3);</pre>
           copie o trecho que precisar. Como são páginas fora do roteador desta documentação,
           use o voltar do navegador para retornar.
         </p>
-        <div class="cards">
+        <div class="cards" id="demos-cards">
           <a href="demo/app-shell.html">
             <strong>App shell</strong>
             <small>protótipo completo: sidebar + page header + cards</small>
@@ -1245,6 +1250,10 @@ pag.movePageTo(3);</pre>
           <a href="demo/PRD32-auditoria-folha-de-monitoramento.html">
             <strong>Auditoria de folha (PRD 32)</strong>
             <small>jornada J1 com cabeçalho fiel ao app</small>
+          </a>
+          <a href="demo/config-modelo-de-folha.html">
+            <strong>Config do modelo de folha (PRD 32)</strong>
+            <small>colunas em lista vertical, sem ajuste de linhas</small>
           </a>
         </div>
       </me-page>
@@ -1274,6 +1283,96 @@ pag.movePageTo(3);</pre>
       } catch {
         // rede indisponível: o fallback embutido continua valendo.
       }
+    })();
+
+    // ===== Vitrine de demos: descobre demo/*.html em runtime =====
+    // Antes cada demo nova exigia um card escrito à mão em #/demos, e a lista
+    // atrasava. Site estático não tem listagem de diretório garantida, então
+    // tentamos duas fontes, na ordem em que cada uma é a confiável:
+    //   1) listagem do servidor de dev — `npx serve .` responde /demo/ com um
+    //      índice HTML. É a única que enxerga arquivo ainda não commitado, ou
+    //      seja, o caso de quem está criando a demo agora;
+    //   2) API de conteúdo do GitHub — é o que vale no GitHub Pages, onde
+    //      /demo/ é 404. Só mostra o que já está na main.
+    // Se as duas falharem (offline, rate-limit), os cards embutidos no HTML
+    // continuam valendo — é para isso que eles existem.
+    (async () => {
+      const grade = document.getElementById('demos-cards');
+      if (!grade) return;
+
+      const REPO = 'FelipeSilveiraBNG/bricks';
+      const base = new URL('demo/', location.href);
+
+      /* Nomes de arquivo dentro de demo/, sem caminho. */
+      async function viaServidorLocal() {
+        const res = await fetch(base);
+        if (!res.ok) return []; // Pages devolve 404 aqui, e é o esperado
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        return [...doc.querySelectorAll('a[href]')]
+          .map((a) => new URL(a.getAttribute('href'), base))
+          // Só link para arquivo .html DIRETO em demo/. O teste contra
+          // base.pathname descarta o link de diretório-pai e protege do
+          // servidor que responde /demo/ com o index das docs (aí os hrefs
+          // resolvem para /demo/demo/... e caem fora).
+          .filter((u) => u.pathname.endsWith('.html') &&
+                         u.pathname.slice(base.pathname.length).indexOf('/') === -1 &&
+                         u.pathname.startsWith(base.pathname))
+          .map((u) => decodeURIComponent(u.pathname.slice(base.pathname.length)));
+      }
+
+      async function viaGitHub() {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/demo?ref=main`);
+        if (!res.ok) return [];
+        const itens = await res.json();
+        return itens
+          .filter((i) => i.type === 'file' && i.name.endsWith('.html'))
+          .map((i) => i.name);
+      }
+
+      /* Título e descrição do card vêm da própria demo, em <meta name="demo-*">:
+         criar a demo e aparecer na vitrine passa a ser o mesmo ato. Sem os metas
+         caímos no <title> e, por fim, no nome do arquivo.
+         Range porque só o começo do arquivo interessa e a maior demo passa de
+         150KB — daí os metas ficarem no topo do <head>. Servidor que ignore
+         Range devolve o arquivo inteiro e o parse segue igual. */
+      async function ficha(nome) {
+        const rotulo = nome.replace(/\.html$/i, '').replace(/[-_]+/g, ' ');
+        try {
+          const res = await fetch(new URL(nome, base), { headers: { Range: 'bytes=0-8191' } });
+          if (!res.ok) return { nome, titulo: rotulo, descricao: '' };
+          const cabeca = (await res.text()).split(/<\/head>/i)[0];
+          const doc = new DOMParser().parseFromString(cabeca, 'text/html');
+          const meta = (n) => doc.querySelector(`meta[name="${n}"]`)?.content?.trim() || '';
+          return {
+            nome,
+            titulo: meta('demo-title') || doc.querySelector('title')?.textContent.trim() || rotulo,
+            descricao: meta('demo-description'),
+          };
+        } catch {
+          return { nome, titulo: rotulo, descricao: '' };
+        }
+      }
+
+      let nomes = [];
+      try { nomes = await viaServidorLocal(); } catch { /* sem rede: tenta a API */ }
+      if (!nomes.length) { try { nomes = await viaGitHub(); } catch { /* fallback embutido */ } }
+      if (!nomes.length) return;
+
+      const fichas = (await Promise.all(nomes.map(ficha)))
+        .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+
+      // textContent, nunca innerHTML: título e descrição vêm de um arquivo lido
+      // por fetch, e a vitrine não é lugar de executar o que veio de lá.
+      grade.replaceChildren(...fichas.map((f) => {
+        const card = document.createElement('a');
+        card.href = `demo/${f.nome}`;
+        const titulo = document.createElement('strong');
+        titulo.textContent = f.titulo;
+        const descricao = document.createElement('small');
+        descricao.textContent = f.descricao || f.nome;
+        card.append(titulo, descricao);
+        return card;
+      }));
     })();
 
     // Marca no menu lateral a rota ativa do roteador de docs

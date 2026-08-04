@@ -57,8 +57,18 @@ import { dirname, join, relative, sep } from 'node:path';
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/* Arquivos que carregam a versão ATUAL — todos bumpam junto no release. */
-const ARQUIVOS_VERSIONADOS = ['README.md', 'AGENTS.md', 'index.html'];
+/*
+ * Arquivos que carregam a versão ATUAL — todos bumpam junto no release.
+ *   config-modelo-de-folha.html — demo que consome o CDN, como a PRD32-*.html,
+ *     mas aqui a escolha foi a oposta: acompanha o kit em vez de ficar pinada.
+ *     É protótipo em revisão, e revisar contra componente velho não serve.
+ */
+const ARQUIVOS_VERSIONADOS = [
+  'README.md',
+  'AGENTS.md',
+  'index.html',
+  'demo/config-modelo-de-folha.html',
+];
 
 /*
  * Arquivos que citam versões ANTIGAS de propósito e NÃO devem bumpar:

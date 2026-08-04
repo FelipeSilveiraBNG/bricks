@@ -21,14 +21,32 @@ python -m http.server
 Depois abra:
 
 - `index.html` — **showcase**: todos os componentes, variantes e snippets de código.
-  A rota `#/demos` lista todas as demos abaixo em cards; ao criar uma nova demo,
-  acrescente o card lá (site estático não lista diretório).
+  A rota `#/demos` monta os cards em runtime a partir dos arquivos de `demo/`, então
+  uma demo nova aparece sozinha: basta declarar o card no `<head>` dela (ver abaixo).
 - `demo/app-shell.html` — página completa composta (sidebar + header + cards + form).
 - `demo/pages.html` — mini-app com rotas por hash (`me-pages` + sidebar sincronizada).
 - `demo/registro-plantao.html` — tela de aprovações: filtros, tabela e ações em massa.
 - `demo/PRD32-auditoria-folha-de-monitoramento.html` — jornada J1 da auditoria de folha.
-  Único demo que carrega o kit pelo CDN, para abrir solto fora do repo — fica pinado na
-  tag contra a qual foi construído (ver `ARQUIVOS_HISTORICOS` em `tools/release.mjs`).
+  Carrega o kit pelo CDN, para abrir solto fora do repo, e fica pinado na tag contra a
+  qual foi construído (ver `ARQUIVOS_HISTORICOS` em `tools/release.mjs`).
+- `demo/config-modelo-de-folha.html` — config do modelo de folha do PRD 32: colunas em
+  lista vertical, sem o bloco de ajuste de linhas. Também carrega pelo CDN, mas
+  acompanha o kit a cada release (`ARQUIVOS_VERSIONADOS`).
+
+### Criando uma demo
+
+A vitrine de `#/demos` lê os arquivos de `demo/` em runtime — pela listagem do servidor
+estático quando você está local (inclusive arquivo ainda não commitado) e pela API de
+conteúdo do GitHub no Pages. O que ela precisa de você são dois metas no topo do `<head>`,
+antes do `<style>`:
+
+```html
+<meta name="demo-title" content="Registro de plantão" />
+<meta name="demo-description" content="tela de aprovações: filtros, tabela e ações em massa" />
+```
+
+Sem eles a demo ainda aparece, com o `<title>` no lugar do rótulo. Os cards escritos à mão
+que sobraram no `index.html` são só o fallback de quem abre a página sem rede.
 
 ## Usando num protótipo
 
