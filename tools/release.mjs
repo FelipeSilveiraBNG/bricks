@@ -23,6 +23,27 @@
  * release. A primeira pega o bump parcial (editou o README, esqueceu o AGENTS),
  * que é o erro provável; a segunda pega o release sem bump nenhum.
  *
+ * A TERCEIRA ASSERÇÃO é a de arquivos não classificados, e ela varre TRACKED +
+ * UNTRACKED (respeitando o .gitignore). Varrer só o índice, como fazia antes,
+ * deixava um arquivo NOVO invisível exatamente na hora útil: rodava-se --check
+ * antes de commitar, dava OK, e o CI reprovava depois — porque no commit o
+ * arquivo passou a ser rastreado e só então contou. Foi assim que a v0.5.0 saiu
+ * com CI vermelho. A mensagem dessa asserção aponta arquivo:linha e põe "apague
+ * o número" como primeira saída, porque nas primeiras vezes que ela reprovou a
+ * citação era prosa em comentário — e classificar o arquivo era a resposta
+ * errada.
+ *
+ * O BUMP IMPRIME o contexto de publicação (última tag, e aviso se os docs
+ * estavam numa versão nunca publicada). Não é trava: docs à frente da última tag
+ * é estado legítimo entre o commit de bump e o push da tag, como explicado
+ * acima. É que bumpar é fácil e publicar não — já aconteceu de os docs andarem
+ * 0.5.0 → 0.6.0 → 0.7.0 → 0.8.0 em quatro passos de trabalho com a última tag
+ * ainda em v0.4.6, e ninguém ver o acumulado até alguém estranhar o número.
+ *
+ * E O BUMP REVALIDA o que escreveu, antes de sugerir commit e tag. Antes ele
+ * reescrevia e ia embora, deixando os 12 lugares em estado não verificado até o
+ * CI conferir — longe do teclado. Agora o bump termina provado.
+ *
  * ISTO NÃO REMOVE A DUPLICAÇÃO, torna o drift immergível. Remover de vez exige
  * faixa semver na URL (@0.4 em vez de @v0.4.5, que o jsDelivr resolve para o
  * último patch) — e isso troca imutabilidade por patches automáticos, decisão
@@ -80,18 +101,39 @@ function ocorrencias(rel) {
   return achados;
 }
 
-/* Arquivos rastreados que citam versão fora das duas listas acima. Existe para
-   que um doc novo não se torne um 13º ponto de drift em silêncio. */
-function arquivosNaoClassificados() {
-  const rastreados = execFileSync('git', ['ls-files'], { cwd: RAIZ, encoding: 'utf8' })
-    .split('\n').filter(Boolean).map(normalizar);
+/*
+ * Arquivos que citam versão fora das duas listas acima. Existe para que um doc
+ * novo não se torne um 13º ponto de drift em silêncio.
+ *
+ * INCLUI UNTRACKED (--others --exclude-standard), e isso é o ponto todo. Com
+ * `git ls-files` puro a guarda só via o índice, então um arquivo NOVO com
+ * citação de versão era invisível justamente na hora em que ela importava: você
+ * rodava --check antes de commitar, dava OK, e o CI reprovava depois — porque no
+ * commit o arquivo passou a ser rastreado e só então contou. Foi assim que a
+ * v0.5.0 saiu vermelha (test/panel-clipping.html citava uma versão em
+ * comentário). --exclude-standard respeita o .gitignore, então node_modules e
+ * afins seguem de fora.
+ *
+ * Devolve as OCORRÊNCIAS (arquivo, linha, versão), não só os caminhos: a
+ * mensagem de erro precisa apontar a linha, senão sobra caçar num arquivo de
+ * 300 linhas qual das citações incomodou.
+ */
+function ocorrenciasNaoClassificadas() {
+  const listados = execFileSync(
+    'git', ['ls-files', '--cached', '--others', '--exclude-standard'],
+    { cwd: RAIZ, encoding: 'utf8' },
+  ).split('\n').filter(Boolean).map(normalizar);
+
   const conhecidos = new Set([...ARQUIVOS_VERSIONADOS, ...ARQUIVOS_HISTORICOS]);
-  return rastreados.filter((rel) => {
-    if (conhecidos.has(rel)) return false;
-    if (relative(RAIZ, join(RAIZ, rel)).startsWith('..')) return false;
-    try { return RE_VERSAO.test(ler(rel)) && (RE_VERSAO.lastIndex = 0, true); }
-    catch { return false; } // binário ou removido do disco
-  });
+  const achados = [];
+  // Set: `--cached --others` pode repetir um caminho em alguns estados do índice.
+  for (const rel of new Set(listados)) {
+    if (conhecidos.has(rel)) continue;
+    if (relative(RAIZ, join(RAIZ, rel)).startsWith('..')) continue;
+    try { achados.push(...ocorrencias(rel)); }
+    catch { /* binário, ou listado mas ausente do disco */ }
+  }
+  return achados;
 }
 
 function verificar(esperada) {
@@ -121,11 +163,24 @@ function verificar(esperada) {
   }
 
   /* 3) Nenhum ponto de drift novo e não classificado. */
-  const orfaos = arquivosNaoClassificados();
+  const orfaos = ocorrenciasNaoClassificadas();
   if (orfaos.length > 0) {
-    erros.push(`arquivo(s) citando versão fora das listas de tools/release.mjs: ${orfaos.join(', ')}\n` +
-               `  classifique cada um: ARQUIVOS_VERSIONADOS (bumpa no release) ou ` +
-               `ARQUIVOS_HISTORICOS (cita versão antiga de propósito)`);
+    const arquivos = [...new Set(orfaos.map((o) => o.arquivo))];
+    /* Aponta LINHA e versão de cada citação. Na prática as três primeiras vezes
+       que esta guarda reprovou, a citação era prosa em comentário — e as duas
+       opções que a mensagem oferecia eram as erradas. Por isso a terceira
+       alternativa vem primeiro na lista de saídas. */
+    const detalhe = orfaos
+      .map((o) => `      ${o.arquivo}:${o.linha}  →  ${o.versao}`)
+      .join('\n');
+    erros.push(
+      `${arquivos.length} arquivo(s) citando versão fora das listas de tools/release.mjs:\n` +
+      `${detalhe}\n` +
+      `  escolha uma saída para cada citação:\n` +
+      `    a) APAGUE o número, se for prosa descrevendo uma mudança ("migrado na\n` +
+      `       v0.7.0" etc.) — número em comentário envelhece e vira mentira;\n` +
+      `    b) ARQUIVOS_VERSIONADOS, se for uma URL/label que deve bumpar no release;\n` +
+      `    c) ARQUIVOS_HISTORICOS, se cita versão antiga de propósito.`);
   }
 
   if (erros.length > 0) {
@@ -137,6 +192,17 @@ function verificar(esperada) {
     .map((f) => `${f} (${achados.filter((a) => a.arquivo === f).length})`).join(', ');
   console.log(`OK — ${achados.length} ocorrências, todas ${distintas[0]}: ${porArquivo}` +
               (esperada ? `; confere com a tag ${esperada}` : ''));
+}
+
+/* Tags v* publicadas, da mais nova para a mais antiga. Tolerante: repo sem tags
+   ou sem git devolve lista vazia, e o bump segue — isto é informação, não trava. */
+function tagsPublicadas() {
+  try {
+    return execFileSync('git', ['tag', '--list', 'v*', '--sort=-v:refname'],
+      { cwd: RAIZ, encoding: 'utf8' }).split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function reescrever(alvo) {
@@ -158,6 +224,25 @@ function reescrever(alvo) {
     }
   }
 
+  /*
+   * Contexto de publicação, ANTES de reescrever. Existe porque bumpar é fácil e
+   * publicar não: já aconteceu de os docs andarem 0.5.0 → 0.6.0 → 0.7.0 → 0.8.0
+   * em quatro passos de trabalho enquanto a última tag seguia v0.4.6, e ninguém
+   * viu o acumulado até alguém estranhar o número. Aqui é informação, não trava:
+   * os docs à frente da última tag é estado LEGÍTIMO entre o commit de bump e o
+   * push da tag — é por isso que --expect só roda no push de tag.
+   */
+  const tags = tagsPublicadas();
+  const anterior = atuais.length === 1 ? atuais[0] : null;
+  console.log(`última tag publicada: ${tags[0] ?? '(nenhuma)'}`);
+  if (anterior && !tags.includes(anterior)) {
+    console.log(
+      `ATENÇÃO: os docs estavam em ${anterior}, que NÃO está publicada.\n` +
+      `  Bumpar agora empilha mais uma versão não publicada. Se a ${anterior} não\n` +
+      `  vai sair, o número a publicar provavelmente é outro — confira antes de tagear.`);
+  }
+  console.log('');
+
   let total = 0;
   for (const rel of ARQUIVOS_VERSIONADOS) {
     const antes = ler(rel);
@@ -167,6 +252,23 @@ function reescrever(alvo) {
     console.log(`  ${rel}: ${n} ocorrência(s)`);
     total += n;
   }
+
+  /*
+   * REVALIDA O QUE ACABOU DE SER ESCRITO, antes de sugerir commit e tag.
+   *
+   * Antes, o script reescrevia e ia embora: quem bumpava saía com os 12 lugares
+   * em estado NÃO verificado, e a validação só chegava depois — no push, pelo
+   * CI, longe do teclado. Rodar a mesma asserção aqui fecha essa lacuna e faz o
+   * bump terminar provado em vez de presumido.
+   *
+   * Vem ANTES do "próximos passos" de propósito: se a verificação reprovar,
+   * sugerir "git commit && git tag" seria orientação errada. E como verificar()
+   * encerra com exit 1, a reescrita já está no disco quando isso acontece — o
+   * que é o certo: você precisa ver o estado quebrado para consertar e rodar de
+   * novo, não um rollback silencioso.
+   */
+  console.log('');
+  verificar(null);
 
   console.log(`\n${total} string(s) reescritas para ${nova}. Próximos passos:\n` +
               `  git diff                     # revise\n` +
