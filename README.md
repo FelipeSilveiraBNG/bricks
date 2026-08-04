@@ -65,6 +65,10 @@ ele rotula a lista sem entrar nela:
 <meta name="demo-description" content="protótipos das telas do PRD 32, em revisão" />
 ```
 
+O `.nojekyll` na raiz do repo existe por causa desse `_`: o Jekyll do GitHub Pages não
+publica arquivo começando com underscore, e sem ele o rótulo funcionaria local e daria 404
+no Pages — a seção cairia no nome da pasta sem erro nenhum na tela. Não apague.
+
 Ao **mover** uma demo para uma pasta, corrija o caminho dela em `tools/release.mjs`
 (`ARQUIVOS_VERSIONADOS`/`ARQUIVOS_HISTORICOS`) se ela citar versão: no caminho antigo a
 entrada deixa de casar e o arquivo reaparece como citação não classificada, reprovando a

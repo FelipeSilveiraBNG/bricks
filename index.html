@@ -1396,6 +1396,9 @@ pag.movePageTo(3);</pre>
       // Arquivo com _ na frente não é demo. O _secao.html de uma pasta rotula a
       // subseção dela com os MESMOS metas de um card — daí ele passar por
       // ficha() como qualquer outro e sair da lista só aqui.
+      // DEPENDE do .nojekyll na raiz: o Jekyll do GitHub Pages não publica
+      // arquivo começando com _, e sem ele o rótulo 404 no Pages (só no Pages) e
+      // a seção cai no nome da pasta, sem erro nenhum na tela.
       const rotulos = new Map();
       const cards = [];
       for (const f of fichas) {
