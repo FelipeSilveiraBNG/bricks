@@ -183,7 +183,10 @@
     }
     .overlay.is-open { display: flex; }
     .sheet-modal {
-      width: min(1152px, 92vw); max-height: 88vh;
+      /* 760px da lista (.cols-panel) + 24px de padding de cada lado do body.
+         O 1152px do SheetTemplateModal.vue era para os chips horizontais; com a
+         lista vertical sobrava recuo lateral demais em 16:9. */
+      width: min(808px, 92vw); max-height: 88vh;
       background: var(--me-color-white, #fff);
       border-radius: var(--me-radius-l, 8px); box-shadow: var(--me-shadow-overlay);
       display: flex; flex-direction: column; overflow: hidden;
@@ -519,8 +522,8 @@
       <div class="sheet-modal__body">
         <div class="cols-panel">
           <p class="cols-help">
-            Defina as colunas da folha, de cima para baixo, na ordem em que aparecem.
-            As colunas fixas vêm do modelo e não podem ser alteradas.
+            Configure as colunas do modelo de folha, de cima para baixo, na ordem que são exibidos.
+            As colunas fixas são obrigatórias e não podem ser alteradas.
           </p>
 
           <div class="col-group">
