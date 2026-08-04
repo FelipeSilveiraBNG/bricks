@@ -35,6 +35,13 @@
      *   me-modal       size="large" ficava MAIS ESTREITO que o default em tela
      *                  pequena (312px contra 342px em 390px de viewport),
      *                  porque 80vw < calc(100vw - 48px) acima de 240px.
+     *   me-card        .header/.footer eram flex SEM wrap dentro de
+     *                  .card{overflow:hidden}: o que estourava era cortado, sem
+     *                  scroll. E o --padding fixo de 24px punha 48px (17%) de
+     *                  respiro num card de 280px — em card estreito o padding
+     *                  agora cai a 16px por CONTAINER query (largura do card,
+     *                  não da tela: um card de 280px num grid de desktop tem o
+     *                  mesmo aperto que um em mobile).
      *
      * MÉTODO — iframes com largura fixa. Media query avalia contra a viewport, e
      * a viewport de um iframe é a largura DELE: é o único jeito de testar três
@@ -73,8 +80,12 @@
     horizontal com a primeira alcançável, a paginação quebra em duas linhas
     dentro do host, os campos encolhem em vez de vazar a coluna, os cards do
     radio horizontal empilham, os dois × removíveis alcançam 24px de alvo, o
-    controle do checkbox alinha com a primeira linha do rótulo e o modal
-    <code>large</code> nunca é mais estreito que o default. Em 1200px tudo volta
+    controle do checkbox alinha com a primeira linha do rótulo, o modal
+    <code>large</code> nunca é mais estreito que o default e o footer do card
+    quebra linha em vez de ser cortado. Em qualquer largura de tela, o card com
+    menos de 360px usa padding de 16px (container query — mede a coluna dele,
+    não a viewport) e o <code>--padding</code> do consumidor vence sempre. Em
+    1200px tudo volta
     ao desenho de desktop: sidebar em fluxo, abas de largura igual, paginação em
     uma linha, campos no teto de 260/320px e o large de volta aos 80vw.
   </p>
@@ -129,6 +140,20 @@
           <me-radio value="b" appearance="card">Integral
             <span slot="description">Pagamento integral.</span></me-radio>
         </me-radio-group>
+      </section>
+      <section id="cartoes">
+        <me-card id="card-fluido">
+          <span slot="header">Plantões da semana</span>
+          Corpo.
+          <!-- Itens de largura FIXA no footer: sem wrap, estourariam o card e
+               seriam cortados pelo overflow:hidden (a regressão do item 9a). -->
+          <span slot="footer" style="flex:none;width:170px">A</span>
+          <span slot="footer" style="flex:none;width:170px">B</span>
+        </me-card>
+        <!-- Card estreito em QUALQUER viewport: simula a coluna de um grid de
+             3 no desktop — o caso que media query de tela erraria. -->
+        <me-card id="card-estreito" style="width:280px">Coluna estreita.</me-card>
+        <me-card id="card-override" style="width:280px; --padding:12px">Override.</me-card>
       </section>
       <section id="multilinha">
         <me-checkbox id="cb" name="u" value="c">Aceito assumir plantões noturnos na unidade Hospital Santa Casa de Misericórdia</me-checkbox>
@@ -221,6 +246,24 @@
             larguras: cards.map(largura),
             ultimoDentro: cards[cards.length - 1].getBoundingClientRect().right
                           <= d.documentElement.clientWidth + 0.5,
+          };
+        })(),
+        /* me-card: footer sem wrap era cortado pelo overflow:hidden do card; e
+           o padding responde à largura do CARD (container query), não à da
+           tela — por isso o esperado se decide pela largura medida do card. */
+        cartao: (() => {
+          const fluido = d.getElementById('card-fluido');
+          const pad = (id) => parseFloat(win.getComputedStyle(
+            d.getElementById(id).shadowRoot.querySelector('.body')).paddingLeft);
+          const itens = [...fluido.querySelectorAll('[slot="footer"]')];
+          const base = fluido.shadowRoot.querySelector('.card').getBoundingClientRect();
+          return {
+            larguraFluido: largura(fluido),
+            linhasFooter: new Set(itens.map((i) => Math.round(i.getBoundingClientRect().top))).size,
+            footerDentro: itens.every((i) => i.getBoundingClientRect().right <= base.right + 0.5),
+            padFluido: pad('card-fluido'),
+            padEstreito: pad('card-estreito'),
+            padOverride: pad('card-override'),
           };
         })(),
         /* Alvos de toque: o mínimo do WCAG 2.5.8 é 24×24. O do chip do me-select
@@ -343,6 +386,14 @@
       linhas.push(`  me-radio-group horizontal`);
       linhas.push(`    ${afirmar(m.cardsRadio.ultimoDentro, `${largura}px: último card do radio passa da borda`)}  último card dentro da tela`);
       linhas.push(`    ${afirmar(m.cardsRadio.linhas === (mobile ? 2 : 1), `${largura}px: esperava ${mobile ? 2 : 1} linha(s) de cards, veio ${m.cardsRadio.linhas}`)}  ${m.cardsRadio.linhas} linha(s) de cards (${m.cardsRadio.larguras.join('/')}px)`);
+
+      linhas.push(`  me-card`);
+      linhas.push(`    ${afirmar(m.cartao.linhasFooter === (mobile ? 2 : 1), `${largura}px: esperava footer do card em ${mobile ? 2 : 1} linha(s), veio ${m.cartao.linhasFooter}`)}  footer em ${m.cartao.linhasFooter} linha(s)`);
+      linhas.push(`    ${afirmar(m.cartao.footerDentro, `${largura}px: item do footer cortado pelo overflow:hidden do card`)}  nada cortado no footer`);
+      const padEsperado = m.cartao.larguraFluido < 360 ? 16 : 24;
+      linhas.push(`    ${afirmar(m.cartao.padFluido === padEsperado, `${largura}px: card de ${m.cartao.larguraFluido}px deveria ter padding ${padEsperado}px, veio ${m.cartao.padFluido}px`)}  padding ${m.cartao.padFluido}px num card de ${m.cartao.larguraFluido}px`);
+      linhas.push(`    ${afirmar(m.cartao.padEstreito === 16, `${largura}px: card de 280px deveria ter padding 16px pela container query, veio ${m.cartao.padEstreito}px`)}  card de 280px: ${m.cartao.padEstreito}px mesmo com a tela larga`);
+      linhas.push(`    ${afirmar(m.cartao.padOverride === 12, `${largura}px: --padding:12px do consumidor deveria vencer a container query, veio ${m.cartao.padOverride}px`)}  --padding do consumidor vence (${m.cartao.padOverride}px)`);
 
       linhas.push(`  alvos de toque (mínimo 24×24 — WCAG 2.5.8)`);
       linhas.push(`    ${afirmar(m.alvos.tagRemove[0] >= 24 && m.alvos.tagRemove[1] >= 24, `${largura}px: × do me-filter-tag tem ${m.alvos.tagRemove.join('×')}, abaixo de 24×24`)}  × do me-filter-tag: ${m.alvos.tagRemove.join('×')}`);
