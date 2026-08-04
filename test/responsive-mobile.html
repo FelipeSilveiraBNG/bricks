@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Responsividade em mobile (sidebar / abas / paginação) — me-bricks</title>
+  <title>Responsividade em mobile — me-bricks</title>
   <style>
     /*
-     * POR QUE ESTE TESTE EXISTE — três componentes quebravam o layout abaixo de
-     * 800px, e as três falhas foram MEDIDAS antes de serem corrigidas:
+     * POR QUE ESTE TESTE EXISTE — o kit não tinha estratégia de responsividade
+     * (uma media query de layout em 18 componentes), e as falhas abaixo foram
+     * todas MEDIDAS antes de serem corrigidas:
      *
      *   me-sidebar     288px em fluxo numa viewport de 390px deixavam o <main>
      *                  com 102px: o heading do me-page-header colapsava para 0
@@ -20,6 +21,20 @@
      *   me-pagination  total-pages=20 + first-last pedem 396px; sem wrap,
      *                  vazava 53px em 343px e 123px em 273px, também com metade
      *                  do excesso à esquerda (o « cortado pela borda).
+     *   me-input       width fixo de 260px, me-select de 320px: a 320px de
+     *   me-select      viewport o select vazava 31px da coluna, e no desktop
+     *                  nenhum dos dois acompanhava a coluna do formulário.
+     *   me-radio-group orientation=horizontal sem wrap: a 320px os dois cards
+     *                  ficavam com 163,5 e 132,8px (desiguais, porque o basis 0
+     *                  encolhe o segundo) e o segundo passava da borda.
+     *   me-filter-tag  o × tinha 14×14 de alvo; o do chip do me-select, 18×18.
+     *   me-select      Ambos abaixo dos 24×24 mínimos do WCAG 2.5.8.
+     *   me-checkbox    align-items:center com rótulo de 3 linhas (72px) deixava
+     *   me-radio       a caixa de 18px a 27px do topo, longe da linha a que se
+     *                  refere — e em mobile quase todo rótulo quebra.
+     *   me-modal       size="large" ficava MAIS ESTREITO que o default em tela
+     *                  pequena (312px contra 342px em 390px de viewport),
+     *                  porque 80vw < calc(100vw - 48px) acima de 240px.
      *
      * MÉTODO — iframes com largura fixa. Media query avalia contra a viewport, e
      * a viewport de um iframe é a largura DELE: é o único jeito de testar três
@@ -50,14 +65,18 @@
   </style>
 </head>
 <body>
-  <h1>Responsividade em mobile — sidebar, abas e paginação</h1>
+  <h1>Responsividade em mobile</h1>
   <p class="intro">
-    Mede o layout em três larguras de viewport. Abaixo de 800px a sidebar deve
-    ficar oculta quando recolhida e virar drawer sobreposto quando aberta (sem
-    roubar largura do conteúdo em nenhum dos dois estados), as abas devem caber
-    em uma linha e rolar na horizontal com a primeira alcançável, e a paginação
-    deve quebrar em duas linhas dentro do host. Em 1200px tudo volta ao desenho
-    de desktop: sidebar em fluxo, abas de largura igual, paginação em uma linha.
+    Mede o layout em três larguras de viewport. Abaixo de 800px: a sidebar fica
+    oculta quando recolhida e sobreposta quando aberta (sem roubar largura do
+    conteúdo em nenhum dos dois estados), as abas cabem em uma linha e rolam na
+    horizontal com a primeira alcançável, a paginação quebra em duas linhas
+    dentro do host, os campos encolhem em vez de vazar a coluna, os cards do
+    radio horizontal empilham, os dois × removíveis alcançam 24px de alvo, o
+    controle do checkbox alinha com a primeira linha do rótulo e o modal
+    <code>large</code> nunca é mais estreito que o default. Em 1200px tudo volta
+    ao desenho de desktop: sidebar em fluxo, abas de largura igual, paginação em
+    uma linha, campos no teto de 260/320px e o large de volta aos 80vw.
   </p>
   <div id="report">medindo…</div>
 
@@ -96,6 +115,28 @@
       </section>
       <section id="pag">
         <me-pagination total-pages="20" page="10" first-last></me-pagination>
+      </section>
+      <section id="campos">
+        <me-input id="inp" label="Nome do médico" name="nome"></me-input>
+        <me-select id="sel" label="Participantes" name="p" multiple>
+          <me-select-option value="1" selected>Dra. Ana Souza de Oliveira Andrade</me-select-option>
+        </me-select>
+      </section>
+      <section id="cards">
+        <me-radio-group name="regra" value="a" orientation="horizontal" label="Regras">
+          <me-radio value="a" appearance="card">Proporcional com limite
+            <span slot="description">Desconto por atraso.</span></me-radio>
+          <me-radio value="b" appearance="card">Integral
+            <span slot="description">Pagamento integral.</span></me-radio>
+        </me-radio-group>
+      </section>
+      <section id="multilinha">
+        <me-checkbox id="cb" name="u" value="c">Aceito assumir plantões noturnos na unidade Hospital Santa Casa de Misericórdia</me-checkbox>
+        <me-filter-tag id="tag" value="x">Aguardando Auditoria</me-filter-tag>
+      </section>
+      <section id="modais">
+        <me-modal id="m-def" label="Default"><span slot="header">D</span>.</me-modal>
+        <me-modal id="m-lg" size="large" label="Large"><span slot="header">L</span>.</me-modal>
       </section>
       <section id="shell" style="display:flex; height:180px; overflow:hidden; border:1px dashed #BCBCCD">
         <me-sidebar expanded id="nav" preset="gestor" active-item="dashboard" style="flex:none; height:180px"></me-sidebar>
@@ -156,8 +197,84 @@
           backdrop: win.getComputedStyle(sb.shadowRoot.querySelector('.backdrop')).display,
           larguraDoShell: largura(shell),
         },
+        /* Campos: 260px/320px eram largura FIXA e vazavam a coluna em tela
+           estreita; agora são teto (max-width) sobre width:100%. */
+        campos: (() => {
+          const inp = d.getElementById('inp'), sel = d.getElementById('sel');
+          /* O limite é a caixa de conteúdo do PAI, lida do DOM. Deduzir do
+             clientWidth da página menos um padding chutado já me deu falso
+             negativo aqui (assumi 16px onde o srcdoc usa 12px). */
+          const limite = inp.parentElement.clientWidth;
+          return {
+            larguraInput: largura(inp), larguraSelect: largura(sel), limite,
+            inputCabe: largura(inp) <= limite + 0.5,
+            selectCabe: largura(sel) <= limite + 0.5,
+            noTetoEmDesktop: largura(inp) === 260 && largura(sel) === 320,
+          };
+        })(),
+        /* Cards do radio horizontal: sem wrap, dois cards ficavam amassados e o
+           segundo passava da borda em 320px. */
+        cardsRadio: (() => {
+          const cards = [...d.querySelectorAll('#cards me-radio')];
+          return {
+            linhas: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().top))).size,
+            larguras: cards.map(largura),
+            ultimoDentro: cards[cards.length - 1].getBoundingClientRect().right
+                          <= d.documentElement.clientWidth + 0.5,
+          };
+        })(),
+        /* Alvos de toque: o mínimo do WCAG 2.5.8 é 24×24. O do chip do me-select
+           é ampliado por pseudo-elemento (o desenho segue com 18px), então a
+           medida honesta é sondar o ponteiro, não ler a caixa pintada. */
+        alvos: (() => {
+          const tag = d.getElementById('tag');
+          const rem = tag.shadowRoot.querySelector('.remove');
+          const sel = d.getElementById('sel');
+          const btn = sel.shadowRoot.querySelector('.tag button');
+          const b = btn.getBoundingClientRect();
+          const sonda = (dx, dy) => {
+            const el = sel.shadowRoot.elementFromPoint(b.left + b.width / 2 + dx, b.top + b.height / 2 + dy);
+            return !!(el && el.closest && el.closest('button'));
+          };
+          return {
+            tagRemove: [+rem.getBoundingClientRect().width.toFixed(0), +rem.getBoundingClientRect().height.toFixed(0)],
+            chipDesenho: +b.width.toFixed(0),
+            chipAlvo11px: sonda(11, 11) && sonda(-11, -11),
+            chipParaEm14px: !sonda(14, 14),
+          };
+        })(),
+        /* Controle alinhado à PRIMEIRA linha do rótulo, não ao meio do
+           parágrafo: com align-items:center um rótulo de 3 linhas (72px) deixava
+           a caixa de 18px a 27px do topo. O desvio esperado é 3px = (24-18)/2. */
+        alinhamento: (() => {
+          const cb = d.getElementById('cb');
+          const caixa = cb.shadowRoot.querySelector('input').getBoundingClientRect();
+          return {
+            alturaRotulo: +cb.getBoundingClientRect().height.toFixed(0),
+            desvioDaCaixa: +(caixa.top - cb.getBoundingClientRect().top).toFixed(1),
+          };
+        })(),
         mobile,
       };
+    }
+
+    /* Modais: size="large" chegou a ficar MAIS ESTREITO que o default em tela
+       pequena, porque 80vw < calc(100vw - 48px) em qualquer viewport > 240px. */
+    async function medirModais(win) {
+      const d = win.document;
+      const abrir = async (id) => {
+        const m = d.getElementById(id);
+        m.show();
+        await new Promise((r) => setTimeout(r, 180));
+        const w = +m.shadowRoot.querySelector('dialog').getBoundingClientRect().width.toFixed(1);
+        m.hide();
+        await new Promise((r) => setTimeout(r, 180));
+        return w;
+      };
+      const def = await abrir('m-def');
+      const large = await abrir('m-lg');
+      return { default: def, large, largeNaoEhMaisEstreito: large >= def,
+               oitentaPorCento: Math.round(win.innerWidth * 0.8) };
     }
 
     /* Abre o drawer pelo botão do header — o caminho real do usuário em mobile. */
@@ -216,6 +333,31 @@
       linhas.push(`  me-pagination`);
       linhas.push(`    ${afirmar(m.paginacao.dentroDoHost, `${largura}px: régua de paginação vaza o host`)}  régua contida no host`);
       linhas.push(`    ${afirmar(m.paginacao.linhas === (mobile ? 2 : 1), `${largura}px: esperava ${mobile ? 2 : 1} linha(s) de paginação, veio ${m.paginacao.linhas}`)}  ${m.paginacao.linhas} linha(s), altura ${m.paginacao.altura}px`);
+
+      linhas.push(`  me-input / me-select (largura como teto, não trilho)`);
+      linhas.push(`    ${afirmar(m.campos.inputCabe && m.campos.selectCabe, `${largura}px: campo vaza a coluna de ${m.campos.limite}px (input ${m.campos.larguraInput}px, select ${m.campos.larguraSelect}px)`)}  cabem na coluna de ${m.campos.limite}px (input ${m.campos.larguraInput}px, select ${m.campos.larguraSelect}px)`);
+      if (!mobile) {
+        linhas.push(`    ${afirmar(m.campos.noTetoEmDesktop, `1200px: com espaço, os campos deveriam repousar em 260px/320px (veio ${m.campos.larguraInput}/${m.campos.larguraSelect})`)}  repousam no teto de 260px/320px`);
+      }
+
+      linhas.push(`  me-radio-group horizontal`);
+      linhas.push(`    ${afirmar(m.cardsRadio.ultimoDentro, `${largura}px: último card do radio passa da borda`)}  último card dentro da tela`);
+      linhas.push(`    ${afirmar(m.cardsRadio.linhas === (mobile ? 2 : 1), `${largura}px: esperava ${mobile ? 2 : 1} linha(s) de cards, veio ${m.cardsRadio.linhas}`)}  ${m.cardsRadio.linhas} linha(s) de cards (${m.cardsRadio.larguras.join('/')}px)`);
+
+      linhas.push(`  alvos de toque (mínimo 24×24 — WCAG 2.5.8)`);
+      linhas.push(`    ${afirmar(m.alvos.tagRemove[0] >= 24 && m.alvos.tagRemove[1] >= 24, `${largura}px: × do me-filter-tag tem ${m.alvos.tagRemove.join('×')}, abaixo de 24×24`)}  × do me-filter-tag: ${m.alvos.tagRemove.join('×')}`);
+      linhas.push(`    ${afirmar(m.alvos.chipAlvo11px, `${largura}px: alvo do × do chip não chega a 24px (sonda a 11px do centro não acertou o botão)`)}  × do chip: desenho ${m.alvos.chipDesenho}px, alvo alcança 11px do centro`);
+      linhas.push(`    ${afirmar(m.alvos.chipParaEm14px, `${largura}px: alvo do × do chip passou de 24px (sonda a 14px acertou) — está roubando clique do campo`)}  e para antes de 14px (não invade o campo)`);
+
+      linhas.push(`  me-checkbox / me-radio com rótulo multilinha`);
+      linhas.push(`    ${afirmar(m.alinhamento.desvioDaCaixa <= 4, `${largura}px: caixa do checkbox a ${m.alinhamento.desvioDaCaixa}px do topo — está centrada no parágrafo, não na primeira linha`)}  caixa a ${m.alinhamento.desvioDaCaixa}px do topo (rótulo de ${m.alinhamento.alturaRotulo}px)`);
+
+      const mm = await medirModais(win);
+      linhas.push(`  me-modal`);
+      linhas.push(`    ${afirmar(mm.largeNaoEhMaisEstreito, `${largura}px: size="large" (${mm.large}px) ficou MAIS ESTREITO que o default (${mm.default}px)`)}  large ${mm.large}px >= default ${mm.default}px`);
+      if (!mobile) {
+        linhas.push(`    ${afirmar(Math.abs(mm.large - mm.oitentaPorCento) < 2, `1200px: large deveria valer 80vw (${mm.oitentaPorCento}px), veio ${mm.large}px`)}  em desktop o large volta a 80vw (${mm.large}px)`);
+      }
 
       linhas.push(`  me-sidebar`);
       linhas.push(`    ${afirmar(m.sidebar.setaDoHeaderEmSincronia, `${largura}px: seta do header dessincronizada do estado da sidebar`)}  seta do header em sincronia`);

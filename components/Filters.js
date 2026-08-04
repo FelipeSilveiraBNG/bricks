@@ -242,6 +242,12 @@ filterTemplate.innerHTML = `
       border-color: var(--me-color-brand, #2F7F91);
       box-shadow: 0 0 0 1px var(--me-color-brand, #2F7F91);
     }
+    /* Ver Input.js: campo com menos de 16px faz o Safari do iOS dar zoom ao
+       focar e não desfazer — e este campo abre dentro de um painel flutuante,
+       onde o zoom desloca o painel junto. Em ponteiro grosso, 16px. */
+    @media (pointer: coarse) {
+      .search input { font-size: var(--me-font-size-body, 16px); }
+    }
 
     .list { max-height: 240px; overflow: auto; }
 
@@ -532,11 +538,16 @@ tagTemplate.innerHTML = `
       line-height: 18px;
     }
 
+    /* O padding é área de toque, não respiro visual: o × tem 14px de desenho e o
+       botão encostava nele, ficando com 14×14 de alvo — abaixo dos 24×24 mínimos
+       do WCAG 2.5.8. O padding leva o alvo a 24px e a margem negativa o desconta
+       de volta, então a pílula não muda de tamanho nem o gap de 8px aumenta. */
     .remove {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0;
+      padding: 5px;
+      margin: -5px;
       border: 0;
       background: none;
       color: inherit;

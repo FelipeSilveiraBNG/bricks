@@ -28,9 +28,16 @@ import { define } from './define.js';
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
+    /* 260px é a largura de repouso, não um trilho fixo: com width:100% o campo
+       encolhe quando a coluna é menor (medido: a 320px de viewport o irmão
+       me-select, que tinha o mesmo problema com 320px fixos, vazava 31px da
+       coluna) e acompanha a coluna quando ela é maior — antes disso, todo
+       formulário precisava de um style="width:100%" à mão. Para fixar de novo,
+       --me-input-width. */
     :host {
       display: inline-block;
-      width: 260px;
+      width: 100%;
+      max-width: var(--me-input-width, 260px);
       font-family: var(--me-font-family, 'Inter', system-ui, sans-serif);
     }
     :host([hidden]) { display: none; }
@@ -115,6 +122,14 @@ template.innerHTML = `
       letter-spacing: var(--me-letter-spacing, 0.5px);
     }
     :host([size="small"]) input { font-size: var(--me-font-size-small, 14px); }
+    /* Campo com menos de 16px faz o Safari do iOS dar ZOOM na página ao focar, e
+       ele não desfaz o zoom ao sair — o protótipo inteiro fica torto depois de
+       tocar num campo small. Em ponteiro grosso (toque) o texto volta para 16px;
+       o desenho de desktop, que é onde o small existe por densidade, não muda.
+       Só o texto digitado: a caixa segue com a altura de 32px do size small. */
+    @media (pointer: coarse) {
+      :host([size="small"]) input { font-size: var(--me-font-size-body, 16px); }
+    }
 
     /* Placeholder nativo fica escondido enquanto a label repousa por cima
        (evita texto duplicado); reaparece quando a label flutua. Sem label,
