@@ -174,6 +174,11 @@ template.innerHTML = `
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      /* O .btn tem line-height:1, e uma caixa de linha de 1em é MENOR que o
+         corpo da Inter (~1,21em): o overflow:hidden acima cortava o descendente
+         de g/j/p/q/y. "normal" segue as métricas da fonte e garante a folga; a
+         altura do botão não muda (é fixa, e o texto centraliza pelo flex). */
+      line-height: normal;
     }
 
     ::slotted(me-icon) { font-size: 1.25em; }
