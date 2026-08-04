@@ -49,6 +49,15 @@ template.innerHTML = `
     .base {
       display: flex;
       align-items: center;
+      /* Quebra em duas linhas em vez de estourar a lateral. MEDIDO: com
+         total-pages=20 page=10 first-last a régua pede 396px; numa coluna de
+         343px (viewport de 390px) vazava 53px e numa de 273px (viewport de
+         320px) vazava 123px — e, como o host centraliza, metade do excesso ia
+         para a esquerda do contêiner, onde não há scroll que alcance (o « ficava
+         cortado pela borda). Item de 36px sempre cabe sozinho, então com wrap
+         não existe mais estado sem saída. */
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 4px;
       list-style: none;
       margin: 0;

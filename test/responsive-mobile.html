@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Responsividade em mobile (sidebar / abas / paginação) — me-bricks</title>
+  <style>
+    /*
+     * POR QUE ESTE TESTE EXISTE — três componentes quebravam o layout abaixo de
+     * 800px, e as três falhas foram MEDIDAS antes de serem corrigidas:
+     *
+     *   me-sidebar     288px em fluxo numa viewport de 390px deixavam o <main>
+     *                  com 102px: o heading do me-page-header colapsava para 0
+     *                  e o slot "end" ia para x=392, fora da tela.
+     *   me-tab-group   5 abas pediam 405px numa faixa de 343px. Sem overflow e
+     *                  com justify-content:center, metade do excesso caía À
+     *                  ESQUERDA do contêiner, onde nenhum scroll alcança — a
+     *                  primeira aba ficava cortada e inclicável. Os rótulos
+     *                  quebravam em 2 linhas (aba de 80,6px de altura).
+     *   me-pagination  total-pages=20 + first-last pedem 396px; sem wrap,
+     *                  vazava 53px em 343px e 123px em 273px, também com metade
+     *                  do excesso à esquerda (o « cortado pela borda).
+     *
+     * MÉTODO — iframes com largura fixa. Media query avalia contra a viewport, e
+     * a viewport de um iframe é a largura DELE: é o único jeito de testar três
+     * breakpoints na mesma página sem redimensionar a janela.
+     *
+     * LIMITE DO AMBIENTE, importante para quem for estender este teste: dentro
+     * do iframe as transições CSS não avançam (a timeline de animação não é
+     * dirigida). Um `transition: width 0.3s` fica preso no valor inicial
+     * indefinidamente. Por isso as asserções aqui medem SÓ estado final de
+     * layout, nunca o meio de uma animação — e por isso o modo drawer do
+     * me-sidebar troca de largura sem transição (ver Sidebar.js).
+     */
+    body {
+      margin: 0; padding: 16px; background: #F0F0F4;
+      font-family: 'Inter', system-ui, sans-serif; color: #16161D;
+    }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    p.intro { margin: 0 0 16px; font-size: 13px; color: #68688D; max-width: 90ch; line-height: 1.5; }
+    #report {
+      white-space: pre; font: 12px/1.5 ui-monospace, Consolas, monospace;
+      background: #fff; border: 1px solid #E2E2E9; border-radius: 8px;
+      padding: 12px; margin-bottom: 16px; overflow-x: auto;
+    }
+    .frames { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+    figure { margin: 0; }
+    figcaption { font-size: 12px; color: #68688D; padding: 4px 0; }
+    iframe { border: 1px solid #BCBCCD; background: #fff; display: block; }
+  </style>
+</head>
+<body>
+  <h1>Responsividade em mobile — sidebar, abas e paginação</h1>
+  <p class="intro">
+    Mede o layout em três larguras de viewport. Abaixo de 800px a sidebar deve
+    ficar oculta quando recolhida e virar drawer sobreposto quando aberta (sem
+    roubar largura do conteúdo em nenhum dos dois estados), as abas devem caber
+    em uma linha e rolar na horizontal com a primeira alcançável, e a paginação
+    deve quebrar em duas linhas dentro do host. Em 1200px tudo volta ao desenho
+    de desktop: sidebar em fluxo, abas de largura igual, paginação em uma linha.
+  </p>
+  <div id="report">medindo…</div>
+
+  <div class="frames">
+    <figure><figcaption>320px</figcaption><iframe id="f320" width="320" height="420"></iframe></figure>
+    <figure><figcaption>390px</figcaption><iframe id="f390" width="390" height="420"></iframe></figure>
+    <figure><figcaption>1200px (desktop)</figcaption><iframe id="f1200" width="1200" height="420"></iframe></figure>
+  </div>
+
+  <script type="module">
+    const wait = (ms = 250) => new Promise((r) => setTimeout(r, ms));
+
+    /* Conteúdo dos iframes por srcdoc: mantém o teste em UM arquivo. O <base>
+       resolve os caminhos relativos do srcdoc contra este diretório. */
+    const CASOS = `
+      <base href="${location.href}">
+      <link rel="stylesheet" href="../tokens.css">
+      <script type="module" src="../components/index.js"><\/script>
+      <style>
+        *{box-sizing:border-box} body{margin:0;padding:12px;font-family:var(--me-font-family)}
+        section{margin-bottom:20px}
+      </style>
+      <section id="abas">
+        <me-tab-group active="a">
+          <me-tab panel="a">Visão geral</me-tab>
+          <me-tab panel="b">Plantões</me-tab>
+          <me-tab panel="c">Configurações</me-tab>
+          <me-tab panel="d">Auditoria</me-tab>
+          <me-tab panel="e">Relatórios</me-tab>
+          <me-tab-panel name="a">.</me-tab-panel>
+          <me-tab-panel name="b">.</me-tab-panel>
+          <me-tab-panel name="c">.</me-tab-panel>
+          <me-tab-panel name="d">.</me-tab-panel>
+          <me-tab-panel name="e">.</me-tab-panel>
+        </me-tab-group>
+      </section>
+      <section id="pag">
+        <me-pagination total-pages="20" page="10" first-last></me-pagination>
+      </section>
+      <section id="shell" style="display:flex; height:180px; overflow:hidden; border:1px dashed #BCBCCD">
+        <me-sidebar expanded id="nav" preset="gestor" active-item="dashboard" style="flex:none; height:180px"></me-sidebar>
+        <main style="flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden">
+          <me-page-header id="hdr" menu heading="Dashboard" subheading="Visão geral" style="flex:none">
+            <span slot="end" style="display:flex; align-items:center; gap:16px">
+              <me-icon name="bell-outline" label="Notificações"></me-icon>
+              <me-icon name="account-circle" label="Perfil" style="font-size:36px"></me-icon>
+            </span>
+          </me-page-header>
+        </main>
+      </section>
+      <script type="module">
+        await customElements.whenDefined('me-sidebar');
+        const nav = document.getElementById('nav'), hdr = document.getElementById('hdr');
+        hdr.menuOpen = nav.expanded;   // linha da receita: acerta a seta no load
+        hdr.addEventListener('me-menu', (e) => { nav.expanded = hdr.menuOpen = e.detail.open; });
+        nav.addEventListener('me-toggle', (e) => { hdr.menuOpen = e.detail.expanded; });
+      <\/script>
+    `;
+
+    function medir(win, mobile) {
+      const d = win.document;
+      const largura = (el) => +el.getBoundingClientRect().width.toFixed(1);
+      const nav = d.querySelector('me-tab-group').shadowRoot.querySelector('.nav');
+      const abas = [...d.querySelectorAll('me-tab')];
+      const pag = d.querySelector('me-pagination');
+      const pagBase = pag.shadowRoot.querySelector('.base');
+      const sb = d.querySelector('me-sidebar');
+      const hdr = d.querySelector('me-page-header');
+      const main = d.querySelector('#shell main');
+      const shell = d.querySelector('#shell');
+
+      return {
+        vw: win.innerWidth,
+        overflowPagina: d.documentElement.scrollWidth - d.documentElement.clientWidth,
+        abas: {
+          alturasDistintas: [...new Set(abas.map((t) => +t.getBoundingClientRect().height.toFixed(1)))],
+          umaLinha: abas.every((t) => t.getBoundingClientRect().height < 70),
+          larguraIgual: new Set(abas.map((t) => Math.round(largura(t)))).size === 1,
+          rolavel: nav.scrollWidth > nav.clientWidth,
+          primeiraAlcancavel: abas[0].getBoundingClientRect().left >= nav.getBoundingClientRect().left - 0.5,
+        },
+        paginacao: {
+          altura: +pagBase.getBoundingClientRect().height.toFixed(0),
+          linhas: pagBase.getBoundingClientRect().height > 50 ? 2 : 1,
+          dentroDoHost: pagBase.getBoundingClientRect().left >= pag.getBoundingClientRect().left - 0.5
+                     && pagBase.getBoundingClientRect().right <= pag.getBoundingClientRect().right + 0.5,
+        },
+        sidebar: {
+          expandedNoLoad: sb.hasAttribute('expanded'),
+          setaDoHeaderEmSincronia: sb.hasAttribute('expanded') === hdr.hasAttribute('menu-open'),
+          larguraSidebar: largura(sb),
+          larguraMain: largura(main),
+          position: win.getComputedStyle(sb).position,
+          display: win.getComputedStyle(sb).display,
+          botaoMenuVisivel: win.getComputedStyle(hdr.shadowRoot.querySelector('.menu')).display !== 'none',
+          backdrop: win.getComputedStyle(sb.shadowRoot.querySelector('.backdrop')).display,
+          larguraDoShell: largura(shell),
+        },
+        mobile,
+      };
+    }
+
+    /* Abre o drawer pelo botão do header — o caminho real do usuário em mobile. */
+    async function medirDrawerAberto(win) {
+      const d = win.document;
+      const sb = d.querySelector('me-sidebar'), hdr = d.querySelector('me-page-header');
+      const main = d.querySelector('#shell main');
+      hdr.shadowRoot.querySelector('.menu').click();
+      await wait(200);
+      const r = {
+        expanded: sb.hasAttribute('expanded'),
+        position: win.getComputedStyle(sb).position,
+        larguraSidebar: +sb.getBoundingClientRect().width.toFixed(1),
+        larguraMain: +main.getBoundingClientRect().width.toFixed(1),
+        backdrop: win.getComputedStyle(sb.shadowRoot.querySelector('.backdrop')).display,
+        setaEmSincronia: hdr.hasAttribute('menu-open'),
+        focoDentroDoDrawer: sb.contains(d.activeElement),
+      };
+      // Esc fecha o drawer (volta a oculta, fora do fluxo)
+      sb.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await wait(200);
+      r.aposEsc = {
+        expanded: sb.hasAttribute('expanded'),
+        larguraSidebar: +sb.getBoundingClientRect().width.toFixed(1),
+        larguraMain: +main.getBoundingClientRect().width.toFixed(1),
+        position: win.getComputedStyle(sb).position,
+      };
+      return r;
+    }
+
+    const linhas = [];
+    const falhas = [];
+    const afirmar = (cond, msg) => { if (!cond) falhas.push(msg); return cond ? 'OK  ' : 'FALHA'; };
+
+    for (const [id, largura] of [['f320', 320], ['f390', 390], ['f1200', 1200]]) {
+      const frame = document.getElementById(id);
+      await new Promise((res) => { frame.onload = res; frame.srcdoc = CASOS; });
+      const win = frame.contentWindow;
+      await win.customElements.whenDefined('me-pagination');
+      await wait(400);
+
+      const mobile = largura < 800;
+      const m = medir(win, mobile);
+      linhas.push(`─── viewport ${m.vw}px  (${mobile ? 'mobile' : 'desktop'})`);
+      linhas.push(`  ${afirmar(m.overflowPagina === 0, `${largura}px: página estoura ${m.overflowPagina}px na horizontal`)}  sem overflow horizontal da página (${m.overflowPagina}px)`);
+
+      linhas.push(`  me-tab-group`);
+      linhas.push(`    ${afirmar(m.abas.umaLinha, `${largura}px: rótulo de aba quebrou linha (altura ${m.abas.alturasDistintas})`)}  rótulos em uma linha (altura ${m.abas.alturasDistintas.join('/')}px)`);
+      linhas.push(`    ${afirmar(m.abas.primeiraAlcancavel, `${largura}px: primeira aba fora do contêiner (inalcançável)`)}  primeira aba dentro do contêiner`);
+      if (mobile) {
+        linhas.push(`    ${afirmar(m.abas.rolavel, `${largura}px: 5 abas deveriam gerar faixa rolável`)}  faixa rolável na horizontal`);
+      } else {
+        linhas.push(`    ${afirmar(m.abas.larguraIgual && !m.abas.rolavel, `1200px: abas deveriam ter largura igual sem scroll`)}  abas de largura igual, sem scroll (desenho do app)`);
+      }
+
+      linhas.push(`  me-pagination`);
+      linhas.push(`    ${afirmar(m.paginacao.dentroDoHost, `${largura}px: régua de paginação vaza o host`)}  régua contida no host`);
+      linhas.push(`    ${afirmar(m.paginacao.linhas === (mobile ? 2 : 1), `${largura}px: esperava ${mobile ? 2 : 1} linha(s) de paginação, veio ${m.paginacao.linhas}`)}  ${m.paginacao.linhas} linha(s), altura ${m.paginacao.altura}px`);
+
+      linhas.push(`  me-sidebar`);
+      linhas.push(`    ${afirmar(m.sidebar.setaDoHeaderEmSincronia, `${largura}px: seta do header dessincronizada do estado da sidebar`)}  seta do header em sincronia`);
+      if (mobile) {
+        linhas.push(`    ${afirmar(!m.sidebar.expandedNoLoad, `${largura}px: sidebar deveria recolher sozinha no load`)}  recolheu sozinha no load`);
+        linhas.push(`    ${afirmar(m.sidebar.display === 'none', `${largura}px: recolhida deveria ficar oculta em mobile, veio display:${m.sidebar.display}`)}  recolhida fica oculta (display:${m.sidebar.display})`);
+        linhas.push(`    ${afirmar(m.sidebar.larguraSidebar === 0, `${largura}px: recolhida ainda ocupa ${m.sidebar.larguraSidebar}px de largura`)}  recolhida não ocupa largura (${m.sidebar.larguraSidebar}px)`);
+        linhas.push(`    ${afirmar(m.sidebar.botaoMenuVisivel, `${largura}px: botão de menu do header deveria aparecer`)}  botão de menu do header visível`);
+        const dr = await medirDrawerAberto(win);
+        linhas.push(`    ${afirmar(dr.position === 'fixed', `${largura}px: drawer aberto deveria ser position:fixed, veio ${dr.position}`)}  aberto: position ${dr.position}, ${dr.larguraSidebar}px`);
+        /* A afirmação que importa: o conteúdo tem a largura toda nos DOIS
+           estados. Oculta, porque a sidebar não está no fluxo; aberta, porque o
+           drawer é fixed. Comparar com a caixa do shell não serve — a borda
+           tracejada do próprio teste entra na conta (deu falso negativo de
+           1,6px), então a medida é o <main> não variar entre os dois estados. */
+        const variacao = +Math.abs(dr.larguraMain - m.sidebar.larguraMain).toFixed(1);
+        linhas.push(`    ${afirmar(variacao < 1, `${largura}px: <main> variou ${variacao}px ao abrir o drawer — o menu está mexendo no layout do conteúdo`)}  <main> igual nos dois estados (${dr.larguraMain}px, variação ${variacao}px)`);
+        linhas.push(`    ${afirmar(dr.backdrop === 'block', `${largura}px: backdrop não apareceu`)}  aberto: backdrop presente`);
+        linhas.push(`    ${afirmar(dr.focoDentroDoDrawer, `${largura}px: foco não entrou no drawer (Esc não funcionaria)`)}  aberto: foco dentro do drawer`);
+        linhas.push(`    ${afirmar(!dr.aposEsc.expanded && dr.aposEsc.larguraSidebar === 0, `${largura}px: Esc não fechou o drawer (sobrou ${dr.aposEsc.larguraSidebar}px de largura)`)}  Esc fecha o drawer (volta a oculta, ${dr.aposEsc.larguraSidebar}px)`);
+      } else {
+        linhas.push(`    ${afirmar(m.sidebar.expandedNoLoad && m.sidebar.position === 'static', `1200px: sidebar deveria seguir expandida e em fluxo`)}  expandida e em fluxo (${m.sidebar.larguraSidebar}px, position ${m.sidebar.position})`);
+        linhas.push(`    ${afirmar(!m.sidebar.botaoMenuVisivel, `1200px: botão de menu do header não deveria aparecer`)}  botão de menu oculto`);
+        linhas.push(`    ${afirmar(m.sidebar.backdrop === 'none', `1200px: backdrop não deveria existir`)}  sem backdrop`);
+      }
+      linhas.push('');
+    }
+
+    const cabecalho = falhas.length === 0
+      ? `TODAS AS AFIRMAÇÕES PASSARAM (${3} viewports)\n\n`
+      : `${falhas.length} FALHA(S):\n${falhas.map((f) => '  · ' + f).join('\n')}\n\n`;
+    document.getElementById('report').textContent = cabecalho + linhas.join('\n');
+    window.__responsive = { falhas };
+  </script>
+</body>
+</html>

@@ -1104,20 +1104,41 @@ pag.movePageTo(3);</pre>
 
       <me-page name="page-header">
         <h2>&lt;me-page-header&gt; — Header de página</h2>
-        <p class="desc">Barra branca (padding 16px/32px) com título e subtítulo, espelhando o Header.vue do app. Com o atributo <code>menu</code>, um botão de seta aparece à esquerda apenas em telas &lt; 800px e emite <code>me-menu</code> (<code>detail.open</code>) para abrir/recolher a sidebar; <code>menu-open</code> alterna a direção da seta.</p>
+        <p class="desc">Barra branca (padding 16px/32px) com título e subtítulo, espelhando o Header.vue do app. Com o atributo <code>menu</code>, um botão aparece à esquerda apenas em telas &lt; 800px e emite <code>me-menu</code> (<code>detail.open</code>) para abrir/recolher a sidebar; <code>menu-open</code> alterna a direção da seta. O ícone é o <strong>quadrado rosa com chevrons duplos brancos</strong> — o mesmo do toggle do <code>me-sidebar</code>, porque o Header.vue do app importa os mesmos SVGs.</p>
         <div class="example column" style="padding:0; background:var(--me-color-page);">
           <me-page-header menu heading="Título" subheading="Descrição da página">
-            <span slot="end" style="display:flex; align-items:center; gap:16px;">
-              <me-icon name="bell-outline" label="Notificações"></me-icon>
-              <me-icon name="account-circle" label="Perfil" style="font-size:36px; color: var(--me-color-brand);"></me-icon>
-              <me-icon name="chevron-down"></me-icon>
+            <span slot="end" style="display:flex; align-items:center;">
+              <span style="position:relative; display:inline-flex; margin-right:24px;">
+                <me-icon name="bell" label="Notificações" style="font-size:24px; color:var(--me-color-brand);"></me-icon>
+                <span style="position:absolute; top:-4px; right:-6px; min-width:18px; height:18px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:0 4px; border-radius:999px; font-size:10px; font-weight:700; background:var(--me-color-negative-50); color:var(--me-color-white); outline:2px solid var(--me-color-surface);">3</span>
+              </span>
+              <span style="width:40px; height:40px; margin-right:8px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--me-color-brand); color:var(--me-color-white); font-size:16px; font-weight:700;">EZ</span>
+              <me-icon name="chevron-down" style="font-size:18px; color:var(--me-color-brand);"></me-icon>
             </span>
           </me-page-header>
         </div>
-        <pre>&lt;me-page-header heading="Título" subheading="Descrição da página"&gt;
-  &lt;span slot="end"&gt;
-    &lt;me-icon name="bell-outline" label="Notificações"&gt;&lt;/me-icon&gt;
-    &lt;me-icon name="account-circle" label="Perfil"&gt;&lt;/me-icon&gt;
+        <pre>&lt;me-page-header menu heading="Título" subheading="Descrição da página"&gt;
+  &lt;!-- Lado direito como no app: sino preenchido teal + badge, avatar de
+       40px com as iniciais, chevron pequeno teal. Espaçamentos do app
+       (24px após o sino, 8px após o avatar), por isso margens à mão. --&gt;
+  &lt;span slot="end" style="display:flex; align-items:center;"&gt;
+    &lt;span style="position:relative; display:inline-flex; margin-right:24px;"&gt;
+      &lt;me-icon name="bell" label="Notificações"
+               style="font-size:24px; color:var(--me-color-brand);"&gt;&lt;/me-icon&gt;
+      &lt;span style="position:absolute; top:-4px; right:-6px; min-width:18px;
+                   height:18px; box-sizing:border-box; display:flex;
+                   align-items:center; justify-content:center; padding:0 4px;
+                   border-radius:999px; font-size:10px; font-weight:700;
+                   background:var(--me-color-negative-50);
+                   color:var(--me-color-white);
+                   outline:2px solid var(--me-color-surface);"&gt;3&lt;/span&gt;
+    &lt;/span&gt;
+    &lt;span style="width:40px; height:40px; margin-right:8px; border-radius:50%;
+                 display:flex; align-items:center; justify-content:center;
+                 background:var(--me-color-brand); color:var(--me-color-white);
+                 font-size:16px; font-weight:700;"&gt;EZ&lt;/span&gt;
+    &lt;me-icon name="chevron-down"
+             style="font-size:18px; color:var(--me-color-brand);"&gt;&lt;/me-icon&gt;
   &lt;/span&gt;
 &lt;/me-page-header&gt;</pre>
       </me-page>
@@ -1442,7 +1463,7 @@ pag.movePageTo(3);</pre>
     const icons = [
       'monitor', 'calendar-edit', 'clipboard-text-outline', 'checkbox-marked-outline',
       'office-building-outline', 'magnify', 'doctor', 'file-chart-outline',
-      'account-group', 'logout', 'bell-outline', 'account-circle', 'chevron-down',
+      'account-group', 'logout', 'bell', 'bell-outline', 'account-circle', 'chevron-down',
       'calendar', 'clock-outline', 'plus', 'close', 'delete-outline', 'pencil-outline',
       'lock-open-variant-outline',
     ];

@@ -38,8 +38,14 @@ tabTemplate.innerHTML = `
   <style>
     :host {
       /* flex:1 1 0 -> todas as abas dividem a largura igualmente, replicando
-         o "w-full" de cada aba dentro do nav centralizado do Tabs.vue. */
+         o "w-full" de cada aba dentro do nav centralizado do Tabs.vue.
+         O min-width é o piso: com basis 0 a aba encolheria até quebrar o
+         rótulo em duas linhas (medido: 5 abas em 390px davam abas de 80,6px de
+         altura, o dobro do normal). Travado em max-content, quando a soma não
+         cabe o nav rola em vez de amassar as abas — e enquanto cabe, o
+         basis 0 segue dividindo igualmente, que é o desenho do app. */
       flex: 1 1 0;
+      min-width: max-content;
       display: flex;
       outline: none;
     }
@@ -50,6 +56,7 @@ tabTemplate.innerHTML = `
       flex: 1;
       box-sizing: border-box;
       padding: 16px 8px;                 /* py-4 px-2 do app */
+      white-space: nowrap;               /* rótulo de aba não quebra linha */
       margin-bottom: -1px;               /* sobrepõe a linha de 1px do nav */
       border: 0;
       border-bottom: 2px solid transparent;
@@ -181,6 +188,17 @@ groupTemplate.innerHTML = `
     .nav {
       display: flex;
       justify-content: center;                          /* nav centralizada do app */
+      /* safe center = centraliza enquanto cabe, alinha no início quando
+         estoura. NÃO é refinamento: com o center puro, o excesso vaza para os
+         DOIS lados e a metade esquerda fica FORA do contêiner, onde nenhum
+         scroll alcança — medido com 5 abas em 390px, a primeira aba ficava
+         cortada na borda e inclicável. A declaração de cima é o fallback para
+         onde o safe não existe (aí o scroll pelo menos resgata a direita). */
+      justify-content: safe center;
+      /* Quando as abas não couberem, a faixa rola na horizontal. Só a nav rola:
+         o conteúdo do painel continua parado. */
+      overflow-x: auto;
+      scrollbar-width: thin;
       border-bottom: 1px solid var(--me-color-border, #E2E2E9); /* border-gray-200 */
     }
 

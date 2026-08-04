@@ -62,8 +62,10 @@ jobs:
       # secondary/tertiary têm 8 usos crus que ainda esperam aliases novos
       # (--me-color-text-strong p/ secondary-40, --me-color-accent p/ o rosa
       # tertiary-30 do toggle da sidebar). Ao criá-los, inclua-as no regex:
-      #   Button.js:107  Filters.js:57,132  RadioGroup.js:91
-      #   Sidebar.js:64,257,261  Tabs.js:66
+      #   Button.js:107  Filters.js:77,160  PageHeader.js:125,129
+      #   RadioGroup.js:91  Sidebar.js:78,353,357  Tabs.js:73
+      # (o rosa do PageHeader.js é o mesmo ícone do toggle do Sidebar.js: quando
+      #  --me-color-accent existir, os quatro usos de tertiary-30 migram juntos.)
       #
       # As famílias neutral/gray também são lidas cruas (bordas e fundos de
       # controle) e não têm alias suficiente: --me-color-border tem um único

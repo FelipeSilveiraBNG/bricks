@@ -334,6 +334,20 @@ Sidebar e header ficam **fixos**; só o conteúdo rola. Para isso o `body` não
 rola (`height:100vh; overflow:hidden`) e a rolagem fica na área de conteúdo
 (`overflow-y:auto`) — evite `position:sticky` + scroll no documento, que deixa
 a sidebar escapar ao rolar.
+
+**Abaixo de 800px** a sidebar muda de comportamento sozinha: recolhida fica
+**oculta** (não ocupa largura), e expandida vira **drawer sobreposto** (não
+empurra o conteúdo) com backdrop, fechando por Esc, clique fora e toque num
+item. Nos dois estados o conteúdo tem a tela inteira. Uma página que declara
+`expanded` abre recolhida no telefone. Não tente reproduzir isso com CSS por
+fora.
+
+> Como em mobile a sidebar está fora da tela, **o `menu` no `me-page-header` e o
+> `me-menu` ligado a ela deixam de ser opcionais** — sem eles não há como abrir
+> o menu no telefone. É o que o script abaixo faz.
+
+Em mobile, prefira `padding: 16px` na área de conteúdo (o `24px 32px` do
+exemplo consome 17% de uma tela de 360px).
 ```html
 <body style="display:flex; margin:0; height:100vh; overflow:hidden;">
   <!-- Menu por perfil vem de components/sidebar-presets.js (não se declaram
@@ -343,10 +357,29 @@ a sidebar escapar ao rolar.
     <!-- me-page-header já é uma barra branca com padding próprio (16px/32px):
          deixe-o full-bleed e fixo no topo (flex:none) e role só o conteúdo.
          O atributo "menu" mostra o botão de abrir a sidebar em telas < 800px. -->
-    <me-page-header id="hdr" menu menu-open heading="Dashboard" subheading="Visão geral" style="flex:none;">
-      <span slot="end" style="display:flex; align-items:center; gap:16px;">
-        <me-icon name="bell-outline" label="Notificações"></me-icon>
-        <me-icon name="account-circle" label="Perfil" style="font-size:36px; color:var(--me-color-brand);"></me-icon>
+    <me-page-header id="hdr" menu heading="Dashboard" subheading="Visão geral" style="flex:none;">
+      <!-- Lado direito COMO NO APP (medido no Header.vue e no Storybook): sino
+           PREENCHIDO teal com badge de não lidas, avatar de 40px com as iniciais
+           em branco, e um chevron pequeno teal. Os espaçamentos são os do app
+           (24px depois do sino, 8px depois do avatar), por isso as margens vão à
+           mão e não por gap. Um só filho no slot: o respiro interno é seu. -->
+      <span slot="end" style="display:flex; align-items:center;">
+        <span style="position:relative; display:inline-flex; margin-right:24px;">
+          <me-icon name="bell" label="Notificações"
+                   style="font-size:24px; color:var(--me-color-brand);"></me-icon>
+          <!-- Badge: 18px, texto 10px bold, anel branco de 2px. Corte em "99+". -->
+          <span style="position:absolute; top:-4px; right:-6px; min-width:18px; height:18px;
+                       display:flex; align-items:center; justify-content:center; padding:0 4px;
+                       box-sizing:border-box; border-radius:999px; font-size:10px; font-weight:700;
+                       background:var(--me-color-negative-50); color:var(--me-color-white);
+                       outline:2px solid var(--me-color-surface);">3</span>
+        </span>
+        <!-- Avatar: no app é a foto do usuário, com as iniciais como fallback. -->
+        <span style="width:40px; height:40px; margin-right:8px; border-radius:50%;
+                     display:flex; align-items:center; justify-content:center;
+                     background:var(--me-color-brand); color:var(--me-color-white);
+                     font-size:16px; font-weight:700;">EZ</span>
+        <me-icon name="chevron-down" style="font-size:18px; color:var(--me-color-brand);"></me-icon>
       </span>
     </me-page-header>
     <div style="flex:1; overflow-y:auto; padding:24px 32px;">
@@ -356,6 +389,10 @@ a sidebar escapar ao rolar.
   <script type="module">
     // Liga o botão mobile do header à sidebar (< 800px).
     const nav = document.getElementById('nav'), hdr = document.getElementById('hdr');
+    // Esta primeira linha não é opcional: abaixo de 800px a sidebar se recolhe
+    // sozinha ao carregar (senão o drawer abriria por cima do conteúdo), e o
+    // recolhimento inicial é silencioso — é aqui que a seta do header acerta.
+    hdr.menuOpen = nav.expanded;
     hdr.addEventListener('me-menu', (e) => { nav.expanded = hdr.menuOpen = e.detail.open; });
     nav.addEventListener('me-toggle', (e) => { hdr.menuOpen = e.detail.expanded; });
   </script>
